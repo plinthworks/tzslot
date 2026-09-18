@@ -17,7 +17,7 @@ export type {
 } from './temporal.js';
 export { getDaySlots } from './slots.js';
 export type { Slot, DaySlotsOptions } from './slots.js';
-export { getMonthGrid, getWeekdayOrder } from './grid.js';
+export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade } from './grid.js';
 export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
 export type { RangeInfo, RangeProblem } from './range.js';
 export type { Weekday } from './grid.js';

@@ -12,9 +12,22 @@ import {
   Temporal,
   getMonthGrid,
   getWeekdayOrder,
-  type PlainDate,
-  type Weekday,
+  getDecadeYears,
+  isOutsideDecade,
 } from '../../core/src/index.js';
+import type { PlainDate, Weekday } from '../../core/src/index.js';
+
+/** Days, months or years — what the grid is currently choosing between. */
+export type CalendarView = 'days' | 'months' | 'years';
+
+/** A month or a year cell: the same shape, since they behave the same way. */
+interface CoarseCell {
+  readonly label: string;
+  readonly value: number;
+  readonly outside: boolean;
+  readonly current: boolean;
+  readonly selected: boolean;
+}
 
 interface DayCell {
   readonly date: PlainDate;
@@ -59,7 +72,17 @@ interface DayCell {
         ‹
       </button>
 
-      <span class="tz-cal__title" aria-live="polite">{{ monthTitle() }}</span>
+      <button
+        type="button"
+        class="tz-cal__title"
+        [class.tz-cal__title--static]="view() === 'years'"
+        [attr.aria-live]="'polite'"
+        [attr.aria-label]="zoomOutLabel()"
+        [disabled]="view() === 'years' || disabled() || formDisabled()"
+        (click)="zoomOut()"
+      >
+        {{ title() }}
+      </button>
 
       <button
         type="button"
@@ -72,7 +95,27 @@ interface DayCell {
       </button>
     </div>
 
-    <div class="tz-cal__grid" role="grid" [attr.aria-label]="monthTitle()" (keydown)="onKeydown($event)">
+    <div class="tz-cal__grid" role="grid" [attr.aria-label]="title()" (keydown)="onKeydown($event)">
+      @if (view() !== 'days') {
+        <div class="tz-cal__coarse">
+          @for (cell of coarseCells(); track cell.value) {
+            <button
+              type="button"
+              role="gridcell"
+              class="tz-cal__coarse-cell"
+              [class.tz-cal__coarse-cell--outside]="cell.outside"
+              [class.tz-cal__coarse-cell--today]="cell.current"
+              [class.tz-cal__coarse-cell--selected]="cell.selected"
+              [attr.aria-selected]="cell.selected"
+              [attr.data-value]="cell.value"
+              [disabled]="disabled() || formDisabled()"
+              (click)="zoomIn(cell)"
+            >
+              {{ cell.label }}
+            </button>
+          }
+        </div>
+      } @else {
       <div class="tz-cal__weekdays" role="row">
         @for (name of weekdayNames(); track name.short) {
           <span class="tz-cal__weekday" role="columnheader" [attr.aria-label]="name.long">
@@ -103,6 +146,7 @@ interface DayCell {
             </button>
           }
         </div>
+      }
       }
     </div>
   `,
@@ -147,6 +191,41 @@ interface DayCell {
       color: var(--tz-cal-selected-fg, canvas);
     }
     .tz-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
+    .tz-cal__title {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      font-weight: var(--tz-cal-title-weight, 600);
+      cursor: pointer;
+      padding: 0.125rem 0.5rem;
+      border-radius: var(--tz-cal-radius, 0.25rem);
+    }
+    .tz-cal__title--static { cursor: default; }
+    /* Four columns: twelve months and twelve years both land on three tidy
+       rows, and the block ends up about as wide as the day grid so the header
+       does not jump when the view changes. */
+    .tz-cal__coarse {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: var(--tz-cal-gap, 0.25rem);
+      width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, 0.25rem));
+    }
+    .tz-cal__coarse-cell {
+      border: 0;
+      background: transparent;
+      color: inherit;
+      font: inherit;
+      cursor: pointer;
+      padding: 0.5rem 0.25rem;
+      border-radius: var(--tz-cal-radius, 0.25rem);
+    }
+    .tz-cal__coarse-cell--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+    .tz-cal__coarse-cell--today { outline: 1px solid var(--tz-cal-today-border, currentColor); }
+    .tz-cal__coarse-cell--selected {
+      background: var(--tz-cal-selected-bg, currentColor);
+      color: var(--tz-cal-selected-fg, canvas);
+    }
   `,
 })
 export class Calendar implements ControlValueAccessor {
@@ -176,6 +255,21 @@ export class Calendar implements ControlValueAccessor {
    * to reproduce six months later.
    */
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
+
+  /**
+   * Which level the grid is choosing between.
+   *
+   * A model rather than internal state, so a consumer can open straight on
+   * years — a birthdate picker that starts on the current month makes the user
+   * click the arrow three hundred times.
+   */
+  readonly view = model<CalendarView>('days');
+
+  /**
+   * How far down the view may go. 'months' turns this into a month picker,
+   * 'years' into a year picker, with no further code.
+   */
+  readonly minView = input<CalendarView>('days');
 
   /** The month on screen, which is not the same as the selection. */
   private readonly cursor = signal<{ year: number; month: number } | null>(null);
@@ -221,6 +315,50 @@ export class Calendar implements ControlValueAccessor {
     );
   });
 
+  /** What the header says, which is also what clicking it zooms out of. */
+  protected readonly title = computed(() => {
+    const { year } = this.shownMonth();
+    switch (this.view()) {
+      case 'days':
+        return this.monthTitle();
+      case 'months':
+        return String(year);
+      case 'years': {
+        const years = getDecadeYears(year);
+        return `${years[1]} – ${years[10]}`;
+      }
+    }
+  });
+
+  protected readonly zoomOutLabel = computed(() =>
+    this.view() === 'days' ? 'Choose a month' : 'Choose a year',
+  );
+
+  protected readonly coarseCells = computed<CoarseCell[]>(() => {
+    const { year, month } = this.shownMonth();
+    const selected = this.value();
+    const today = this.today();
+
+    if (this.view() === 'months') {
+      const format = this.formatter({ month: 'short' });
+      return Array.from({ length: 12 }, (_, i) => ({
+        label: format.format(new Date(Date.UTC(year, i, 1))),
+        value: i + 1,
+        outside: false,
+        current: today.year === year && today.month === i + 1,
+        selected: selected !== null && selected.year === year && selected.month === i + 1,
+      }));
+    }
+
+    return getDecadeYears(year).map((y) => ({
+      label: String(y),
+      value: y,
+      outside: isOutsideDecade(y, year),
+      current: today.year === y,
+      selected: selected !== null && selected.year === y,
+    }));
+  });
+
   protected readonly weekdayNames = computed(() => {
     const short = this.formatter({ weekday: 'short' });
     const long = this.formatter({ weekday: 'long' });
@@ -238,10 +376,53 @@ export class Calendar implements ControlValueAccessor {
     return new Intl.DateTimeFormat(this.locale(), { ...options, timeZone: 'UTC' });
   }
 
+  /**
+   * The arrows move by whatever the grid is showing: a month, a year, or a
+   * decade. An arrow that always moved a month would be useless in a decade
+   * view, which is the state these buttons exist to escape.
+   */
   protected shiftMonth(delta: number): void {
     const { year, month } = this.shownMonth();
-    const moved = Temporal.PlainDate.from({ year, month, day: 1 }).add({ months: delta });
+    const step =
+      this.view() === 'days'
+        ? { months: delta }
+        : this.view() === 'months'
+          ? { years: delta }
+          : { years: delta * 10 };
+    const moved = Temporal.PlainDate.from({ year, month, day: 1 }).add(step);
     this.cursor.set({ year: moved.year, month: moved.month });
+  }
+
+  private readonly order: CalendarView[] = ['days', 'months', 'years'];
+
+  protected zoomOut(): void {
+    if (this.disabled() || this.formDisabled()) return;
+    const next = this.order[this.order.indexOf(this.view()) + 1];
+    if (next) this.view.set(next);
+  }
+
+  /**
+   * Going down from months or years. At minView the choice is the answer, so
+   * a month picker selects the first of the month rather than descending into
+   * days it is not meant to show.
+   */
+  protected zoomIn(cell: CoarseCell): void {
+    if (this.disabled() || this.formDisabled()) return;
+
+    const { year, month } = this.shownMonth();
+    const target =
+      this.view() === 'months' ? { year, month: cell.value } : { year: cell.value, month };
+    this.cursor.set(target);
+
+    const below = this.order[this.order.indexOf(this.view()) - 1]!;
+    if (this.order.indexOf(below) < this.order.indexOf(this.minView())) {
+      const date = Temporal.PlainDate.from({ ...target, day: 1 });
+      this.value.set(date);
+      this.onChange(date);
+      this.onTouched();
+      return;
+    }
+    this.view.set(below);
   }
 
   protected select(cell: DayCell): void {

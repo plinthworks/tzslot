@@ -7,6 +7,7 @@
  */
 export { TimeSlotPicker } from './time-slot-picker.js';
 export { Calendar } from './calendar.js';
+export type { CalendarView } from './calendar.js';
 export { DateField } from './date-field.js';
 export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';

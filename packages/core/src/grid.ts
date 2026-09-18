@@ -38,3 +38,22 @@ export function getMonthGrid(
 export function getWeekdayOrder(firstDayOfWeek: Weekday = 1): Weekday[] {
   return Array.from({ length: 7 }, (_, i) => (((firstDayOfWeek - 1 + i) % 7) + 1) as Weekday);
 }
+
+/**
+ * The twelve years a decade view shows: the ten of the decade, plus the last
+ * year of the one before and the first of the one after.
+ *
+ * Twelve rather than ten so the grid is a rectangle — three rows of four —
+ * and so the edges of the decade are reachable without navigating first, the
+ * same reason a month grid shows the days either side of it.
+ */
+export function getDecadeYears(year: number): number[] {
+  const first = Math.floor(year / 10) * 10;
+  return Array.from({ length: 12 }, (_, i) => first - 1 + i);
+}
+
+/** True for the two cells a decade view shows from the neighbouring decades. */
+export function isOutsideDecade(year: number, shownYear: number): boolean {
+  const first = Math.floor(shownYear / 10) * 10;
+  return year < first || year > first + 9;
+}

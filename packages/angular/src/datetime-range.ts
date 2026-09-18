@@ -223,6 +223,13 @@ export class DateTimeRange implements ControlValueAccessor {
     this.onTouched();
   }
 
+  /** Clears the selection and tells any form control about it. */
+  clear(): void {
+    this.value.set(EMPTY);
+    this.onChange(EMPTY);
+    this.onTouched();
+  }
+
   // ── ControlValueAccessor ────────────────────────────────────
 
   protected readonly formDisabled = signal(false);

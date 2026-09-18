@@ -53,7 +53,7 @@ export type FieldMode = 'popup' | 'dialog';
       class="tz-field__trigger"
       [class.tz-field__trigger--empty]="!value()"
       [attr.aria-haspopup]="'dialog'"
-      [attr.aria-expanded]="open()"
+      [attr.aria-expanded]="isOpen()"
       [attr.aria-label]="ariaLabel()"
       [disabled]="disabled() || formDisabled()"
       (click)="toggle()"
@@ -136,7 +136,8 @@ export class DateField implements ControlValueAccessor {
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
 
-  protected readonly open = signal(false);
+  /** Whether the panel is showing. Readable from a ViewChild. */
+  readonly isOpen = signal(false);
   protected readonly formDisabled = signal(false);
 
   private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
@@ -165,8 +166,26 @@ export class DateField implements ControlValueAccessor {
     );
   }
 
-  protected toggle(): void {
-    this.open() ? this.close() : this.openPanel();
+  /**
+   * Opening and closing are public so a ViewChild can drive the field — a
+   * button elsewhere on the page, a wizard step, a keyboard shortcut. This is
+   * the part of flatpickr's imperative API worth keeping: not attaching to a
+   * DOM node, just being able to say "open".
+   */
+  toggle(): void {
+    this.isOpen() ? this.close() : this.openPanel();
+  }
+
+  /** No-op when already open. */
+  open(): void {
+    if (!this.isOpen()) this.openPanel();
+  }
+
+  /** Clears the selection and tells any form control about it. */
+  clear(): void {
+    this.value.set(null);
+    this.onChange(null);
+    this.onTouched();
   }
 
   private openPanel(): void {
@@ -205,17 +224,17 @@ export class DateField implements ControlValueAccessor {
     this.focusTrap = this.focusTraps.create(element);
     this.focusTrap.focusInitialElementWhenReady();
 
-    this.open.set(true);
+    this.isOpen.set(true);
     this.onTouched();
   }
 
-  protected close(): void {
+  close(): void {
     this.focusTrap?.destroy();
     this.focusTrap = null;
     this.overlayRef?.dispose();
     this.overlayRef = null;
-    if (this.open()) {
-      this.open.set(false);
+    if (this.isOpen()) {
+      this.isOpen.set(false);
       this.trigger().nativeElement.focus();
     }
   }

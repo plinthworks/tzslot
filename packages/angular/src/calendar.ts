@@ -400,6 +400,22 @@ export class Calendar implements ControlValueAccessor {
    * decade. An arrow that always moved a month would be useless in a decade
    * view, which is the state these buttons exist to escape.
    */
+  /**
+   * Moves the grid without selecting anything — flatpickr's setViewDate.
+   * Showing a month is not the same as choosing a day in it, and a caller that
+   * wants to point somewhere should not have to make a selection to do it.
+   */
+  goTo(date: PlainDate | { year: number; month: number }): void {
+    this.cursor.set({ year: date.year, month: date.month });
+  }
+
+  /** Clears the selection and tells any form control about it. */
+  clear(): void {
+    this.value.set(null);
+    this.onChange(null);
+    this.onTouched();
+  }
+
   protected shiftMonth(delta: number): void {
     const { year, month } = this.shownMonth();
     const step =

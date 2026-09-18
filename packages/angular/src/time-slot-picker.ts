@@ -204,6 +204,13 @@ export class TimeSlotPicker implements ControlValueAccessor {
     this.onTouched();
   }
 
+  /** Clears the selection and tells any form control about it. */
+  clear(): void {
+    this.value.set(null);
+    this.onChange(null);
+    this.onTouched();
+  }
+
   // ── ControlValueAccessor ────────────────────────────────────
   //
   // So the component can sit in a FormGroup. The model input stays the API for

@@ -21,19 +21,23 @@ retained across five thousand discarded calls.
 
 ### `@tzslot/dom` — the widgets, no framework
 
-Being extracted from the Angular package, one component at a time, so that
-Angular (and later React or Vue) only translates its own idioms.
+Everything a user sees and touches: markup, keyboard, focus, panels, words.
+Usable from a `<script>` tag; each returns an instance with `update`,
+`clear` and `destroy`, and reports through `onChange`.
 
 | | |
 |---|---|
-| `createCalendar(el, options)` | month grid, month and year views, keyboard, words, icons. `update`, `goTo`, `clear`, `setIcons`, `destroy` |
-| `createDateField(el, options)` | a field whose panel opens anchored or centred, on the body, carrying the field's `data-theme` with it. Focus in and back out, Tab kept inside, `onOpen` / `onClose` |
+| `createCalendar` | month grid, month and year views, keyboard, `goTo`, `setIcons` |
+| `createDateField` | a field whose panel opens anchored or centred, on the body, carrying the field's `data-theme`; `open` / `close`, `onOpen` / `onClose` |
+| `createTimeSlots` | times on one day; `getSlotChoices` gives the rows without drawing them |
+| `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day |
+| `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
 
-Still Angular-only: the time slots and both ranges.
+Layout CSS is injected once, in `@layer tzslot`, so any unlayered rule of the
+page wins. `injectStyles: false` plus the exported `*_CSS` strings for a
+strict Content-Security-Policy.
 
-No Angular CDK any more: the date field was its only user.
-
-### `@tzslot/angular` — five components
+### `@tzslot/angular` — five wrappers
 
 | | |
 |---|---|
@@ -43,7 +47,8 @@ No Angular CDK any more: the date field was its only user.
 | `<tz-date-range>` | two dates, refusing to span a closed day |
 | `<tz-datetime-range>` | an interval with a time at both ends, and the hour it hides |
 
-All five are `ControlValueAccessor`s, so they go in a `FormGroup`.
+Each maps inputs and models to `update()` and callbacks to outputs. All five
+are `ControlValueAccessor`s, so they go in a `FormGroup`. No Angular CDK.
 
 ### `@tzslot/theme` — optional
 

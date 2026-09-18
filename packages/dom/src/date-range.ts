@@ -1,0 +1,321 @@
+import { Temporal, getMonthGrid, getWeekdayOrder } from '../../core/src/index.js';
+import type { PlainDate, Weekday } from '../../core/src/index.js';
+import type { YearMonth } from './calendar.js';
+import { EN, type TzslotMessages } from './messages.js';
+import { RANGE_CSS, ensureStyles } from './styles.js';
+
+/** Either end may be unset while a range is being chosen. */
+export interface DateRangeValue {
+  readonly start: PlainDate | null;
+  readonly end: PlainDate | null;
+}
+
+export interface DateRangeSettings {
+  value: DateRangeValue;
+  firstDayOfWeek: Weekday;
+  locale: string | undefined;
+  min: PlainDate | null;
+  max: PlainDate | null;
+  disabled: boolean;
+  isDateDisabled: ((date: PlainDate) => boolean) | undefined;
+  today: PlainDate;
+  /**
+   * Refuse a range that steps over a day ruled out by isDateDisabled.
+   *
+   * On by default, because the usual reason a day is unavailable is that the
+   * thing being booked is not available then — and a booking that spans a
+   * closure cannot be honoured. Turn it off for ranges that merely bracket a
+   * period, like a report's dates.
+   */
+  blockAcrossDisabled: boolean;
+  /** Overrides messages.rangeCrossesUnavailable for this one instance. */
+  rangeSpansBlockedMessage: string | undefined;
+  messages: TzslotMessages;
+  onChange: ((value: DateRangeValue) => void) | undefined;
+}
+
+export interface DateRangeOptions extends Partial<DateRangeSettings> {
+  icons?: { prev?: Node | string | undefined; next?: Node | string | undefined };
+  injectStyles?: boolean;
+}
+
+export interface DateRangeInstance {
+  readonly value: DateRangeValue;
+  update(settings: Partial<DateRangeSettings>): void;
+  goTo(target: YearMonth): void;
+  setIcons(icons: { prev?: Node | string | undefined; next?: Node | string | undefined }): void;
+  clear(): void;
+  destroy(): void;
+}
+
+const EMPTY: DateRangeValue = { start: null, end: null };
+const before = (a: PlainDate, b: PlainDate) => Temporal.PlainDate.compare(a, b) < 0;
+
+/**
+ * Two dates and everything between them.
+ *
+ * Separate from the calendar rather than a mode of it, because the value is a
+ * different shape, and a widget whose value type changes with a flag cannot
+ * go in a typed form. The grid comes from the same core function, so the two
+ * cannot disagree about what a month looks like.
+ */
+export function createDateRange(host: HTMLElement, options: DateRangeOptions = {}): DateRangeInstance {
+  const doc = host.ownerDocument;
+  const { icons, injectStyles = true, ...initial } = options;
+
+  const s: DateRangeSettings = {
+    value: EMPTY,
+    firstDayOfWeek: 1,
+    locale: undefined,
+    min: null,
+    max: null,
+    disabled: false,
+    isDateDisabled: undefined,
+    today: Temporal.Now.plainDateISO(),
+    blockAcrossDisabled: true,
+    rangeSpansBlockedMessage: undefined,
+    messages: EN,
+    onChange: undefined,
+    ...initial,
+  };
+
+  let cursor: YearMonth | null = null;
+  /** The day under the pointer, previewing where the range would end. */
+  let hovered: PlainDate | null = null;
+  let error: string | null = null;
+  let stylesPending = injectStyles;
+
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string) => {
+    const node = doc.createElement(tag);
+    node.className = className;
+    return node;
+  };
+  const button = (className: string) => {
+    const b = el('button', className);
+    b.type = 'button';
+    return b;
+  };
+
+  const addedHostClass = !host.classList.contains('tz-range');
+  host.classList.add('tz-range');
+
+  const header = el('div', 'tz-range__header');
+  const prev = button('tz-range__nav');
+  const title = el('span', 'tz-range__title');
+  const next = button('tz-range__nav');
+  title.setAttribute('aria-live', 'polite');
+  prev.append(icons?.prev ?? '‹');
+  next.append(icons?.next ?? '›');
+  header.append(prev, title, next);
+
+  const grid = el('div', 'tz-range__grid');
+  grid.setAttribute('role', 'grid');
+  const weekdays = el('div', 'tz-range__weekdays');
+  weekdays.setAttribute('role', 'row');
+  const weekdayCells = Array.from({ length: 7 }, () => {
+    const cell = el('span', 'tz-range__weekday');
+    cell.setAttribute('role', 'columnheader');
+    return cell;
+  });
+  weekdays.append(...weekdayCells);
+  grid.append(weekdays);
+
+  const dayCells: HTMLButtonElement[] = [];
+  for (let w = 0; w < 6; w++) {
+    const row = el('div', 'tz-range__week');
+    row.setAttribute('role', 'row');
+    for (let d = 0; d < 7; d++) {
+      const cell = button('tz-range__day');
+      cell.setAttribute('role', 'gridcell');
+      dayCells.push(cell);
+      row.append(cell);
+    }
+    grid.append(row);
+  }
+
+  const alert = el('p', 'tz-range__error');
+  alert.setAttribute('role', 'alert');
+
+  host.append(header, grid);
+
+  const shown = (): YearMonth => {
+    if (cursor) return cursor;
+    const anchor = s.value.start ?? s.today;
+    return { year: anchor.year, month: anchor.month };
+  };
+
+  const ruledOut = (date: PlainDate) =>
+    (s.min !== null && before(date, s.min)) ||
+    (s.max !== null && before(s.max, date)) ||
+    (s.isDateDisabled?.(date) ?? false);
+
+  function render(): void {
+    if (stylesPending && host.isConnected) {
+      ensureStyles(host, 'range', RANGE_CSS);
+      stylesPending = false;
+    }
+    const at = shown();
+    const off = s.disabled;
+
+    prev.disabled = off;
+    next.disabled = off;
+    prev.setAttribute('aria-label', s.messages.previousMonth);
+    next.setAttribute('aria-label', s.messages.nextMonth);
+
+    const text = new Intl.DateTimeFormat(s.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+      new Date(Date.UTC(at.year, at.month - 1, 1)),
+    );
+    title.textContent = text;
+    grid.setAttribute('aria-label', text);
+
+    const short = new Intl.DateTimeFormat(s.locale, { weekday: 'short', timeZone: 'UTC' });
+    getWeekdayOrder(s.firstDayOfWeek).forEach((weekday, i) => {
+      weekdayCells[i]!.textContent = short.format(new Date(Date.UTC(1970, 0, 4 + weekday)));
+    });
+
+    // The end as it would be if the pointer stopped here, so the run under the
+    // cursor is the run that will be chosen.
+    const { start, end } = s.value;
+    const finish = start && !end ? hovered : end;
+    const [from, to] = start && finish && before(finish, start) ? [finish, start] : [start, finish];
+
+    getMonthGrid(at.year, at.month, s.firstDayOfWeek)
+      .flat()
+      .forEach((date, i) => {
+        const cell = dayCells[i]!;
+        const isStart = from !== null && date.equals(from);
+        const isEnd = to !== null && date.equals(to);
+        const within = from !== null && to !== null && !before(date, from) && !before(to, date);
+        cell.textContent = String(date.day);
+        cell.dataset['date'] = date.toString();
+        cell.classList.toggle('tz-range__day--outside', date.month !== at.month || date.year !== at.year);
+        cell.classList.toggle('tz-range__day--today', date.equals(s.today));
+        cell.classList.toggle('tz-range__day--start', isStart);
+        cell.classList.toggle('tz-range__day--end', isEnd);
+        cell.classList.toggle('tz-range__day--within', within);
+        cell.setAttribute('aria-selected', String(isStart || isEnd));
+        cell.disabled = off || ruledOut(date);
+      });
+
+    if (error) {
+      alert.textContent = error;
+      if (!alert.isConnected) host.append(alert);
+    } else {
+      alert.remove();
+    }
+  }
+
+  /** Walks the span looking for a day the caller ruled out. */
+  function crossesBlocked(from: PlainDate, to: PlainDate): boolean {
+    const blocked = s.isDateDisabled;
+    if (!blocked) return false;
+    for (let day = from; !before(to, day); day = day.add({ days: 1 })) {
+      if (blocked(day)) return true;
+    }
+    return false;
+  }
+
+  function commit(next: DateRangeValue): void {
+    s.value = next;
+    render();
+    s.onChange?.(next);
+  }
+
+  function choose(date: PlainDate): void {
+    if (s.disabled || ruledOut(date)) return;
+    const { start, end } = s.value;
+    error = null;
+
+    // A complete range, or none at all, means this click starts a new one.
+    if (!start || end) {
+      commit({ start: date, end: null });
+      return;
+    }
+
+    // Clicking before the start moves the start rather than making a backwards
+    // range, which is what someone correcting a mis-click expects.
+    const [from, to] = before(date, start) ? [date, start] : [start, date];
+    if (s.blockAcrossDisabled && crossesBlocked(from, to)) {
+      error = s.rangeSpansBlockedMessage ?? s.messages.rangeCrossesUnavailable;
+      render();
+      return;
+    }
+    commit({ start: from, end: to });
+  }
+
+  function shift(delta: number): void {
+    const { year, month } = shown();
+    const moved = Temporal.PlainDate.from({ year, month, day: 1 }).add({ months: delta });
+    cursor = { year: moved.year, month: moved.month };
+    render();
+  }
+
+  const listening = new AbortController();
+  const on = { signal: listening.signal };
+  const dayAt = (event: Event) => {
+    const target = event.target as Element;
+    return target instanceof HTMLButtonElement && target.dataset['date'] ? target : null;
+  };
+
+  prev.addEventListener('click', () => shift(-1), on);
+  next.addEventListener('click', () => shift(1), on);
+  grid.addEventListener(
+    'click',
+    (event) => {
+      const cell = (event.target as Element).closest<HTMLButtonElement>('.tz-range__day');
+      if (cell && !cell.disabled) choose(Temporal.PlainDate.from(cell.dataset['date']!));
+    },
+    on,
+  );
+  // mouseenter does not bubble; listening in the capture phase still sees it.
+  grid.addEventListener(
+    'mouseenter',
+    (event) => {
+      const cell = dayAt(event);
+      if (!cell) return;
+      hovered = Temporal.PlainDate.from(cell.dataset['date']!);
+      if (s.value.start && !s.value.end) render();
+    },
+    { ...on, capture: true },
+  );
+  grid.addEventListener(
+    'mouseleave',
+    (event) => {
+      if (!dayAt(event)) return;
+      hovered = null;
+      if (s.value.start && !s.value.end) render();
+    },
+    { ...on, capture: true },
+  );
+
+  render();
+
+  return {
+    get value() {
+      return s.value;
+    },
+    update(settings) {
+      Object.assign(s, settings);
+      render();
+    },
+    goTo({ year, month }) {
+      cursor = { year, month };
+      render();
+    },
+    setIcons(next_) {
+      if (next_.prev !== undefined) prev.replaceChildren(next_.prev);
+      if (next_.next !== undefined) next.replaceChildren(next_.next);
+    },
+    clear() {
+      error = null;
+      commit(EMPTY);
+    },
+    destroy() {
+      listening.abort();
+      header.remove();
+      grid.remove();
+      alert.remove();
+      if (addedHostClass) host.classList.remove('tz-range');
+    },
+  };
+}

@@ -22,6 +22,27 @@ export type {
   DateFieldSettings,
   FieldMode,
 } from './date-field.js';
+export { createTimeSlots, getSlotChoices } from './time-slots.js';
+export type {
+  SlotChoice,
+  TimeSlotsInstance,
+  TimeSlotsOptions,
+  TimeSlotsSettings,
+} from './time-slots.js';
+export { createDateRange } from './date-range.js';
+export type {
+  DateRangeInstance,
+  DateRangeOptions,
+  DateRangeSettings,
+  DateRangeValue,
+} from './date-range.js';
+export { createDateTimeRange } from './datetime-range.js';
+export type {
+  DateTimeRangeInstance,
+  DateTimeRangeOptions,
+  DateTimeRangeSettings,
+  DateTimeRangeValue,
+} from './datetime-range.js';
 export { EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
-export { CALENDAR_CSS, FIELD_CSS } from './styles.js';
+export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS } from './styles.js';

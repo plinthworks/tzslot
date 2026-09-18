@@ -1,101 +1,133 @@
-import { Component, computed, signal } from '@angular/core';
-import { Calendar, TimeSlotPicker } from '../packages/angular/src/index.js';
+import { Component, signal } from '@angular/core';
+import {
+  Calendar,
+  DateField,
+  DateRange,
+  DateTimeRange,
+  TimeSlotPicker,
+  type DateRangeValue,
+  type DateTimeRangeValue,
+} from '../packages/angular/src/index.js';
 import { Temporal, usingPolyfill } from '../packages/core/src/index.js';
 import type { Instant, PlainDate } from '../packages/core/src/index.js';
 
+/** The earlier reading of a wall time in Paris — enough for a demonstration. */
+function parisAt(iso: string): Instant {
+  return Temporal.PlainDateTime.from(iso)
+    .toZonedDateTime('Europe/Paris', { disambiguation: 'earlier' })
+    .toInstant();
+}
+
 /**
- * A page to look at the components on, and to prod at the days that break
- * every other picker.
+ * Somewhere to look at all of it, with the days that break other pickers one
+ * click away.
  *
- * The three preset dates are not decoration: they are the spring gap, the
- * autumn repetition, and Lord Howe's half-hour shift. Anyone evaluating this
- * library wants to see those three, and nowhere else makes them one click away.
+ * The presets are not decoration: they are the spring gap, the autumn
+ * repetition, and Lord Howe's half-hour shift. Anyone evaluating this wants
+ * those three, and nowhere else makes them reachable without arithmetic.
  */
 @Component({
   selector: 'demo-root',
   standalone: true,
-  imports: [Calendar, TimeSlotPicker],
+  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange],
   template: `
     <header>
       <h1>tzslot</h1>
       <p class="sub">
-        Temporal: <b>{{ usingPolyfill ? 'polyfilled' : 'native' }}</b>
+        Timezone-aware time slots · Temporal is
+        <b>{{ usingPolyfill ? 'polyfilled' : 'native' }}</b>
       </p>
     </header>
 
-    <section class="presets">
-      <p>Days that break other pickers:</p>
-      @for (preset of presets; track preset.date) {
-        <button
-          type="button"
-          [class.on]="date().toString() === preset.date && zone() === preset.zone"
-          (click)="usePreset(preset)"
-        >
-          {{ preset.label }}
-        </button>
-      }
-    </section>
+    <section class="block block--feature">
+      <h2>An interval with a time at both ends</h2>
+      <p class="lede">
+        A night shift across the end of summer time. Every other picker calls this six hours.
+      </p>
 
-    <section class="controls">
-      <label>
-        Time zone
-        <select [value]="zone()" (change)="zone.set($any($event.target).value)">
-          @for (z of zones; track z) {
-            <option [value]="z">{{ z }}</option>
-          }
-        </select>
-      </label>
-      <label>
-        Step
-        <select [value]="step()" (change)="step.set(+$any($event.target).value)">
-          @for (s of [15, 30, 60]; track s) {
-            <option [value]="s">{{ s }} min</option>
-          }
-        </select>
-      </label>
-      <label class="check">
-        <input type="checkbox" [checked]="skip()" (change)="skip.set($any($event.target).checked)" />
-        hide impossible times
-      </label>
-    </section>
-
-    <div class="panes">
-      <div class="pane">
-        <h2>Calendar</h2>
-        <tz-calendar [value]="date()" (valueChange)="onDate($event)" [today]="today" />
+      <div class="row">
+        @for (p of shiftPresets; track p.label) {
+          <button type="button" class="chip"
+                  [class.on]="shiftLabel() === p.label" (click)="useShift(p)">
+            {{ p.label }}
+          </button>
+        }
       </div>
 
-      <div class="pane">
-        <h2>Times on {{ date().toString() }}</h2>
-        <tz-time-slots
-          [date]="date()"
-          [timeZone]="zone()"
-          [stepMinutes]="step()"
-          [skipNonExistent]="skip()"
-          [(value)]="instant"
-        />
-      </div>
-    </div>
+      <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'"
+                         [stepMinutes]="60" [locale]="'en-GB'" />
+    </section>
 
-    <section class="result">
-      <h2>What would be stored</h2>
-      @if (instant()) {
+    <section class="block">
+      <h2>Times on one day</h2>
+      <div class="row">
+        @for (p of dayPresets; track p.label) {
+          <button type="button" class="chip"
+                  [class.on]="day().toString() === p.date && zone() === p.zone"
+                  (click)="useDay(p)">
+            {{ p.label }}
+          </button>
+        }
+      </div>
+      <div class="row">
+        <label>Zone
+          <select [value]="zone()" (change)="zone.set($any($event.target).value)">
+            @for (z of zones; track z) { <option [value]="z">{{ z }}</option> }
+          </select>
+        </label>
+        <label>Step
+          <select [value]="step()" (change)="step.set(+$any($event.target).value)">
+            @for (s of [15, 30, 60]; track s) { <option [value]="s">{{ s }} min</option> }
+          </select>
+        </label>
+        <label>Hours
+          <select [value]="hours()" (change)="hours.set($any($event.target).value)">
+            <option value="all">all day</option>
+            <option value="office">09:00 – 17:00</option>
+          </select>
+        </label>
+      </div>
+
+      <tz-time-slots [date]="day()" [timeZone]="zone()" [stepMinutes]="step()"
+                     [minTime]="hours() === 'office' ? '09:00' : undefined"
+                     [maxTime]="hours() === 'office' ? '17:00' : undefined"
+                     [isDisabled]="lunchIsTaken" [(value)]="instant" />
+
+      @if (instant(); as chosen) {
         <dl>
-          <dt>Instant (UTC)</dt>
-          <dd><code>{{ instant()!.toString() }}</code></dd>
-          <dt>Read back in {{ zone() }}</dt>
-          <dd><code>{{ inZone() }}</code></dd>
-          <dt>Read back in Asia/Tokyo</dt>
-          <dd><code>{{ inTokyo() }}</code></dd>
+          <dt>Stored</dt><dd><code>{{ chosen.toString() }}</code></dd>
+          <dt>In {{ zone() }}</dt><dd><code>{{ read(chosen, zone()) }}</code></dd>
+          <dt>In Asia/Tokyo</dt><dd><code>{{ read(chosen, 'Asia/Tokyo') }}</code></dd>
         </dl>
-        <p class="note">
-          One instant, three readings. That is what makes it safe to store — a wall
-          time would need the zone and the offset beside it to mean anything.
-        </p>
       } @else {
-        <p class="note">Pick a time. Struck-through ones cannot happen; dashed ones happen twice.</p>
+        <p class="note">
+          Struck through = cannot happen. Dashed = happens twice. Faded = already taken.
+        </p>
       }
     </section>
+
+    <div class="grid">
+      <section class="block">
+        <h2>Calendar</h2>
+        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
+        <p class="note">{{ date()?.toString() ?? 'nothing chosen' }}</p>
+      </section>
+
+      <section class="block">
+        <h2>Field</h2>
+        <p class="note">Anchored to the field:</p>
+        <tz-date-field [(value)]="popupDate" [locale]="'en-GB'" mode="popup" />
+        <p class="note">Centred over the page:</p>
+        <tz-date-field [(value)]="dialogDate" [locale]="'en-GB'" mode="dialog" />
+      </section>
+
+      <section class="block">
+        <h2>Range</h2>
+        <p class="note">Weekends are closed — a range may not step over one.</p>
+        <tz-date-range [(value)]="stay" [locale]="'en-GB'" [isDateDisabled]="noWeekends" />
+        <p class="note">{{ stayText() }}</p>
+      </section>
+    </div>
   `,
   styles: `
     :host {
@@ -104,80 +136,102 @@ import type { Instant, PlainDate } from '../packages/core/src/index.js';
       --tz-slot-bg-selected: #2563eb;
       --tz-slot-fg-selected: #fff;
       --tz-slot-columns: 6;
+      --tz-dtr-warning-fg: #b45309;
+      --tz-dtr-error-fg: #b91c1c;
+      --tz-range-error-fg: #b91c1c;
       display: block;
-      max-width: 62rem;
-      margin: 2rem auto;
+      max-width: 68rem;
+      margin: 2rem auto 4rem;
       padding: 0 1rem;
       font: 15px/1.5 system-ui, sans-serif;
       color: #18181b;
     }
-    h1 { font-size: 1.4rem; margin: 0; }
-    h2 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.05em; opacity: 0.6; }
-    .sub { margin: 0.25rem 0 1.5rem; opacity: 0.7; font-size: 0.875rem; }
-    .presets, .controls { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 1rem; }
-    .presets p { margin: 0 0.25rem 0 0; opacity: 0.7; font-size: 0.875rem; }
-    .presets button {
-      border: 1px solid #d4d4d8; background: #fff; border-radius: 0.375rem;
-      padding: 0.35rem 0.7rem; font: inherit; font-size: 0.875rem; cursor: pointer;
-    }
-    .presets button.on { border-color: #2563eb; color: #2563eb; }
-    label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.875rem; }
-    .panes { display: grid; grid-template-columns: auto 1fr; gap: 2rem; align-items: start; }
-    .pane { min-width: 0; }
-    .result { margin-top: 2rem; border-top: 1px solid #e4e4e7; padding-top: 1rem; }
-    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.35rem 1rem; margin: 0.5rem 0; font-size: 0.875rem; }
-    dt { opacity: 0.6; }
+    h1 { font-size: 1.5rem; margin: 0; }
+    h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
+         opacity: 0.55; margin: 0 0 0.75rem; }
+    .sub { margin: 0.25rem 0 2rem; opacity: 0.7; font-size: 0.875rem; }
+    .lede { margin: -0.5rem 0 0.75rem; font-size: 0.9rem; opacity: 0.8; }
+    .block { border: 1px solid #e4e4e7; border-radius: 0.5rem; padding: 1.25rem;
+             margin-bottom: 1.5rem; }
+    .block--feature { border-color: #2563eb; border-width: 2px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
+            gap: 1.5rem; }
+    .grid .block { margin: 0; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
+           margin-bottom: 1rem; }
+    .chip { border: 1px solid #d4d4d8; background: #fff; border-radius: 999px;
+            padding: 0.3rem 0.75rem; font: inherit; font-size: 0.8125rem; cursor: pointer; }
+    .chip.on { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+    label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; }
+    dl { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem;
+         margin: 1rem 0 0; font-size: 0.8125rem; }
+    dt { opacity: 0.55; }
     code { background: #f4f4f5; padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
-    .note { font-size: 0.85rem; opacity: 0.7; max-width: 44rem; }
-    @media (max-width: 800px) { .panes { grid-template-columns: 1fr; } }
+    .note { font-size: 0.8125rem; opacity: 0.7; margin: 0.75rem 0 0; }
   `,
 })
 export class Demo {
   protected readonly usingPolyfill = usingPolyfill;
-  protected readonly today = Temporal.Now.plainDateISO();
 
   protected readonly zones = [
-    'Europe/Paris',
-    'America/Chicago',
-    'Australia/Lord_Howe',
-    'Asia/Tokyo',
-    'America/New_York',
-    'UTC',
+    'Europe/Paris', 'America/Chicago', 'Australia/Lord_Howe', 'Asia/Tokyo', 'UTC',
   ];
 
-  protected readonly presets = [
+  protected readonly dayPresets = [
     { label: 'Paris — hour skipped', date: '2026-03-29', zone: 'Europe/Paris' },
     { label: 'Paris — hour repeated', date: '2026-10-25', zone: 'Europe/Paris' },
     { label: 'Chicago — hour skipped', date: '2026-03-08', zone: 'America/Chicago' },
     { label: 'Lord Howe — half hour', date: '2026-10-04', zone: 'Australia/Lord_Howe' },
-    { label: 'An ordinary day', date: '2026-06-15', zone: 'Europe/Paris' },
+    { label: 'Ordinary day', date: '2026-06-15', zone: 'Europe/Paris' },
   ];
 
-  protected readonly date = signal<PlainDate>(Temporal.PlainDate.from('2026-10-25'));
+  protected readonly shiftPresets = [
+    { label: 'Clocks going back', from: '2026-10-24T23:00', to: '2026-10-25T05:00' },
+    { label: 'Clocks going forward', from: '2026-03-29T01:00', to: '2026-03-29T07:00' },
+    { label: 'An ordinary night', from: '2026-06-14T23:00', to: '2026-06-15T05:00' },
+  ];
+
   protected readonly zone = signal('Europe/Paris');
-  protected readonly step = signal(30);
-  protected readonly skip = signal(false);
+  protected readonly step = signal(60);
+  protected readonly hours = signal<'all' | 'office'>('all');
+  protected readonly day = signal<PlainDate>(Temporal.PlainDate.from('2026-10-25'));
   protected readonly instant = signal<Instant | null>(null);
 
-  protected readonly inZone = computed(() => this.read(this.zone()));
-  protected readonly inTokyo = computed(() => this.read('Asia/Tokyo'));
+  protected readonly date = signal<PlainDate | null>(null);
+  protected readonly popupDate = signal<PlainDate | null>(null);
+  protected readonly dialogDate = signal<PlainDate | null>(null);
+  protected readonly stay = signal<DateRangeValue>({ start: null, end: null });
 
-  private read(zone: string): string {
-    const i = this.instant();
-    if (!i) return '';
-    const z = i.toZonedDateTimeISO(zone);
+  protected readonly shift = signal<DateTimeRangeValue>({
+    start: parisAt('2026-10-24T23:00'),
+    end: parisAt('2026-10-25T05:00'),
+  });
+  protected readonly shiftLabel = signal('Clocks going back');
+
+  /** Lunch is booked every day: a slot that exists but is unavailable. */
+  protected readonly lunchIsTaken = (slot: { time: Temporal.PlainTime }) => slot.time.hour === 13;
+
+  protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
+
+  protected stayText(): string {
+    const { start, end } = this.stay();
+    if (!start) return 'nothing chosen';
+    return `${start.toString()} → ${end?.toString() ?? '…'}`;
+  }
+
+  protected read(instant: Instant, zone: string): string {
+    const z = instant.toZonedDateTimeISO(zone);
     return `${z.toPlainDate().toString()} ${z.toPlainTime().toString({ smallestUnit: 'minute' })} (UTC${z.offset})`;
   }
 
-  protected onDate(next: PlainDate | null): void {
-    if (!next) return;
-    this.date.set(next);
-    this.instant.set(null); // a time on another day is not the time you picked
-  }
-
-  protected usePreset(preset: { date: string; zone: string }): void {
-    this.date.set(Temporal.PlainDate.from(preset.date));
+  protected useDay(preset: { date: string; zone: string }): void {
+    this.day.set(Temporal.PlainDate.from(preset.date));
     this.zone.set(preset.zone);
     this.instant.set(null);
+  }
+
+  protected useShift(preset: { label: string; from: string; to: string }): void {
+    this.shift.set({ start: parisAt(preset.from), end: parisAt(preset.to) });
+    this.shiftLabel.set(preset.label);
   }
 }

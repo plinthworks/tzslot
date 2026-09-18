@@ -4,12 +4,13 @@ import angular from '@analogjs/vite-plugin-angular';
 /**
  * The playground. Not shipped; it exists so the components can be looked at.
  *
- * `jit` because there is no AOT build step here, and the tsconfig has to be
- * named explicitly — without it the plugin leaves `type` specifiers in the
- * output, which reaches the browser as invalid JavaScript.
+ * The tsconfig has to be named explicitly, and it has to list every folder
+ * that holds components: the plugin only transforms what that file includes,
+ * and anything outside it is served with its `import type` statements intact —
+ * which is not JavaScript, and the browser blames a brace several modules away.
  */
 export default defineConfig({
-  plugins: [angular({ tsconfig: 'tsconfig.spec.json', jit: true })],
+  plugins: [angular({ tsconfig: 'tsconfig.spec.json' })],
   server: { port: 4500 },
   optimizeDeps: { include: ['temporal-polyfill'] },
 });

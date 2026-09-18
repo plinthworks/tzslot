@@ -11,6 +11,16 @@ import {
 import { Temporal, usingPolyfill } from '../packages/core/src/index.js';
 import type { Instant, PlainDate } from '../packages/core/src/index.js';
 
+/** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
+function readableOn(hex: string): string {
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance = 0.2126 * r! + 0.7152 * g! + 0.0722 * b!;
+  return luminance > 0.179 ? '#000000' : '#ffffff';
+}
+
 /** The earlier reading of a wall time in Paris — enough for a demonstration. */
 function parisAt(iso: string): Instant {
   return Temporal.PlainDateTime.from(iso)
@@ -34,9 +44,29 @@ function parisAt(iso: string): Instant {
     <header>
       <div class="titlebar">
         <h1>tzslot</h1>
-        <button type="button" class="chip" (click)="toggleTheme()">
-          {{ theme() === 'dark' ? 'Light' : 'Dark' }}
+        <a class="chip" href="/playground/vanilla.html">Without Angular →</a>
+      </div>
+      <div class="row controls">
+        <div class="seg" role="group" aria-label="Theme">
+          @for (t of themes; track t.id) {
+            <button type="button" class="chip" [class.on]="theme() === t.id"
+                    [attr.aria-pressed]="theme() === t.id" (click)="setTheme(t.id)">
+              {{ t.label }}
+            </button>
+          }
+        </div>
+        <button type="button" class="chip" [class.on]="contrast()"
+                [attr.aria-pressed]="contrast()" (click)="toggleContrast()">
+          More contrast
         </button>
+        <label class="chip">
+          Accent
+          <input type="color" [value]="accent() ?? '#2563eb'"
+                 (input)="setAccent($any($event.target).value)" />
+        </label>
+        @if (accent()) {
+          <button type="button" class="chip" (click)="setAccent(null)">Reset accent</button>
+        }
       </div>
       <p class="sub">
         Timezone-aware time slots · Temporal is
@@ -129,6 +159,38 @@ function parisAt(iso: string): Instant {
     </section>
     }
 
+    @if (tab() === 'theming') {
+    <p class="lede">
+      Each card sets one attribute or one variable, nothing else. Open the fields: the panel
+      is drawn on the body, outside the card, and still looks like it belongs to it.
+    </p>
+    <div class="grid">
+      <section class="block card" data-theme="dark">
+        <h2>data-theme="dark"</h2>
+        <p class="note">A dark card on whatever the page is.</p>
+        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
+        <div class="gap"><tz-date-field [(value)]="popupDate" [locale]="'en-GB'" /></div>
+      </section>
+
+      <section class="block card" style="--tz-accent: #e11d48; --tz-accent-fg: #ffffff">
+        <h2>--tz-accent: #e11d48</h2>
+        <p class="note">One brand colour; the range tint is derived from it.</p>
+        <tz-date-range [(value)]="stay" [locale]="'en-GB'" />
+        <div class="gap"><tz-date-field [(value)]="dialogDate" [locale]="'en-GB'" mode="dialog" /></div>
+      </section>
+
+      <section class="block card" data-contrast="more">
+        <h2>data-contrast="more"</h2>
+        <p class="note">Also applies by itself when the system asks for more contrast.</p>
+        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
+        <div class="gap">
+          <tz-time-slots [date]="'2026-10-25'" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
+                         [minTime]="'01:00'" [maxTime]="'04:00'" [(value)]="instant" />
+        </div>
+      </section>
+    </div>
+    }
+
     @if (tab() === 'dates') {
     <div class="grid">
       <section class="block">
@@ -164,9 +226,16 @@ function parisAt(iso: string): Instant {
       padding: 0 1rem;
       font: 15px/1.5 system-ui, sans-serif;
       color: var(--tz-fg);
-      background: var(--tz-bg);
     }
     h1 { font-size: 1.5rem; margin: 0; }
+    a.chip { text-decoration: none; }
+    .controls { margin: 0.75rem 0 0; }
+    .seg { display: inline-flex; gap: 0.25rem; }
+    input[type='color'] { width: 1.5rem; height: 1.1rem; padding: 0; border: 0; background: none; }
+    /* A card resolves the palette itself, so its own data-theme decides it. */
+    .card { color-scheme: var(--tz-color-scheme, light dark); background: var(--tz-bg);
+            color: var(--tz-fg); }
+    .gap { margin-top: 1rem; }
     .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--tz-border);
             margin-bottom: 1.5rem; }
@@ -223,16 +292,48 @@ export class Demo {
     { id: 'interval' as const, label: 'Interval' },
     { id: 'times' as const, label: 'Times' },
     { id: 'dates' as const, label: 'Dates' },
+    { id: 'theming' as const, label: 'Theming' },
   ];
-  protected readonly tab = signal<'interval' | 'times' | 'dates'>('interval');
+  protected readonly tab = signal<'interval' | 'times' | 'dates' | 'theming'>('interval');
 
-  /** Proves the theme follows an explicit choice, not just the system. */
-  protected readonly theme = signal<'light' | 'dark'>('light');
+  protected readonly themes = [
+    { id: 'system' as const, label: 'System' },
+    { id: 'light' as const, label: 'Light' },
+    { id: 'dark' as const, label: 'Dark' },
+  ];
+  /** System by default; an explicit choice is an attribute on the document. */
+  protected readonly theme = signal<'system' | 'light' | 'dark'>('system');
+  protected readonly contrast = signal(false);
+  protected readonly accent = signal<string | null>(null);
 
-  protected toggleTheme(): void {
-    const next = this.theme() === 'dark' ? 'light' : 'dark';
-    this.theme.set(next);
-    document.documentElement.setAttribute('data-theme', next);
+  protected setTheme(theme: 'system' | 'light' | 'dark'): void {
+    this.theme.set(theme);
+    const root = document.documentElement;
+    if (theme === 'system') root.removeAttribute('data-theme');
+    else root.setAttribute('data-theme', theme);
+  }
+
+  protected toggleContrast(): void {
+    this.contrast.update((on) => !on);
+    const root = document.documentElement;
+    if (this.contrast()) root.setAttribute('data-contrast', 'more');
+    else root.removeAttribute('data-contrast');
+  }
+
+  /**
+   * One colour for both schemes. The text on it is picked for legibility here,
+   * because CSS cannot yet choose a contrasting colour everywhere by itself.
+   */
+  protected setAccent(color: string | null): void {
+    this.accent.set(color);
+    const style = document.documentElement.style;
+    if (!color) {
+      style.removeProperty('--tz-accent');
+      style.removeProperty('--tz-accent-fg');
+      return;
+    }
+    style.setProperty('--tz-accent', color);
+    style.setProperty('--tz-accent-fg', readableOn(color));
   }
 
   protected readonly zone = signal('Europe/Paris');

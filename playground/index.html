@@ -4,6 +4,12 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>tzslot — playground</title>
+    <style>
+      /* The page follows the same choice as the widgets: the system, unless a
+         data-theme on <html> says otherwise. */
+      :root { color-scheme: var(--tz-color-scheme, light dark); }
+      body { margin: 0; background: var(--tz-bg); color: var(--tz-fg); }
+    </style>
   </head>
   <body>
     <demo-root></demo-root>

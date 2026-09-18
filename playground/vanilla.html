@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tzslot — without a framework</title>
+    <style>
+      :root { color-scheme: var(--tz-color-scheme, light dark); }
+      body {
+        margin: 2rem auto 4rem;
+        max-width: 64rem;
+        padding: 0 1rem;
+        font: 15px/1.5 system-ui, sans-serif;
+        background: var(--tz-bg);
+        color: var(--tz-fg);
+      }
+      h1 { font-size: 1.5rem; margin: 0; }
+      h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; opacity: 0.55; margin: 0 0 0.75rem; }
+      a { color: var(--tz-accent); }
+      section { border: 1px solid var(--tz-border); border-radius: 0.5rem; padding: 1.25rem; margin-top: 1.5rem; }
+      .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr)); gap: 1.5rem; }
+      .grid section { margin-top: 0; }
+      pre { background: var(--tz-bg-raised); padding: 0.75rem; border-radius: 0.375rem; overflow-x: auto; font-size: 0.8125rem; }
+      output { display: block; margin-top: 0.75rem; font-size: 0.8125rem; opacity: 0.8; }
+    </style>
+  </head>
+  <body>
+    <h1>tzslot, without a framework</h1>
+    <p>
+      No Angular on this page: <code>@tzslot/dom</code>, the optional theme, and one script.
+      <a href="/playground/index.html">← The Angular playground</a>
+    </p>
+
+    <pre>import { createCalendar } from '@tzslot/dom';
+import '@tzslot/theme';
+
+const calendar = createCalendar(document.querySelector('#calendar'), {
+  onChange: (day) => console.log(day?.toString()),
+});</pre>
+
+    <div class="grid">
+      <section>
+        <h2>createCalendar</h2>
+        <div id="calendar"></div>
+        <output id="calendar-out">nothing chosen</output>
+      </section>
+      <section>
+        <h2>createDateField</h2>
+        <div id="field"></div>
+        <output id="field-out">nothing chosen</output>
+      </section>
+    </div>
+
+    <section>
+      <h2>createDateTimeRange</h2>
+      <div id="interval"></div>
+    </section>
+
+    <script type="module">
+      import { mountVanilla } from '/playground/vanilla.ts';
+      mountVanilla(document);
+    </script>
+  </body>
+</html>

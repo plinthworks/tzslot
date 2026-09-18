@@ -2,6 +2,11 @@
  * The layout every widget needs to be usable at all: grids, sizes, the reset
  * that turns a <button> into a cell. Colour and taste stay in @tzslot/theme.
  *
+ * Every colour is `var(--tz-specific, var(--tz-palette, plain))`: the specific
+ * variable if someone set it, else the theme's palette, else something
+ * legible with no theme at all. Resolved here, where it is drawn, so a palette
+ * set on any ancestor reaches it.
+ *
  * Injected rather than shipped as a file to import, because a calendar that
  * renders as a column of unstyled buttons until someone finds the right CSS
  * import is a calendar that looks broken on first try. Pass
@@ -19,7 +24,7 @@ export const CALENDAR_CSS = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--tz-cal-gap, 0.25rem);
+    gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
     padding: var(--tz-cal-header-padding, 0.25rem 0);
   }
   .tz-cal__nav,
@@ -31,7 +36,7 @@ export const CALENDAR_CSS = `
     color: inherit;
     font: var(--tz-font, inherit);
     cursor: pointer;
-    border-radius: var(--tz-cal-radius, 0.25rem);
+    border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
   }
   .tz-cal__title {
     font-weight: var(--tz-cal-title-weight, 600);
@@ -42,7 +47,7 @@ export const CALENDAR_CSS = `
   .tz-cal__week {
     display: grid;
     grid-template-columns: repeat(7, var(--tz-cal-cell-size, 2rem));
-    gap: var(--tz-cal-gap, 0.25rem);
+    gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
   }
   .tz-cal__weekday {
     text-align: center;
@@ -56,11 +61,11 @@ export const CALENDAR_CSS = `
   .tz-cal__day--outside,
   .tz-cal__coarse-cell--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
   .tz-cal__day--today,
-  .tz-cal__coarse-cell--today { outline: 1px solid var(--tz-cal-today-border, currentColor); }
+  .tz-cal__coarse-cell--today { outline: 1px solid var(--tz-cal-today-border, var(--tz-accent, currentColor)); }
   .tz-cal__day--selected,
   .tz-cal__coarse-cell--selected {
-    background: var(--tz-cal-selected-bg, currentColor);
-    color: var(--tz-cal-selected-fg, canvas);
+    background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
+    color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
   }
   .tz-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
   /* Four columns: twelve months and twelve years both land on three tidy rows,
@@ -69,8 +74,8 @@ export const CALENDAR_CSS = `
   .tz-cal__coarse {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: var(--tz-cal-gap, 0.25rem);
-    width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, 0.25rem));
+    gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
+    width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, var(--tz-gap, 0.25rem)));
   }
   .tz-cal__coarse-cell { padding: 0.5rem 0.25rem; }
 }
@@ -91,10 +96,10 @@ export const FIELD_CSS = `
     gap: var(--tz-field-gap, 0.5rem);
     min-width: var(--tz-field-width, 12rem);
     padding: var(--tz-field-padding, 0.5rem 0.75rem);
-    border: 1px solid var(--tz-field-border, currentColor);
-    border-radius: var(--tz-field-radius, 0.375rem);
-    background: var(--tz-field-bg, transparent);
-    color: var(--tz-field-fg, inherit);
+    border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
+    border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
+    background: var(--tz-field-bg, var(--tz-bg, transparent));
+    color: var(--tz-field-fg, var(--tz-fg));
     font: var(--tz-font, inherit);
     cursor: pointer;
     text-align: left;
@@ -140,16 +145,16 @@ export const SLOTS_CSS = `
     align-items: center;
     gap: 0.125rem;
     padding: var(--tz-slot-padding, 0.5rem 0.25rem);
-    border: 1px solid var(--tz-slot-border, currentColor);
-    border-radius: var(--tz-slot-radius, 0.375rem);
-    background: var(--tz-slot-bg, transparent);
-    color: var(--tz-slot-fg, inherit);
+    border: 1px solid var(--tz-slot-border, var(--tz-border, currentColor));
+    border-radius: var(--tz-slot-radius, var(--tz-radius, 0.375rem));
+    background: var(--tz-slot-bg, var(--tz-bg, transparent));
+    color: var(--tz-slot-fg, var(--tz-fg));
     font: var(--tz-font, inherit);
     cursor: pointer;
   }
   .tz-slots__slot--selected {
-    background: var(--tz-slot-bg-selected, currentColor);
-    color: var(--tz-slot-fg-selected, canvas);
+    background: var(--tz-slot-bg-selected, var(--tz-accent, currentColor));
+    color: var(--tz-slot-fg-selected, var(--tz-accent-fg, canvas));
   }
   .tz-slots__slot--unavailable {
     opacity: var(--tz-slot-unavailable-opacity, 0.45);
@@ -182,7 +187,7 @@ export const RANGE_CSS = `
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: var(--tz-cal-gap, 0.25rem);
+    gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
     padding: var(--tz-cal-header-padding, 0.25rem 0);
   }
   .tz-range__title { font-weight: var(--tz-cal-title-weight, 600); }
@@ -193,7 +198,7 @@ export const RANGE_CSS = `
     color: inherit;
     font: var(--tz-font, inherit);
     cursor: pointer;
-    border-radius: var(--tz-cal-radius, 0.25rem);
+    border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
   }
   .tz-range__weekdays,
   .tz-range__week {
@@ -207,21 +212,21 @@ export const RANGE_CSS = `
   }
   .tz-range__day { height: var(--tz-cal-cell-size, 2rem); text-align: center; }
   .tz-range__day--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
-  .tz-range__day--today { outline: 1px solid var(--tz-cal-today-border, currentColor); }
+  .tz-range__day--today { outline: 1px solid var(--tz-cal-today-border, var(--tz-accent, currentColor)); }
   .tz-range__day--within {
-    background: var(--tz-range-within-bg, color-mix(in srgb, currentColor 12%, transparent));
+    background: var(--tz-range-within-bg, color-mix(in srgb, var(--tz-accent, currentColor) 16%, var(--tz-bg, transparent)));
     border-radius: 0;
   }
   .tz-range__day--start,
   .tz-range__day--end {
-    background: var(--tz-cal-selected-bg, currentColor);
-    color: var(--tz-cal-selected-fg, canvas);
+    background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
+    color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
   }
-  .tz-range__day--start { border-radius: var(--tz-cal-radius, 0.25rem) 0 0 var(--tz-cal-radius, 0.25rem); }
-  .tz-range__day--end { border-radius: 0 var(--tz-cal-radius, 0.25rem) var(--tz-cal-radius, 0.25rem) 0; }
-  .tz-range__day--start.tz-range__day--end { border-radius: var(--tz-cal-radius, 0.25rem); }
+  .tz-range__day--start { border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem)) 0 0 var(--tz-cal-radius, var(--tz-radius, 0.25rem)); }
+  .tz-range__day--end { border-radius: 0 var(--tz-cal-radius, var(--tz-radius, 0.25rem)) var(--tz-cal-radius, var(--tz-radius, 0.25rem)) 0; }
+  .tz-range__day--start.tz-range__day--end { border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem)); }
   .tz-range__day:disabled { opacity: 0.3; cursor: not-allowed; }
-  .tz-range__error { font-size: 0.8em; color: var(--tz-range-error-fg, currentColor); }
+  .tz-range__error { font-size: 0.8em; color: var(--tz-range-error-fg, var(--tz-danger, currentColor)); }
 }
 `;
 
@@ -263,8 +268,8 @@ export const DTR_CSS = `
     font-weight: var(--tz-dtr-summary-weight, 600);
     font-size: var(--tz-dtr-summary-size, 1.375rem);
   }
-  .tz-dtr__warning { color: var(--tz-dtr-warning-fg, currentColor); font-size: 0.9em; }
-  .tz-dtr__error { color: var(--tz-dtr-error-fg, currentColor); font-size: 0.9em; }
+  .tz-dtr__warning { color: var(--tz-dtr-warning-fg, var(--tz-warning, currentColor)); font-size: 0.9em; }
+  .tz-dtr__error { color: var(--tz-dtr-error-fg, var(--tz-danger, currentColor)); font-size: 0.9em; }
 }
 `;
 

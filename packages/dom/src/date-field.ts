@@ -55,6 +55,43 @@ export interface DateFieldInstance {
   destroy(): void;
 }
 
+/** What a panel must take with it from where its field sits. */
+const CARRIED = [
+  '--tz-color-scheme',
+  '--tz-bg',
+  '--tz-bg-raised',
+  '--tz-fg',
+  '--tz-fg-muted',
+  '--tz-border',
+  '--tz-accent',
+  '--tz-accent-fg',
+  '--tz-danger',
+  '--tz-warning',
+  '--tz-font',
+  '--tz-radius',
+];
+
+/**
+ * The panel lives on the body, so it inherits nothing from the field: a dark
+ * card on a light page would open a light calendar, and a card with its own
+ * accent would open one in the page's. Carry the attributes the stylesheets
+ * select on, and every palette variable that differs from the page's.
+ */
+function carryTheme(field: HTMLElement, panel: HTMLElement): void {
+  for (const name of ['theme', 'contrast']) {
+    const source = field.closest<HTMLElement>(`[data-${name}]`);
+    if (source) panel.dataset[name] = source.dataset[name];
+  }
+  const win = field.ownerDocument.defaultView;
+  if (!win) return;
+  const here = win.getComputedStyle(field);
+  const page = win.getComputedStyle(field.ownerDocument.documentElement);
+  for (const name of CARRIED) {
+    const value = here.getPropertyValue(name).trim();
+    if (value && value !== page.getPropertyValue(name).trim()) panel.style.setProperty(name, value);
+  }
+}
+
 /**
  * A field that opens a calendar, anchored or centred.
  *
@@ -195,11 +232,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     panel.setAttribute('aria-label', label());
     if (dialog) panel.setAttribute('aria-modal', 'true');
 
-    // The panel is not inside the field, so it cannot inherit the theme the
-    // field sits in. Carry it across, or a dark card on a light page opens a
-    // light calendar.
-    const themed = host.closest<HTMLElement>('[data-theme]');
-    if (themed) panel.dataset['theme'] = themed.dataset['theme'];
+    carryTheme(host, panel);
 
     const calendarHost = doc.createElement('div');
     panel.append(calendarHost);

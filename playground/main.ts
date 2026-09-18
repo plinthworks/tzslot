@@ -6,6 +6,7 @@ import { Demo } from './demo.js';
 // the components still work and look plain — which is the point of it being a
 // separate package.
 import '../packages/theme/tzslot.css';
+import '../packages/theme/contrast.css';
 
 /**
  * Bootstrap only.

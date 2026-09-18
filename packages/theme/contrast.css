@@ -1,0 +1,61 @@
+/**
+ * @tzslot/theme/contrast.css — more contrast, for people who need it.
+ *
+ *   import '@tzslot/theme';
+ *   import '@tzslot/theme/contrast.css';
+ *
+ * Applies on its own when the system asks for more contrast
+ * (prefers-contrast: more), and on request with data-contrast="more" on any
+ * element. data-contrast="normal" on the root opts the page out of the
+ * automatic version.
+ *
+ * A separate axis from light and dark, not a third theme: someone who needs
+ * more contrast still has a preference between the two.
+ *
+ * Contrast: text and the selection meet WCAG AAA (7:1); faded states that
+ * carry meaning (outside the month, unavailable) stay above 4.5:1.
+ */
+
+@media (prefers-contrast: more) {
+  :root:not([data-contrast='normal']) {
+    --tz-bg: light-dark(#ffffff, #000000);
+    --tz-bg-raised: light-dark(#e4e4e7, #27272a);
+    --tz-fg: light-dark(#000000, #ffffff);
+    --tz-fg-muted: light-dark(#27272a, #e4e4e7);
+    --tz-border: light-dark(#000000, #ffffff);
+    --tz-accent: light-dark(#1d3fb8, #ffd400);
+    --tz-accent-fg: light-dark(#ffffff, #000000);
+    --tz-danger: light-dark(#8b0000, #ff8a8a);
+    --tz-warning: light-dark(#6b3a00, #ffd27a);
+    --tz-cal-outside-opacity: 0.7;
+    --tz-slot-missing-opacity: 0.75;
+    --tz-slot-unavailable-opacity: 0.75;
+    --tz-focus-ring: 3px solid var(--tz-fg);
+  }
+}
+
+[data-contrast='more'] {
+  --tz-bg: light-dark(#ffffff, #000000);
+  --tz-bg-raised: light-dark(#e4e4e7, #27272a);
+  --tz-fg: light-dark(#000000, #ffffff);
+  --tz-fg-muted: light-dark(#27272a, #e4e4e7);
+  --tz-border: light-dark(#000000, #ffffff);
+  --tz-accent: light-dark(#1d3fb8, #ffd400);
+  --tz-accent-fg: light-dark(#ffffff, #000000);
+  --tz-danger: light-dark(#8b0000, #ff8a8a);
+  --tz-warning: light-dark(#6b3a00, #ffd27a);
+  --tz-cal-outside-opacity: 0.7;
+  --tz-slot-missing-opacity: 0.75;
+  --tz-slot-unavailable-opacity: 0.75;
+  --tz-focus-ring: 3px solid var(--tz-fg);
+}
+
+/* Borders on every cell, so the grid reads without relying on colour. */
+:is([data-contrast='more']) :is(.tz-cal__day, .tz-range__day):not(:disabled) {
+  box-shadow: inset 0 0 0 1px var(--tz-border);
+}
+@media (prefers-contrast: more) {
+  :root:not([data-contrast='normal']) :is(.tz-cal__day, .tz-range__day):not(:disabled) {
+    box-shadow: inset 0 0 0 1px var(--tz-border);
+  }
+}

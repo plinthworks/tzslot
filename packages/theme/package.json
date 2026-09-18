@@ -4,7 +4,16 @@
   "description": "An optional stylesheet for the tzslot components. Plain CSS, no framework.",
   "license": "MIT",
   "main": "./tzslot.css",
-  "exports": { ".": "./tzslot.css", "./tzslot.css": "./tzslot.css" },
-  "files": ["tzslot.css"],
-  "sideEffects": ["*.css"]
+  "exports": {
+    ".": "./tzslot.css",
+    "./tzslot.css": "./tzslot.css",
+    "./contrast.css": "./contrast.css"
+  },
+  "files": [
+    "tzslot.css",
+    "contrast.css"
+  ],
+  "sideEffects": [
+    "*.css"
+  ]
 }

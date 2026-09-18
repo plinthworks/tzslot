@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Demo } from '../demo.js';
 
@@ -116,15 +116,52 @@ describe('the date pickers', () => {
   });
 });
 
-describe('the theme toggle', () => {
-  it('sets an explicit choice on the document, which beats the system preference', () => {
-    const toggle = chips().find((b) => /Dark|Light/.test(b.textContent!))!;
-    toggle.click();
+describe('the theme controls', () => {
+  afterEach(() => {
+    document.documentElement.removeAttribute('data-theme');
+    document.documentElement.removeAttribute('data-contrast');
+    document.documentElement.removeAttribute('style');
+  });
+
+  it('an explicit choice goes on the document, and System takes it off', () => {
+    chip('Dark').click();
     fixture.detectChanges();
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
 
-    toggle.click();
+    chip('Light').click();
     fixture.detectChanges();
     expect(document.documentElement.getAttribute('data-theme')).toBe('light');
+
+    chip('System').click();
+    fixture.detectChanges();
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(false);
+  });
+
+  it('contrast is its own switch', () => {
+    chip('More contrast').click();
+    fixture.detectChanges();
+    expect(document.documentElement.getAttribute('data-contrast')).toBe('more');
+  });
+
+  it('an accent brings a legible text colour with it', () => {
+    const picker = el().querySelector<HTMLInputElement>('input[type="color"]')!;
+    picker.value = '#fde047'; // pale yellow: white text would be unreadable
+    picker.dispatchEvent(new Event('input'));
+    fixture.detectChanges();
+    const style = document.documentElement.style;
+    expect(style.getPropertyValue('--tz-accent')).toBe('#fde047');
+    expect(style.getPropertyValue('--tz-accent-fg')).toBe('#000000');
+  });
+});
+
+describe('the theming tab', () => {
+  it('shows a dark card, a branded card and a high-contrast card', () => {
+    tab('Theming');
+    const cards = Array.from(el().querySelectorAll<HTMLElement>('.card'));
+    expect(cards).toHaveLength(3);
+    expect(cards[0]!.dataset['theme']).toBe('dark');
+    expect(cards[1]!.style.getPropertyValue('--tz-accent')).toBe('#e11d48');
+    expect(cards[2]!.dataset['contrast']).toBe('more');
+    expect(cards[0]!.querySelectorAll('button.tz-cal__day')).toHaveLength(42);
   });
 });

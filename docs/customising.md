@@ -88,24 +88,65 @@ up:
 .tz-cal__day { font-variant-numeric: tabular-nums; }
 ```
 
-## A third theme
+## Light, dark, and where
 
-Light and dark ship. Another is a block of the same variables under whatever
-selector you like:
+The palette is nine colours, each written `light-dark(light, dark)`. The
+widgets follow the system by default; `data-theme` forces a scheme for
+everything inside the element that carries it — any element, not only
+`<html>`:
 
-```css
-[data-theme='high-contrast'] {
-  --tz-bg: #000;
-  --tz-fg: #fff;
-  --tz-border: #fff;
-  --tz-accent: #ffd400;
-  --tz-accent-fg: #000;
-}
+```html
+<html data-theme="dark">            <!-- the whole page -->
+<div class="card" data-theme="dark"> <!-- one card on a light page -->
 ```
 
-The shipped dark values are defined twice — once under `prefers-color-scheme`
-and once under `[data-theme='dark']` — so an explicit choice wins in both
-directions. Do the same for yours if it should follow a system preference.
+A field's panel is drawn on the body, outside the card, and still opens dark:
+it takes the card's `data-theme`, `data-contrast` and palette with it.
+
+## Your colours
+
+One accent, and everything derived from it follows — the selected day, the
+range tint, the focus ring, the hover on the selection:
+
+```css
+:root { --tz-accent: #e11d48; --tz-accent-fg: #ffffff; }
+```
+
+`--tz-accent-fg` is the text on the accent; set it when your accent is light
+enough that white would not read. Different values per scheme are
+`light-dark()` again:
+
+```css
+:root { --tz-accent: light-dark(#be123c, #fb7185); }
+```
+
+Set on a card instead of `:root`, it applies to that card only.
+
+## More contrast
+
+```js
+import '@tzslot/theme/contrast.css';
+```
+
+Applies by itself when the system asks for more contrast, and on request with
+`data-contrast="more"` on any element. A separate axis from light and dark:
+someone who needs more contrast still prefers one of the two. Forced-colour
+modes (Windows high contrast) are handled by the main theme.
+
+## A theme of your own
+
+A block of palette variables under whatever selector you like:
+
+```css
+[data-theme='sepia'] {
+  --tz-color-scheme: light;
+  --tz-bg: #f4ecd8;
+  --tz-fg: #3b2f1e;
+  --tz-border: #c9b99a;
+  --tz-accent: #8b4513;
+  --tz-accent-fg: #ffffff;
+}
+```
 
 ## No stylesheet at all
 

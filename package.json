@@ -8,10 +8,24 @@
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit"
   },
   "devDependencies": {
+    "@analogjs/vite-plugin-angular": "^2.7.2",
+    "@angular/build": "^21.2.24",
+    "@angular/cdk": "^21.2.14",
+    "@angular/common": "^21.2.23",
+    "@angular/compiler": "^21.2.23",
+    "@angular/compiler-cli": "^21.2.23",
+    "@angular/core": "^21.2.23",
+    "@angular/platform-browser": "^21.2.23",
+    "jsdom": "^29.1.1",
     "typescript": "^5.9.0",
-    "vitest": "^5.0.1"
+    "vitest": "^4.0.8"
   },
   "dependencies": {
     "temporal-polyfill": "^1.0.5"
+  },
+  "peerDependencies": {
+    "@angular/cdk": "^21.2.14",
+    "@angular/common": "^21.2.23",
+    "@angular/core": "^21.2.23"
   }
 }

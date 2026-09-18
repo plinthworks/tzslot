@@ -59,3 +59,33 @@ no fallback to `Date`: it would reintroduce exactly the bug this library exists
 to fix, on the platforms least able to reveal it.
 
 MIT.
+
+## Components
+
+`@ngx-zoneddatepicker/ui` — Angular standalone components over the core. CDK
+only; no Material, no design system. Structural class names and CSS custom
+properties, so restyling does not mean fighting specificity.
+
+```html
+<ngx-time-slot-picker
+  [date]="'2026-10-25'"
+  [timeZone]="'Europe/Paris'"
+  [stepMinutes]="30"
+  [(value)]="chosen" />
+```
+
+On the morning the clocks go back, 02:00 renders as **two** buttons, labelled
+`+02:00` and `+01:00`. They are an hour apart and the user picks one. On the
+morning they go forward, 02:00 renders struck through and disabled, with a
+tooltip saying why.
+
+`value` is a `Temporal.Instant` — a moment, not a clock face.
+
+## A note on installing
+
+`npm install --legacy-peer-deps`.
+
+npm 10.9.3 fails with `Cannot read properties of null (reading 'edgesOut')` on
+vitest 4's dependency graph, and vitest 4 is what Angular 21 supports. The flag
+is a workaround for that npm bug, not a sign of a broken tree — `npm ls` is
+clean afterwards.

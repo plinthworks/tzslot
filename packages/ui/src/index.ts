@@ -1,0 +1,9 @@
+/**
+ * @ngx-zoneddatepicker/ui — Angular components over the core.
+ *
+ * Angular CDK only; no Material, no design system. Structural class names and
+ * CSS custom properties (--dp-*), so a consumer restyles without fighting
+ * specificity.
+ */
+export { TimeSlotPicker } from './time-slot-picker.js';
+export type { SlotChoice } from './time-slot-picker.js';

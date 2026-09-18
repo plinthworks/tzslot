@@ -1,0 +1,243 @@
+@use 'sass:list';
+@use 'sass:meta';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// The source of @tzslot/theme. tzslot.css is compiled from this file and a
+// test fails when the two drift apart, so there is one theme, not two.
+//
+// Sass is optional for consumers. What it adds over the CSS:
+//
+//   // configure the palette at compile time
+//   @use '@tzslot/theme/tzslot' with ($accent: (#be123c, #fb7185));
+//
+//   // or scope one to a selector, from your own palette variables
+//   @use '@tzslot/theme/tzslot' as tz;
+//   .brand-card { @include tz.palette((accent: $brand, accent-fg: #fff)); }
+//
+// A colour is either one value, used in both schemes, or a pair
+// (light, dark) that becomes light-dark(light, dark).
+//
+// Everything still ends up as --tz-* custom properties: that is what lets a
+// theme change at runtime, per element, which Sass variables alone cannot do.
+// ─────────────────────────────────────────────────────────────────────────────
+
+// ── palette ──────────────────────────────────────────────────────────────────
+$bg: (#ffffff, #18181b) !default;
+$bg-raised: (#f4f4f5, #27272a) !default;
+$fg: (#18181b, #f4f4f5) !default;
+$fg-muted: (#52525b, #a1a1aa) !default;
+$border: (#d4d4d8, #3f3f46) !default;
+$accent: (#2563eb, #60a5fa) !default;
+$accent-fg: (#ffffff, #0b1220) !default;
+$danger: (#b91c1c, #f87171) !default;
+$warning: (#b45309, #fbbf24) !default;
+
+$font: inherit !default;
+
+// ── shape and size ───────────────────────────────────────────────────────────
+$sizes: (
+  radius: 0.375rem,
+  gap: 0.25rem,
+  cal-cell-size: 2.25rem,
+  cal-weekday-size: 0.6875rem,
+  cal-outside-opacity: 0.32,
+  slot-gap: 0.375rem,
+  slot-padding: 0.4375rem 0.25rem,
+  slot-note-size: 0.6875rem,
+  field-width: 13rem,
+  dtr-gap: 1.25rem,
+  dtr-leg-min: 15rem,
+  dtr-legend-size: 0.6875rem,
+  dtr-summary-size: 1.375rem,
+) !default;
+
+/// False to load only the functions and mixins, with no CSS emitted.
+$emit: true !default;
+
+/// A single colour, or a (light, dark) pair turned into light-dark().
+@function value($colour) {
+  @if meta.type-of($colour) == 'list' and list.length($colour) == 2 {
+    @return light-dark(list.nth($colour, 1), list.nth($colour, 2));
+  }
+  @return $colour;
+}
+
+/// Sets palette variables on the current selector. Keys are the names without
+/// the prefix: (accent: #e11d48) sets --tz-accent.
+@mixin palette($colours) {
+  @each $name, $colour in $colours {
+    --tz-#{$name}: #{value($colour)};
+  }
+}
+
+@if $emit {
+  /**
+   * @tzslot/theme — one import and the widgets are presentable.
+   *
+   *   import '@tzslot/theme';                     // plain CSS
+   *   @use '@tzslot/theme/tzslot' with ($accent: #e11d48, $accent-fg: #fff);
+   *
+   * Generated from tzslot.scss — edit that file, then `npm run build:theme`.
+   *
+   * Optional by design. The widgets carry structural class names and read their
+   * colours from custom properties; this file only sets those properties and a
+   * handful of interaction rules. Replacing it means writing your own values for
+   * the same names, not fighting selectors.
+   *
+   * ── How it is built ──────────────────────────────────────────────────────────
+   *
+   * One palette, nine colours, each written light-dark(light, dark). Which half
+   * applies is decided by `color-scheme` at the element that uses the colour, so:
+   *
+   *   - by default the widgets follow the system;
+   *   - data-theme="dark" or "light" on ANY element forces it for everything
+   *     inside — a dark card on a light page is one attribute;
+   *   - there is no second copy of the dark values to keep in step.
+   *
+   * Nothing derived is declared here. A variable like "the selected day's
+   * background" defaults to the accent at the place it is drawn, not on :root —
+   * a custom property that refers to another is frozen where it is declared, and
+   * declaring it on :root would stop a card's own --tz-accent from reaching it.
+   * Every such default lives in the widgets' base CSS as a var() fallback.
+   *
+   * Contrast: every text/background pair meets WCAG AA at the sizes used.
+   * light-dark() needs Chrome 123, Safari 17.5 or Firefox 120 (all of 2024).
+   */
+  :root {
+    @include palette(
+      (
+        bg: $bg,
+        bg-raised: $bg-raised,
+        fg: $fg,
+        fg-muted: $fg-muted,
+        border: $border,
+        accent: $accent,
+        accent-fg: $accent-fg,
+        danger: $danger,
+        warning: $warning,
+      )
+    );
+
+    /**
+     * The widgets inherit the page's font by default, which is almost always
+     * right. Set this only to make them differ from their surroundings.
+     */
+    --tz-font: #{$font};
+
+    @each $name, $size in $sizes {
+      --tz-#{$name}: #{$size};
+    }
+  }
+
+  /**
+   * Which half of every light-dark() applies. Declared on the widgets rather than
+   * the page, so importing the theme never changes the page's own form controls
+   * and scrollbars. --tz-color-scheme is inherited, which is how data-theme on
+   * any ancestor reaches them.
+   */
+  .tz-cal,
+  .tz-range,
+  .tz-slots,
+  .tz-field,
+  .tz-field__panel,
+  .tz-field__backdrop,
+  .tz-dtr {
+    color-scheme: var(--tz-color-scheme, light dark);
+    color: var(--tz-fg);
+    font: var(--tz-font);
+  }
+
+  [data-theme='light'] { --tz-color-scheme: light; }
+  [data-theme='dark'] { --tz-color-scheme: dark; }
+
+  /**
+   * The rules the variables cannot express: hover, focus, the panel surface.
+   * Kept short — every rule here is one a consumer may have to override.
+   */
+  .tz-cal__day:hover:not(:disabled),
+  .tz-cal__coarse-cell:hover:not(:disabled),
+  .tz-range__day:hover:not(:disabled),
+  .tz-cal__nav:hover:not(:disabled),
+  .tz-cal__title:hover:not(:disabled),
+  .tz-range__nav:hover:not(:disabled) {
+    background: var(--tz-bg-raised);
+  }
+
+  /* Hovering the selection must not hide it. */
+  .tz-cal__day--selected:hover:not(:disabled),
+  .tz-cal__coarse-cell--selected:hover:not(:disabled),
+  .tz-range__day--start:hover:not(:disabled),
+  .tz-range__day--end:hover:not(:disabled) {
+    background: color-mix(in srgb, var(--tz-accent) 85%, var(--tz-fg));
+  }
+
+  .tz-slots__slot:hover:not(:disabled),
+  .tz-field__trigger:hover:not(:disabled) {
+    border-color: var(--tz-accent);
+  }
+
+  /* Focus must be visible on every control, including those inside the panel —
+     a keyboard user who cannot see where they are is stuck. */
+  .tz-cal__day:focus-visible,
+  .tz-cal__coarse-cell:focus-visible,
+  .tz-cal__title:focus-visible,
+  .tz-range__day:focus-visible,
+  .tz-cal__nav:focus-visible,
+  .tz-range__nav:focus-visible,
+  .tz-slots__slot:focus-visible,
+  .tz-field__trigger:focus-visible {
+    outline: var(--tz-focus-ring, 2px solid var(--tz-accent));
+    outline-offset: 2px;
+  }
+
+  .tz-field__panel {
+    border: 1px solid var(--tz-border);
+    border-radius: calc(var(--tz-radius) * 1.5);
+    background: var(--tz-bg);
+    box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.35);
+  }
+
+  .tz-field__panel--dialog {
+    box-shadow: 0 25px 60px -15px rgb(0 0 0 / 0.5);
+  }
+
+  .tz-field__backdrop {
+    background: rgb(0 0 0 / 0.45);
+  }
+
+  .tz-cal__weekday,
+  .tz-range__weekday,
+  .tz-dtr__legend {
+    color: var(--tz-fg-muted);
+  }
+
+  /**
+   * Windows high contrast and other forced-colour modes replace every colour
+   * with the system's, backgrounds included — so a selection shown only by its
+   * background would vanish. System colours keep it visible.
+   */
+  @media (forced-colors: active) {
+    .tz-cal__day--selected,
+    .tz-cal__coarse-cell--selected,
+    .tz-range__day--start,
+    .tz-range__day--end,
+    .tz-slots__slot--selected {
+      forced-color-adjust: none;
+      background: Highlight;
+      color: HighlightText;
+    }
+    .tz-cal__day--today { outline-color: CanvasText; }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .tz-cal__day,
+    .tz-cal__coarse-cell,
+    .tz-range__day,
+    .tz-slots__slot,
+    .tz-field__trigger {
+      transition:
+        background-color 120ms ease,
+        border-color 120ms ease;
+    }
+  }
+}

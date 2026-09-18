@@ -1,7 +1,11 @@
+@charset "UTF-8";
 /**
  * @tzslot/theme — one import and the widgets are presentable.
  *
- *   import '@tzslot/theme';
+ *   import '@tzslot/theme';                     // plain CSS
+ *   @use '@tzslot/theme/tzslot' with ($accent: #e11d48, $accent-fg: #fff);
+ *
+ * Generated from tzslot.scss — edit that file, then `npm run build:theme`.
  *
  * Optional by design. The widgets carry structural class names and read their
  * colours from custom properties; this file only sets those properties and a
@@ -27,9 +31,7 @@
  * Contrast: every text/background pair meets WCAG AA at the sizes used.
  * light-dark() needs Chrome 123, Safari 17.5 or Firefox 120 (all of 2024).
  */
-
 :root {
-  /* ── palette ─────────────────────────────────────────────── */
   --tz-bg: light-dark(#ffffff, #18181b);
   --tz-bg-raised: light-dark(#f4f4f5, #27272a);
   --tz-fg: light-dark(#18181b, #f4f4f5);
@@ -39,14 +41,11 @@
   --tz-accent-fg: light-dark(#ffffff, #0b1220);
   --tz-danger: light-dark(#b91c1c, #f87171);
   --tz-warning: light-dark(#b45309, #fbbf24);
-
   /**
    * The widgets inherit the page's font by default, which is almost always
    * right. Set this only to make them differ from their surroundings.
    */
   --tz-font: inherit;
-
-  /* ── shape and size: plain values, safe to declare here ─── */
   --tz-radius: 0.375rem;
   --tz-gap: 0.25rem;
   --tz-cal-cell-size: 2.25rem;
@@ -80,8 +79,13 @@
   font: var(--tz-font);
 }
 
-[data-theme='light'] { --tz-color-scheme: light; }
-[data-theme='dark'] { --tz-color-scheme: dark; }
+[data-theme=light] {
+  --tz-color-scheme: light;
+}
+
+[data-theme=dark] {
+  --tz-color-scheme: dark;
+}
 
 /**
  * The rules the variables cannot express: hover, focus, the panel surface.
@@ -127,15 +131,15 @@
   border: 1px solid var(--tz-border);
   border-radius: calc(var(--tz-radius) * 1.5);
   background: var(--tz-bg);
-  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.35);
+  box-shadow: 0 10px 30px -12px rgba(0, 0, 0, 0.35);
 }
 
 .tz-field__panel--dialog {
-  box-shadow: 0 25px 60px -15px rgb(0 0 0 / 0.5);
+  box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5);
 }
 
 .tz-field__backdrop {
-  background: rgb(0 0 0 / 0.45);
+  background: rgba(0, 0, 0, 0.45);
 }
 
 .tz-cal__weekday,
@@ -159,17 +163,16 @@
     background: Highlight;
     color: HighlightText;
   }
-  .tz-cal__day--today { outline-color: CanvasText; }
+  .tz-cal__day--today {
+    outline-color: CanvasText;
+  }
 }
-
 @media (prefers-reduced-motion: no-preference) {
   .tz-cal__day,
   .tz-cal__coarse-cell,
   .tz-range__day,
   .tz-slots__slot,
   .tz-field__trigger {
-    transition:
-      background-color 120ms ease,
-      border-color 120ms ease;
+    transition: background-color 120ms ease, border-color 120ms ease;
   }
 }

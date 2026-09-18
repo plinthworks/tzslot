@@ -7,7 +7,8 @@
     "test:watch": "vitest",
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit",
     "start": "vite",
-    "test:memory": "NODE_OPTIONS=--expose-gc vitest run packages/core/test/perf.test.ts"
+    "test:memory": "NODE_OPTIONS=--expose-gc vitest run packages/core/test/perf.test.ts",
+    "build:theme": "sass --no-source-map --style=expanded packages/theme/tzslot.scss packages/theme/tzslot.css"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",
@@ -18,6 +19,7 @@
     "@angular/core": "^21.2.23",
     "@angular/platform-browser": "^21.2.23",
     "jsdom": "^29.1.1",
+    "sass": "^1.104.1",
     "typescript": "^5.9.0",
     "vitest": "^4.0.8"
   },

@@ -7,13 +7,20 @@
   "exports": {
     ".": "./tzslot.css",
     "./tzslot.css": "./tzslot.css",
-    "./contrast.css": "./contrast.css"
+    "./contrast.css": "./contrast.css",
+    "./tzslot.scss": "./tzslot.scss",
+    "./tzslot": {
+      "sass": "./tzslot.scss",
+      "default": "./tzslot.css"
+    }
   },
   "files": [
     "tzslot.css",
+    "tzslot.scss",
     "contrast.css"
   ],
   "sideEffects": [
     "*.css"
-  ]
+  ],
+  "sass": "./tzslot.scss"
 }

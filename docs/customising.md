@@ -122,6 +122,33 @@ enough that white would not read. Different values per scheme are
 
 Set on a card instead of `:root`, it applies to that card only.
 
+## From Sass
+
+Optional: the CSS works in any project, Sass or not. With Sass, the palette
+can be configured at compile time — a pair becomes `light-dark()`, a single
+colour is used in both schemes:
+
+```scss
+@use '@tzslot/theme/tzslot' with (
+  $accent: (#be123c, #fb7185),
+  $accent-fg: #fff,
+);
+```
+
+Or scoped to a selector from your own variables:
+
+```scss
+@use '@tzslot/theme/tzslot' as tz;
+
+.brand-card {
+  @include tz.palette((accent: $brand-primary, accent-fg: #fff));
+}
+```
+
+`with ($emit: false)` loads the mixin without emitting the theme itself.
+Everything still ends as `--tz-*` custom properties, so runtime changes —
+`data-theme` on a card, an accent picked by the user — keep working.
+
 ## More contrast
 
 ```js

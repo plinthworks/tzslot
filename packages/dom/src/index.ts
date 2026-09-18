@@ -15,6 +15,13 @@ export type {
   CalendarView,
   YearMonth,
 } from './calendar.js';
+export { createDateField } from './date-field.js';
+export type {
+  DateFieldInstance,
+  DateFieldOptions,
+  DateFieldSettings,
+  FieldMode,
+} from './date-field.js';
 export { EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
-export { CALENDAR_CSS } from './styles.js';
+export { CALENDAR_CSS, FIELD_CSS } from './styles.js';

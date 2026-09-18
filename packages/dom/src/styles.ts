@@ -77,6 +77,56 @@ export const CALENDAR_CSS = `
 `;
 
 /**
+ * The field and its panel. The panel is fixed-position and placed by script;
+ * without a theme it still gets a surface and a border, so an unthemed page
+ * does not open a transparent calendar over its content.
+ */
+export const FIELD_CSS = `
+@layer tzslot {
+  .tz-field { display: inline-block; }
+  .tz-field__trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tz-field-gap, 0.5rem);
+    min-width: var(--tz-field-width, 12rem);
+    padding: var(--tz-field-padding, 0.5rem 0.75rem);
+    border: 1px solid var(--tz-field-border, currentColor);
+    border-radius: var(--tz-field-radius, 0.375rem);
+    background: var(--tz-field-bg, transparent);
+    color: var(--tz-field-fg, inherit);
+    font: var(--tz-font, inherit);
+    cursor: pointer;
+    text-align: left;
+  }
+  .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
+  .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+  .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
+  .tz-field__panel {
+    position: fixed;
+    z-index: var(--tz-panel-z, 1000);
+    padding: 0.75rem;
+    border: 1px solid;
+    border-radius: 0.5rem;
+    background: Canvas;
+    color: CanvasText;
+    font: var(--tz-font, inherit);
+  }
+  .tz-field__panel--dialog {
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+  }
+  .tz-field__backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: calc(var(--tz-panel-z, 1000) - 1);
+    background: rgb(0 0 0 / 0.3);
+  }
+}
+`;
+
+/**
  * Puts a stylesheet where the host will see it, once.
  *
  * "Where the host will see it" is not always the document: inside a shadow

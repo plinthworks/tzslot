@@ -27,8 +27,11 @@ Angular (and later React or Vue) only translates its own idioms.
 | | |
 |---|---|
 | `createCalendar(el, options)` | month grid, month and year views, keyboard, words, icons. `update`, `goTo`, `clear`, `setIcons`, `destroy` |
+| `createDateField(el, options)` | a field whose panel opens anchored or centred, on the body, carrying the field's `data-theme` with it. Focus in and back out, Tab kept inside, `onOpen` / `onClose` |
 
-Still Angular-only: the time slots, the date field, both ranges.
+Still Angular-only: the time slots and both ranges.
+
+No Angular CDK any more: the date field was its only user.
 
 ### `@tzslot/angular` — five components
 
@@ -72,6 +75,8 @@ they do not.
 - No React or Vue wrapper. The core is framework-free and usable from either
   today; a wrapper waits until the core has been proven.
 - No repository on GitHub, nothing published to npm.
+- No build step. Sources are TypeScript and every `package.json` points at
+  `src/index.ts`; publishing needs compiled JavaScript plus generated `.d.ts`.
 - `tz-date-range` and `tz-datetime-range` do not know about each other, so
   "3rd to 7th, 09:00 to 17:00 each day" has no component.
 - Tests run in jsdom. They cover behaviour and the DOM, never layout — a

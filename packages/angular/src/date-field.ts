@@ -1,114 +1,52 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
+  computed,
+  effect,
   forwardRef,
   inject,
   input,
   model,
+  output,
   signal,
+  untracked,
   viewChild,
-  type TemplateRef,
-  ViewContainerRef,
-  DestroyRef,
+  type AfterViewInit,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Overlay, OverlayRef } from '@angular/cdk/overlay';
-import { TemplatePortal } from '@angular/cdk/portal';
-import { ConfigurableFocusTrapFactory, type ConfigurableFocusTrap } from '@angular/cdk/a11y';
-import { Calendar } from './calendar.js';
 import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
+import {
+  createDateField,
+  type DateFieldInstance,
+  type DateFieldSettings,
+  type FieldMode,
+} from '../../dom/src/index.js';
 
-/** Anchored under the field, or centred over the page. */
-export type FieldMode = 'popup' | 'dialog';
+export type { FieldMode } from '../../dom/src/index.js';
 
 /**
- * A text field that opens a calendar.
+ * `<tz-date-field>` — the field from @tzslot/dom, spoken in Angular.
  *
- * The third way to show a picker, after inline and embedded, and the one most
- * forms actually want. Both modes are the same overlay with a different
- * position strategy — a dialog is a popup that stopped following its trigger,
- * and treating them as two components would mean two sets of focus handling to
- * keep correct.
- *
- * The field is read-only on purpose. Parsing what someone types into a date is
- * a separate problem with its own ambiguities — 03/04 is two different days
- * depending on where the reader lives — and getting it half right is worse
- * than not offering it.
+ * The trigger, the panel, its position, focus and theme are all drawn by
+ * `createDateField`. This class maps inputs to `update()`, callbacks to
+ * `valueChange`, `opened`, `closed` and form notifications, and a projected
+ * `[tzIcon]` to the field's icon.
  */
 @Component({
   selector: 'tz-date-field',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Calendar],
-  host: { class: 'tz-field' },
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateField), multi: true },
   ],
-  template: `
-    <button
-      #trigger
-      type="button"
-      class="tz-field__trigger"
-      [class.tz-field__trigger--empty]="!value()"
-      [attr.aria-haspopup]="'dialog'"
-      [attr.aria-expanded]="isOpen()"
-      [attr.aria-label]="ariaLabel() ?? msg.chooseDate"
-      [disabled]="disabled() || formDisabled()"
-      (click)="toggle()"
-    >
-      <span class="tz-field__text">{{ display() || placeholder() || msg.chooseDate }}</span>
-      <span class="tz-field__icon" aria-hidden="true">
-        <ng-content select="[tzIcon]">▾</ng-content>
-      </span>
-    </button>
-
-    <ng-template #panel>
-      <div
-        class="tz-field__panel"
-        [class.tz-field__panel--dialog]="mode() === 'dialog'"
-        role="dialog"
-        [attr.aria-label]="ariaLabel() ?? msg.chooseDate"
-        (keydown.escape)="close()"
-      >
-        <tz-calendar
-          [value]="value()"
-          (valueChange)="pick($event)"
-          [firstDayOfWeek]="firstDayOfWeek()"
-          [locale]="locale()"
-          [min]="min()"
-          [max]="max()"
-          [isDateDisabled]="isDateDisabled()"
-        />
-      </div>
-    </ng-template>
-  `,
-  styles: `
-    :host { display: inline-block; }
-    .tz-field__trigger {
-      display: inline-flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: var(--tz-field-gap, 0.5rem);
-      min-width: var(--tz-field-width, 12rem);
-      padding: var(--tz-field-padding, 0.5rem 0.75rem);
-      border: 1px solid var(--tz-field-border, currentColor);
-      border-radius: var(--tz-field-radius, 0.375rem);
-      background: var(--tz-field-bg, transparent);
-      color: var(--tz-field-fg, inherit);
-      font: var(--tz-font, inherit);
-      cursor: pointer;
-      text-align: left;
-    }
-    .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
-    .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
-    .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
-  `,
+  template: `<span #icon hidden><ng-content select="[tzIcon]" /></span>`,
 })
-export class DateField implements ControlValueAccessor {
+export class DateField implements ControlValueAccessor, AfterViewInit {
   readonly value = model<PlainDate | null>(null);
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
@@ -128,128 +66,92 @@ export class DateField implements ControlValueAccessor {
   readonly valueAs = input<ValueShape>('temporal');
 
   /**
-   * The zone used to turn a Date into a calendar day and back.
-   *
-   * Only consulted when valueAs is 'date'. A Date is an instant, and which day
-   * it falls on depends on where you are standing — so this is required to be
-   * explicit rather than guessed, and defaults to the system's.
+   * The zone used to turn a Date into a calendar day and back. Only consulted
+   * when valueAs is 'date': which day an instant falls on depends on where you
+   * are standing, so it is explicit rather than guessed.
    */
   readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
-
 
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
 
-  /** Whether the panel is showing. Readable from a ViewChild. */
-  protected readonly msg = inject(TZSLOT_MESSAGES);
+  readonly opened = output<void>();
+  readonly closed = output<void>();
 
   /** Whether the panel is showing. Readable from a ViewChild. */
   readonly isOpen = signal(false);
   protected readonly formDisabled = signal(false);
 
-  private readonly trigger = viewChild.required<ElementRef<HTMLButtonElement>>('trigger');
-  private readonly panel = viewChild.required<TemplateRef<unknown>>('panel');
+  private readonly host: HTMLElement = inject(ElementRef).nativeElement;
+  private readonly messages = inject(TZSLOT_MESSAGES);
+  private readonly iconSlot = viewChild.required<ElementRef<HTMLElement>>('icon');
 
-  private readonly overlay = inject(Overlay);
-  private readonly viewContainer = inject(ViewContainerRef);
-  private readonly focusTraps = inject(ConfigurableFocusTrapFactory);
-  private overlayRef: OverlayRef | null = null;
-  private focusTrap: ConfigurableFocusTrap | null = null;
+  private readonly settings = computed<Partial<DateFieldSettings>>(() => ({
+    value: this.value(),
+    mode: this.mode(),
+    placeholder: this.placeholder(),
+    ariaLabel: this.ariaLabel(),
+    locale: this.locale(),
+    firstDayOfWeek: this.firstDayOfWeek(),
+    min: this.min(),
+    max: this.max(),
+    isDateDisabled: this.isDateDisabled(),
+    disabled: this.disabled() || this.formDisabled(),
+    displayWith: this.displayWith(),
+    messages: this.messages,
+  }));
+
+  private readonly field: DateFieldInstance = createDateField(this.host, {
+    ...untracked(this.settings),
+    onChange: (date) => {
+      this.value.set(date);
+      this.onChange(date);
+    },
+    onOpen: () => {
+      this.isOpen.set(true);
+      this.onTouched();
+      this.opened.emit();
+    },
+    onClose: () => {
+      this.isOpen.set(false);
+      this.closed.emit();
+    },
+  });
 
   constructor() {
-    // An overlay outlives the component that opened it unless someone says
-    // otherwise, and a detached panel floating over the next page is the kind
-    // of bug that gets blamed on the router.
-    inject(DestroyRef).onDestroy(() => this.close());
+    effect(() => this.field.update(this.settings()));
+    inject(DestroyRef).onDestroy(() => this.field.destroy());
   }
 
-  protected display(): string {
-    const date = this.value();
-    if (!date) return '';
-    const custom = this.displayWith();
-    if (custom) return custom(date);
-    return new Intl.DateTimeFormat(this.locale(), { dateStyle: 'medium', timeZone: 'UTC' }).format(
-      new Date(Date.UTC(date.year, date.month - 1, date.day)),
-    );
+  ngAfterViewInit(): void {
+    const slot = this.iconSlot().nativeElement;
+    if (Array.from(slot.childNodes).some((n) => n.nodeType === Node.ELEMENT_NODE || n.textContent?.trim())) {
+      const fragment = this.host.ownerDocument.createDocumentFragment();
+      fragment.append(...Array.from(slot.childNodes));
+      this.field.setIcon(fragment);
+    }
   }
 
   /**
    * Opening and closing are public so a ViewChild can drive the field — a
-   * button elsewhere on the page, a wizard step, a keyboard shortcut. This is
-   * the part of flatpickr's imperative API worth keeping: not attaching to a
-   * DOM node, just being able to say "open".
+   * button elsewhere on the page, a wizard step, a keyboard shortcut.
    */
   toggle(): void {
-    this.isOpen() ? this.close() : this.openPanel();
+    this.field.toggle();
   }
 
   /** No-op when already open. */
   open(): void {
-    if (!this.isOpen()) this.openPanel();
+    this.field.open();
+  }
+
+  close(): void {
+    this.field.close();
   }
 
   /** Clears the selection and tells any form control about it. */
   clear(): void {
-    this.value.set(null);
-    this.onChange(null);
-    this.onTouched();
-  }
-
-  private openPanel(): void {
-    if (this.overlayRef) return;
-
-    const dialog = this.mode() === 'dialog';
-
-    this.overlayRef = this.overlay.create({
-      positionStrategy: dialog
-        ? this.overlay.position().global().centerHorizontally().centerVertically()
-        : this.overlay
-            .position()
-            .flexibleConnectedTo(this.trigger())
-            .withPush(false)
-            .withPositions([
-              { originX: 'start', originY: 'bottom', overlayX: 'start', overlayY: 'top', offsetY: 4 },
-              { originX: 'start', originY: 'top', overlayX: 'start', overlayY: 'bottom', offsetY: -4 },
-            ]),
-      // A popup that scrolls away from its field looks broken; one that blocks
-      // the page feels broken. Reposition for popups, block for dialogs.
-      scrollStrategy: dialog ? this.overlay.scrollStrategies.block() : this.overlay.scrollStrategies.reposition(),
-      hasBackdrop: true,
-      backdropClass: dialog ? 'tz-field__backdrop' : 'cdk-overlay-transparent-backdrop',
-    });
-
-    this.overlayRef.attach(new TemplatePortal(this.panel(), this.viewContainer));
-    this.overlayRef.backdropClick().subscribe(() => this.close());
-    this.overlayRef.keydownEvents().subscribe((event) => {
-      if (event.key === 'Escape') this.close();
-    });
-
-    // Keyboard focus has to go into the panel and come back out to the field,
-    // or a keyboard user opens a calendar they cannot reach and lands at the
-    // top of the document when it closes.
-    const element = this.overlayRef.overlayElement;
-    this.focusTrap = this.focusTraps.create(element);
-    this.focusTrap.focusInitialElementWhenReady();
-
-    this.isOpen.set(true);
-    this.onTouched();
-  }
-
-  close(): void {
-    this.focusTrap?.destroy();
-    this.focusTrap = null;
-    this.overlayRef?.dispose();
-    this.overlayRef = null;
-    if (this.isOpen()) {
-      this.isOpen.set(false);
-      this.trigger().nativeElement.focus();
-    }
-  }
-
-  protected pick(date: PlainDate | null): void {
-    this.value.set(date);
-    this.onChange(date);
-    this.close();
+    this.field.clear();
   }
 
   // ── ControlValueAccessor ────────────────────────────────────
@@ -258,9 +160,7 @@ export class DateField implements ControlValueAccessor {
   private onTouched: () => void = () => {};
 
   writeValue(value: DateLike | null): void {
-    this.value.set(
-      value === null || value === undefined ? null : toPlainDate(value, this.valueTimeZone()),
-    );
+    this.value.set(value === null || value === undefined ? null : toPlainDate(value, this.valueTimeZone()));
   }
   registerOnChange(fn: (value: unknown) => void): void {
     this.onChange = (date) => fn(fromPlainDate(date, this.valueAs(), this.valueTimeZone()));
@@ -270,7 +170,6 @@ export class DateField implements ControlValueAccessor {
   }
   setDisabledState(isDisabled: boolean): void {
     this.formDisabled.set(isDisabled);
-    if (isDisabled) this.close();
   }
 }
 

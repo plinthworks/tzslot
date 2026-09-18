@@ -12,7 +12,6 @@
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",
     "@angular/build": "^21.2.24",
-    "@angular/cdk": "^21.2.14",
     "@angular/common": "^21.2.23",
     "@angular/compiler": "^21.2.23",
     "@angular/compiler-cli": "^21.2.23",
@@ -27,7 +26,6 @@
     "temporal-polyfill": "^1.0.5"
   },
   "peerDependencies": {
-    "@angular/cdk": "^21.2.14",
     "@angular/common": "^21.2.23",
     "@angular/core": "^21.2.23"
   }

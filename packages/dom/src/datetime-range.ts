@@ -121,7 +121,10 @@ export function createDateTimeRange(
   host.append(legsBox);
 
   const makeLeg = (key: LegKey): Leg => {
-    const section = el('section', 'tz-dtr__leg');
+    // A group, not a <section>: two landmarks per widget is noise for a screen
+    // reader, and a page's own section styles would land on it.
+    const section = el('div', 'tz-dtr__leg');
+    section.setAttribute('role', 'group');
     const legend = el('h3', 'tz-dtr__legend');
     // Named like the Angular elements, so the same CSS reaches them either way.
     const fieldHost = doc.createElement('tz-date-field');

@@ -52,6 +52,18 @@ describe('mounting', () => {
     second.remove();
   });
 
+  it('puts its styles first, unlayered, so page resets cannot win and page classes can', () => {
+    // A cascade layer lost to every unlayered rule of the page: an
+    // `output { display: block }` in a demo page took the interval apart.
+    const pageStyles = document.createElement('style');
+    document.head.append(pageStyles);
+    mount();
+    const style = document.head.querySelector('style[data-tzslot="calendar"]')!;
+    expect(document.head.firstElementChild).toBe(style);
+    expect(style.textContent).not.toContain('@layer');
+    pageStyles.remove();
+  });
+
   it('leaves the styles to you when asked', () => {
     mount({ injectStyles: false });
     expect(document.head.querySelector('style[data-tzslot]')).toBeNull();

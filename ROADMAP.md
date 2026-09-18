@@ -33,9 +33,10 @@ Usable from a `<script>` tag; each returns an instance with `update`,
 | `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day |
 | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
 
-Layout CSS is injected once, in `@layer tzslot`, so any unlayered rule of the
-page wins. `injectStyles: false` plus the exported `*_CSS` strings for a
-strict Content-Security-Policy.
+Layout CSS is injected once, first in the head, as plain class selectors: a
+page's element resets cannot reach it, and any class rule loaded after it
+wins. `injectStyles: false` plus the exported `*_CSS` strings for a strict
+Content-Security-Policy.
 
 ### `@tzslot/angular` — five wrappers
 

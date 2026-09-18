@@ -83,7 +83,7 @@ export interface SlotChoice {
     }
   `,
   styles: `
-    .tz-slots {
+    :host {
       display: grid;
       grid-template-columns: repeat(var(--tz-slot-columns, 4), minmax(0, 1fr));
       gap: var(--tz-slot-gap, 0.375rem);

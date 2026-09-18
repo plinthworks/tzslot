@@ -83,7 +83,7 @@ export type FieldMode = 'popup' | 'dialog';
     </ng-template>
   `,
   styles: `
-    .tz-field { display: inline-block; }
+    :host { display: inline-block; }
     .tz-field__trigger {
       display: inline-flex;
       align-items: center;

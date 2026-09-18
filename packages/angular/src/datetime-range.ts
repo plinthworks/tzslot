@@ -43,6 +43,20 @@ const EMPTY: DateTimeRangeValue = { start: null, end: null };
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateTimeRange), multi: true },
   ],
   template: `
+    <!-- The answer first. Under two lists of twenty-four times it is below the
+         fold, and the whole point of the component is invisible. -->
+    @if (summary(); as text) {
+      <output class="tz-dtr__result">
+        <span class="tz-dtr__summary">{{ text }}</span>
+        @if (warning(); as note) {
+          <span class="tz-dtr__warning" role="status">{{ note }}</span>
+        }
+      </output>
+    }
+    @if (problem(); as text) {
+      <p class="tz-dtr__error" role="alert">{{ text }}</p>
+    }
+
     <div class="tz-dtr__legs">
       @for (leg of legs; track leg.key) {
         <section class="tz-dtr__leg" [attr.aria-label]="leg.key === 'start' ? startLabel() : endLabel()">
@@ -74,18 +88,9 @@ const EMPTY: DateTimeRangeValue = { start: null, end: null };
       }
     </div>
 
-    @if (summary(); as text) {
-      <p class="tz-dtr__summary">{{ text }}</p>
-    }
-    @if (warning(); as text) {
-      <p class="tz-dtr__warning" role="status">{{ text }}</p>
-    }
-    @if (problem(); as text) {
-      <p class="tz-dtr__error" role="alert">{{ text }}</p>
-    }
   `,
   styles: `
-    .tz-dtr { display: block; }
+    :host { display: block; }
     .tz-dtr__legs {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(var(--tz-dtr-leg-min, 16rem), 1fr));
@@ -99,7 +104,28 @@ const EMPTY: DateTimeRangeValue = { start: null, end: null };
       opacity: 0.7;
     }
     .tz-dtr__leg tz-date-field { margin-bottom: var(--tz-dtr-gap, 0.75rem); display: block; }
-    .tz-dtr__summary { font-weight: var(--tz-dtr-summary-weight, 600); }
+    /* Twenty-four times is a long list. Capping it keeps both ends of the
+       interval, and the answer above them, on one screen. */
+    .tz-dtr__leg tz-time-slots {
+      /* A leg is narrower than a page, so it sets its own column count rather
+         than inheriting one chosen for a full-width list. */
+      --tz-slot-columns: var(--tz-dtr-slot-columns, 3);
+      display: grid;
+      max-height: var(--tz-dtr-slots-height, 15rem);
+      overflow-y: auto;
+      padding-right: 0.25rem;
+    }
+    .tz-dtr__result {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: baseline;
+      gap: 0.25rem 0.75rem;
+      margin-bottom: var(--tz-dtr-gap, 1.25rem);
+    }
+    .tz-dtr__summary {
+      font-weight: var(--tz-dtr-summary-weight, 600);
+      font-size: var(--tz-dtr-summary-size, 1.375rem);
+    }
     .tz-dtr__warning { color: var(--tz-dtr-warning-fg, currentColor); font-size: 0.9em; }
     .tz-dtr__error { color: var(--tz-dtr-error-fg, currentColor); font-size: 0.9em; }
   `,

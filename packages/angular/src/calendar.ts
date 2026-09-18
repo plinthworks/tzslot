@@ -107,7 +107,7 @@ interface DayCell {
     </div>
   `,
   styles: `
-    .tz-cal { display: inline-block; }
+    :host { display: inline-block; }
     .tz-cal__header {
       display: flex;
       align-items: center;

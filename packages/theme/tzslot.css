@@ -84,6 +84,9 @@
   --tz-dtr-legend-gap: 0.5rem;
   --tz-dtr-legend-size: 0.6875rem;
   --tz-dtr-summary-weight: 600;
+  --tz-dtr-summary-size: 1.375rem;
+  --tz-dtr-slots-height: 15rem;
+  --tz-dtr-slot-columns: 3;
   --tz-dtr-warning-fg: var(--tz-warning);
   --tz-dtr-error-fg: var(--tz-danger);
 }

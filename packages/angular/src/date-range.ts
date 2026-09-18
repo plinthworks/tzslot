@@ -108,7 +108,7 @@ const EMPTY: DateRangeValue = { start: null, end: null };
     }
   `,
   styles: `
-    .tz-range { display: inline-block; }
+    :host { display: inline-block; }
     .tz-range__header {
       display: flex;
       align-items: center;

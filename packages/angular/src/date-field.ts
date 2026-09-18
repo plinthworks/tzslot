@@ -17,8 +17,8 @@ import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { ConfigurableFocusTrapFactory, type ConfigurableFocusTrap } from '@angular/cdk/a11y';
 import { Calendar } from './calendar.js';
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
+import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
 
 /** Anchored under the field, or centred over the page. */
 export type FieldMode = 'popup' | 'dialog';
@@ -115,6 +115,23 @@ export class DateField implements ControlValueAccessor {
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
   readonly disabled = input(false);
+
+  /**
+   * What the form control holds. 'temporal' by default; 'date' lets an
+   * existing FormControl<Date> keep working untouched, which is the whole of a
+   * flatpickr migration on most screens.
+   */
+  readonly valueAs = input<ValueShape>('temporal');
+
+  /**
+   * The zone used to turn a Date into a calendar day and back.
+   *
+   * Only consulted when valueAs is 'date'. A Date is an instant, and which day
+   * it falls on depends on where you are standing — so this is required to be
+   * explicit rather than guessed, and defaults to the system's.
+   */
+  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
+
 
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
@@ -214,11 +231,13 @@ export class DateField implements ControlValueAccessor {
   private onChange: (value: PlainDate | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: PlainDate | null): void {
-    this.value.set(value ?? null);
+  writeValue(value: DateLike | null): void {
+    this.value.set(
+      value === null || value === undefined ? null : toPlainDate(value, this.valueTimeZone()),
+    );
   }
-  registerOnChange(fn: (value: PlainDate | null) => void): void {
-    this.onChange = fn;
+  registerOnChange(fn: (value: unknown) => void): void {
+    this.onChange = (date) => fn(fromPlainDate(date, this.valueAs(), this.valueTimeZone()));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;

@@ -14,8 +14,10 @@ import {
   getWeekdayOrder,
   getDecadeYears,
   isOutsideDecade,
+  toPlainDate,
+  fromPlainDate,
 } from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
 
 /** Days, months or years — what the grid is currently choosing between. */
 export type CalendarView = 'days' | 'months' | 'years';
@@ -243,6 +245,23 @@ export class Calendar implements ControlValueAccessor {
   readonly disabled = input(false);
 
   /**
+   * What the form control holds. 'temporal' by default; 'date' lets an
+   * existing FormControl<Date> keep working untouched, which is the whole of a
+   * flatpickr migration on most screens.
+   */
+  readonly valueAs = input<ValueShape>('temporal');
+
+  /**
+   * The zone used to turn a Date into a calendar day and back.
+   *
+   * Only consulted when valueAs is 'date'. A Date is an instant, and which day
+   * it falls on depends on where you are standing — so this is required to be
+   * explicit rather than guessed, and defaults to the system's.
+   */
+  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
+
+
+  /**
    * Rules out individual days inside the range: closures, weekends, days that
    * are already full. Bounds cut the ends off; this takes holes out of the
    * middle, which bounds cannot express.
@@ -441,12 +460,14 @@ export class Calendar implements ControlValueAccessor {
   private onChange: (value: PlainDate | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: PlainDate | null): void {
-    this.value.set(value ?? null);
+  writeValue(value: DateLike | null): void {
+    this.value.set(value === null || value === undefined
+      ? null
+      : toPlainDate(value, this.valueTimeZone()));
   }
 
-  registerOnChange(fn: (value: PlainDate | null) => void): void {
-    this.onChange = fn;
+  registerOnChange(fn: (value: unknown) => void): void {
+    this.onChange = (date) => fn(fromPlainDate(date, this.valueAs(), this.valueTimeZone()));
   }
 
   registerOnTouched(fn: () => void): void {

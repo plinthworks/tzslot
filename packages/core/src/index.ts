@@ -19,5 +19,13 @@ export { getDaySlots } from './slots.js';
 export type { Slot, DaySlotsOptions } from './slots.js';
 export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade } from './grid.js';
 export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
+export {
+  toPlainDate,
+  fromPlainDate,
+  toInstant,
+  fromInstant,
+  isDateLike,
+} from './interop.js';
+export type { ValueShape, DateLike, InstantLike } from './interop.js';
 export type { RangeInfo, RangeProblem } from './range.js';
 export type { Weekday } from './grid.js';

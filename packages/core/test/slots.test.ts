@@ -175,3 +175,84 @@ describe('arguments', () => {
     expect(fromDate.map((s) => s.time.toString())).toEqual(fromString.map((s) => s.time.toString()));
   });
 });
+
+describe('opening hours', () => {
+  it('bounds omit the slots outside them', () => {
+    const slots = getDaySlots('2026-06-15', 'Europe/Paris', {
+      stepMinutes: 60,
+      minTime: '09:00',
+      maxTime: '17:00',
+    });
+
+    expect(slots).toHaveLength(9); // 09:00 through 17:00, both ends included
+    expect(slots[0]!.time.toString({ smallestUnit: 'minute' })).toBe('09:00');
+    expect(slots.at(-1)!.time.toString({ smallestUnit: 'minute' })).toBe('17:00');
+  });
+
+  it('takes a PlainTime as readily as a string', () => {
+    const fromString = getDaySlots('2026-06-15', 'Europe/Paris', { stepMinutes: 60, minTime: '09:00' });
+    const fromTime = getDaySlots('2026-06-15', 'Europe/Paris', {
+      stepMinutes: 60,
+      minTime: Temporal.PlainTime.from('09:00'),
+    });
+    expect(fromTime).toHaveLength(fromString.length);
+  });
+
+  it('still reports the skipped hour when it falls inside the bounds', () => {
+    // Chicago springs forward at 02:00; a night shift running 01:00 to 05:00
+    // needs to be told, not quietly handed a shorter list.
+    const slots = getDaySlots('2026-03-08', 'America/Chicago', {
+      stepMinutes: 60,
+      minTime: '01:00',
+      maxTime: '05:00',
+    });
+    expect(at(slots, '02:00').exists).toBe(false);
+  });
+});
+
+describe('slots ruled out by the caller', () => {
+  it('flags without removing', () => {
+    const slots = getDaySlots('2026-06-15', 'Europe/Paris', {
+      stepMinutes: 60,
+      isDisabled: (slot) => slot.time.hour === 13, // lunch
+    });
+
+    expect(slots).toHaveLength(24);
+    expect(at(slots, '13:00').disabled).toBe(true);
+    expect(at(slots, '13:00').exists).toBe(true); // it happens; it is just taken
+    expect(at(slots, '12:00').disabled).toBe(false);
+  });
+
+  it('is given the instants, so a caller can match its own bookings', () => {
+    const taken = new Set(['2026-06-15T08:00:00Z']);
+    const slots = getDaySlots('2026-06-15', 'Europe/Paris', {
+      stepMinutes: 60,
+      isDisabled: (slot) => slot.instants.some((i) => taken.has(i.toString())),
+    });
+
+    // 10:00 in Paris in June is 08:00 UTC.
+    expect(at(slots, '10:00').disabled).toBe(true);
+    expect(at(slots, '11:00').disabled).toBe(false);
+  });
+
+  it('is never asked about a time that cannot happen', () => {
+    const asked: string[] = [];
+    getDaySlots('2026-03-29', 'Europe/Paris', {
+      stepMinutes: 30,
+      isDisabled: (slot) => {
+        asked.push(slot.time.toString({ smallestUnit: 'minute' }));
+        return false;
+      },
+    });
+
+    // Ruling out a moment that does not occur is not a decision anyone can make.
+    expect(asked).not.toContain('02:00');
+    expect(asked).not.toContain('02:30');
+    expect(asked).toContain('03:00');
+  });
+
+  it('every slot carries the flag, disabled or not', () => {
+    const slots = getDaySlots('2026-06-15', 'Europe/Paris', { stepMinutes: 60 });
+    expect(slots.every((s) => s.disabled === false)).toBe(true);
+  });
+});

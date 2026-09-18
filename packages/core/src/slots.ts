@@ -40,13 +40,46 @@ export interface Slot {
    * change of DST rules, and being read back next year.
    */
   readonly instants: readonly Instant[];
+
+  /**
+   * Ruled out by the caller — already booked, outside opening hours, whatever
+   * the business says. Kept distinct from `exists`, which is about physics:
+   * one of these can be lifted by asking someone, the other cannot.
+   */
+  readonly disabled: boolean;
 }
 
 export interface DaySlotsOptions {
   /** Minutes between slots. 30 gives 48 a day; 15 gives 96. */
   readonly stepMinutes?: number;
+
   /** Drop the slots that cannot happen instead of returning them flagged. */
   readonly skipNonExistent?: boolean;
+
+  /**
+   * The earliest and latest times of day to produce, inclusive. A booking that
+   * opens at nine has no use for the eighteen slots before it, and rendering
+   * them greyed is worse than not rendering them — it makes the list long and
+   * the real choices hard to find.
+   *
+   * Bounds omit; `isDisabled` flags. Use bounds for what is never offered and
+   * the predicate for what happens to be taken today.
+   */
+  readonly minTime?: PlainTime | string;
+  readonly maxTime?: PlainTime | string;
+
+  /**
+   * Rules out individual slots while still showing them. Called for every slot
+   * that exists, with the instants it resolves to, so a caller can compare
+   * against its own bookings without re-deriving them.
+   */
+  readonly isDisabled?: (slot: Omit<Slot, 'disabled'>) => boolean;
+}
+
+/** `'09:00'`, `'9:00'` and a PlainTime all mean the same thing here. */
+function toTime(value: PlainTime | string | undefined): PlainTime | null {
+  if (value === undefined) return null;
+  return typeof value === 'string' ? Temporal.PlainTime.from(value) : value;
 }
 
 /**
@@ -113,13 +146,15 @@ export function getDaySlots(
   timeZone: string,
   options: DaySlotsOptions = {},
 ): Slot[] {
-  const { stepMinutes = 30, skipNonExistent = false } = options;
+  const { stepMinutes = 30, skipNonExistent = false, isDisabled } = options;
 
   if (!Number.isInteger(stepMinutes) || stepMinutes <= 0 || stepMinutes > 1440) {
     throw new RangeError(`stepMinutes must be a whole number of minutes between 1 and 1440, got ${stepMinutes}`);
   }
 
   const day = typeof date === 'string' ? Temporal.PlainDate.from(date) : date;
+  const min = toTime(options.minTime);
+  const max = toTime(options.maxTime);
   const slots: Slot[] = [];
 
   for (let minute = 0; minute < 1440; minute += stepMinutes) {
@@ -128,16 +163,23 @@ export function getDaySlots(
       minute: minute % 60,
     });
 
+    if (min && Temporal.PlainTime.compare(time, min) < 0) continue;
+    if (max && Temporal.PlainTime.compare(time, max) > 0) break;
+
     const resolved = resolve(day, time, timeZone);
     if (!resolved.exists && skipNonExistent) continue;
 
-    slots.push({
+    const slot = {
       time,
       exists: resolved.exists,
       ambiguous: resolved.ambiguous,
       offsets: resolved.offsets,
       instants: resolved.instants,
-    });
+    };
+
+    // A time that cannot happen is not a time anyone can rule out, so the
+    // predicate is never asked about it.
+    slots.push({ ...slot, disabled: resolved.exists ? (isDisabled?.(slot) ?? false) : false });
   }
 
   return slots;

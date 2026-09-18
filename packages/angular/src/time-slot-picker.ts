@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  input,
+  model,
+  signal,
+} from '@angular/core';
+import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { getDaySlots } from '../../core/src/index.js';
 import type { Instant, PlainDate, Slot } from '../../core/src/index.js';
 
@@ -37,6 +46,13 @@ export interface SlotChoice {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'tz-slots', role: 'listbox', '[attr.aria-label]': 'ariaLabel()' },
+  providers: [
+    {
+      provide: NG_VALUE_ACCESSOR,
+      useExisting: forwardRef(() => TimeSlotPicker),
+      multi: true,
+    },
+  ],
   template: `
     @for (choice of choices(); track choice.key) {
       <button
@@ -44,11 +60,12 @@ export interface SlotChoice {
         class="tz-slots__slot"
         role="option"
         [class.tz-slots__slot--missing]="!choice.slot.exists"
+        [class.tz-slots__slot--unavailable]="choice.slot.disabled"
         [class.tz-slots__slot--repeated]="choice.repeated"
         [class.tz-slots__slot--selected]="isSelected(choice)"
         [attr.aria-selected]="isSelected(choice)"
         [attr.aria-disabled]="!choice.slot.exists || null"
-        [disabled]="!choice.slot.exists || disabled()"
+        [disabled]="!choice.slot.exists || choice.slot.disabled || disabled() || formDisabled()"
         [title]="describe(choice)"
         (click)="choose(choice)"
       >
@@ -88,6 +105,10 @@ export interface SlotChoice {
       background: var(--tz-slot-bg-selected, currentColor);
       color: var(--tz-slot-fg-selected, canvas);
     }
+    .tz-slots__slot--unavailable {
+      opacity: var(--tz-slot-unavailable-opacity, 0.45);
+      cursor: not-allowed;
+    }
     .tz-slots__slot--missing {
       opacity: var(--tz-slot-missing-opacity, 0.4);
       cursor: not-allowed;
@@ -103,7 +124,7 @@ export interface SlotChoice {
     }
   `,
 })
-export class TimeSlotPicker {
+export class TimeSlotPicker implements ControlValueAccessor {
   /** The day to list, as a PlainDate or an ISO date string. */
   readonly date = input.required<PlainDate | string>();
 
@@ -111,6 +132,20 @@ export class TimeSlotPicker {
   readonly timeZone = input.required<string>();
 
   readonly stepMinutes = input(30);
+
+  /**
+   * The working day. Slots outside these bounds are not produced at all —
+   * eighteen greyed rows before nine o'clock make the real choices harder to
+   * find, not easier.
+   */
+  readonly minTime = input<string | undefined>(undefined);
+  readonly maxTime = input<string | undefined>(undefined);
+
+  /**
+   * Rules out individual slots while still showing them: already booked, over
+   * capacity, whatever the caller knows and this component does not.
+   */
+  readonly isDisabled = input<((slot: Omit<Slot, 'disabled'>) => boolean) | undefined>(undefined);
 
   /** Leave out the times that cannot happen, rather than showing them struck through. */
   readonly skipNonExistent = input(false);
@@ -135,6 +170,9 @@ export class TimeSlotPicker {
     const slots = getDaySlots(this.date(), this.timeZone(), {
       stepMinutes: this.stepMinutes(),
       skipNonExistent: this.skipNonExistent(),
+      ...(this.minTime() !== undefined ? { minTime: this.minTime()! } : {}),
+      ...(this.maxTime() !== undefined ? { maxTime: this.maxTime()! } : {}),
+      ...(this.isDisabled() !== undefined ? { isDisabled: this.isDisabled()! } : {}),
     });
 
     return slots.flatMap((slot) => {
@@ -160,8 +198,36 @@ export class TimeSlotPicker {
   }
 
   protected choose(choice: SlotChoice): void {
-    if (!choice.slot.exists || this.disabled()) return;
+    if (!choice.slot.exists || choice.slot.disabled || this.disabled()) return;
     this.value.set(choice.instant);
+    this.onChange(choice.instant);
+    this.onTouched();
+  }
+
+  // ── ControlValueAccessor ────────────────────────────────────
+  //
+  // So the component can sit in a FormGroup. The model input stays the API for
+  // template use; these keep a form control in step with it rather than
+  // duplicating the state, which is how the two drift apart.
+
+  protected readonly formDisabled = signal(false);
+  private onChange: (value: Instant | null) => void = () => {};
+  private onTouched: () => void = () => {};
+
+  writeValue(value: Instant | null): void {
+    this.value.set(value ?? null);
+  }
+
+  registerOnChange(fn: (value: Instant | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.formDisabled.set(isDisabled);
   }
 
   protected format(slot: Slot): string {

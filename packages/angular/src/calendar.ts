@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, input, model, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  forwardRef,
+  input,
+  model,
+  signal,
+} from '@angular/core';
+import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import {
   Temporal,
   getMonthGrid,
@@ -35,13 +44,16 @@ interface DayCell {
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'tz-cal' },
+  providers: [
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => Calendar), multi: true },
+  ],
   template: `
     <div class="tz-cal__header">
       <button
         type="button"
         class="tz-cal__nav"
         [attr.aria-label]="previousMonthLabel()"
-        [disabled]="disabled()"
+        [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(-1)"
       >
         ‹
@@ -53,7 +65,7 @@ interface DayCell {
         type="button"
         class="tz-cal__nav"
         [attr.aria-label]="nextMonthLabel()"
-        [disabled]="disabled()"
+        [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(1)"
       >
         ›
@@ -83,7 +95,7 @@ interface DayCell {
               [attr.aria-current]="cell.today ? 'date' : null"
               [attr.data-date]="cell.iso"
               [attr.tabindex]="cell.iso === focused() ? 0 : -1"
-              [disabled]="cell.disabled || disabled()"
+              [disabled]="cell.disabled || disabled() || formDisabled()"
               (click)="select(cell)"
               (focus)="focused.set(cell.iso)"
             >
@@ -137,7 +149,7 @@ interface DayCell {
     .tz-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
   `,
 })
-export class Calendar {
+export class Calendar implements ControlValueAccessor {
   /** The selected day. Two-way: `[(value)]`. */
   readonly value = model<PlainDate | null>(null);
 
@@ -150,6 +162,13 @@ export class Calendar {
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly disabled = input(false);
+
+  /**
+   * Rules out individual days inside the range: closures, weekends, days that
+   * are already full. Bounds cut the ends off; this takes holes out of the
+   * middle, which bounds cannot express.
+   */
+  readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
 
   /**
    * Today, injectable so a test does not depend on the day it runs.
@@ -177,6 +196,7 @@ export class Calendar {
     const today = this.today();
     const min = this.min();
     const max = this.max();
+    const ruledOut = this.isDateDisabled();
 
     return getMonthGrid(year, month, this.firstDayOfWeek()).map((week) =>
       week.map((date) => ({
@@ -188,7 +208,8 @@ export class Calendar {
         selected: selected !== null && date.equals(selected),
         disabled:
           (min !== null && Temporal.PlainDate.compare(date, min) < 0) ||
-          (max !== null && Temporal.PlainDate.compare(date, max) > 0),
+          (max !== null && Temporal.PlainDate.compare(date, max) > 0) ||
+          (ruledOut?.(date) ?? false),
       })),
     );
   });
@@ -224,11 +245,35 @@ export class Calendar {
   }
 
   protected select(cell: DayCell): void {
-    if (cell.disabled || this.disabled()) return;
+    if (cell.disabled || this.disabled() || this.formDisabled()) return;
     this.value.set(cell.date);
+    this.onChange(cell.date);
+    this.onTouched();
     // Clicking a trailing day of the next month should follow it there, or the
     // selection lands on a date the grid no longer highlights.
     if (cell.outside) this.cursor.set({ year: cell.date.year, month: cell.date.month });
+  }
+
+  // ── ControlValueAccessor ────────────────────────────────────
+
+  protected readonly formDisabled = signal(false);
+  private onChange: (value: PlainDate | null) => void = () => {};
+  private onTouched: () => void = () => {};
+
+  writeValue(value: PlainDate | null): void {
+    this.value.set(value ?? null);
+  }
+
+  registerOnChange(fn: (value: PlainDate | null) => void): void {
+    this.onChange = fn;
+  }
+
+  registerOnTouched(fn: () => void): void {
+    this.onTouched = fn;
+  }
+
+  setDisabledState(isDisabled: boolean): void {
+    this.formDisabled.set(isDisabled);
   }
 
   /**

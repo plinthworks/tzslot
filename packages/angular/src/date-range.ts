@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   forwardRef,
+  inject,
   input,
   model,
   signal,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
+import { TZSLOT_MESSAGES } from './messages.js';
+
 import { Temporal, getMonthGrid, getWeekdayOrder } from '../../core/src/index.js';
 import type { PlainDate, Weekday } from '../../core/src/index.js';
 
@@ -52,21 +55,21 @@ const EMPTY: DateRangeValue = { start: null, end: null };
       <button
         type="button"
         class="tz-range__nav"
-        aria-label="Previous month"
+        [attr.aria-label]="msg.previousMonth"
         [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(-1)"
       >
-        ‹
+        <ng-content select="[tzPrev]">‹</ng-content>
       </button>
       <span class="tz-range__title" aria-live="polite">{{ monthTitle() }}</span>
       <button
         type="button"
         class="tz-range__nav"
-        aria-label="Next month"
+        [attr.aria-label]="msg.nextMonth"
         [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(1)"
       >
-        ›
+        <ng-content select="[tzNext]">›</ng-content>
       </button>
     </div>
 
@@ -121,7 +124,7 @@ const EMPTY: DateRangeValue = { start: null, end: null };
       border: 0;
       background: transparent;
       color: inherit;
-      font: inherit;
+      font: var(--tz-font, inherit);
       cursor: pointer;
     }
     .tz-range__weekdays,
@@ -179,7 +182,10 @@ export class DateRange implements ControlValueAccessor {
    */
   readonly blockAcrossDisabled = input(true);
 
-  readonly rangeSpansBlockedMessage = input('That range crosses an unavailable day.');
+  /** Overrides the bundle for this one instance. */
+  readonly rangeSpansBlockedMessage = input<string | undefined>(undefined);
+
+  protected readonly msg = inject(TZSLOT_MESSAGES);
 
   private readonly cursor = signal<{ year: number; month: number } | null>(null);
   protected readonly hover = signal<string | null>(null);
@@ -280,7 +286,7 @@ export class DateRange implements ControlValueAccessor {
       Temporal.PlainDate.compare(cell.date, start) < 0 ? [cell.date, start] : [start, cell.date];
 
     if (this.blockAcrossDisabled() && this.crossesBlocked(from, to)) {
-      this.error.set(this.rangeSpansBlockedMessage());
+      this.error.set(this.rangeSpansBlockedMessage() ?? this.msg.rangeCrossesUnavailable);
       return;
     }
 

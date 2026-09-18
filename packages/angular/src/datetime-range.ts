@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   forwardRef,
+  inject,
   input,
   model,
   signal,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
+import { TZSLOT_MESSAGES } from './messages.js';
+
 import { DateField } from './date-field.js';
 import { TimeSlotPicker } from './time-slot-picker.js';
 import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '../../core/src/index.js';
@@ -59,8 +62,8 @@ const EMPTY: DateTimeRangeValue = { start: null, end: null };
 
     <div class="tz-dtr__legs">
       @for (leg of legs; track leg.key) {
-        <section class="tz-dtr__leg" [attr.aria-label]="leg.key === 'start' ? startLabel() : endLabel()">
-          <h3 class="tz-dtr__legend">{{ leg.key === 'start' ? startLabel() : endLabel() }}</h3>
+        <section class="tz-dtr__leg" [attr.aria-label]="leg.key === 'start' ? (startLabel() ?? msg.from) : (endLabel() ?? msg.to)">
+          <h3 class="tz-dtr__legend">{{ leg.key === 'start' ? (startLabel() ?? msg.from) : (endLabel() ?? msg.to) }}</h3>
 
           <tz-date-field
             [value]="dayOf(leg.key)"
@@ -133,6 +136,8 @@ const EMPTY: DateTimeRangeValue = { start: null, end: null };
 export class DateTimeRange implements ControlValueAccessor {
   readonly value = model<DateTimeRangeValue>(EMPTY);
 
+  protected readonly msg = inject(TZSLOT_MESSAGES);
+
   readonly timeZone = input.required<string>();
   readonly stepMinutes = input(30);
   readonly minTime = input<string | undefined>(undefined);
@@ -143,9 +148,9 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly locale = input<string | undefined>(undefined);
   readonly disabled = input(false);
 
-  readonly startLabel = input('From');
-  readonly endLabel = input('To');
-  readonly endBeforeStartMessage = input('The end is before the start.');
+  readonly startLabel = input<string | undefined>(undefined);
+  readonly endLabel = input<string | undefined>(undefined);
+  readonly endBeforeStartMessage = input<string | undefined>(undefined);
 
   protected readonly legs = [{ key: 'start' as const }, { key: 'end' as const }];
 
@@ -189,7 +194,9 @@ export class DateTimeRange implements ControlValueAccessor {
 
   protected readonly problem = computed(() => {
     const result = this.info();
-    return result && isRangeProblem(result) ? this.endBeforeStartMessage() : null;
+    return result && isRangeProblem(result)
+      ? (this.endBeforeStartMessage() ?? this.msg.endBeforeStart)
+      : null;
   });
 
   protected readonly summary = computed(() => {
@@ -214,7 +221,7 @@ export class DateTimeRange implements ControlValueAccessor {
     const direction = result.shiftMinutes > 0 ? 'back' : 'forward';
     const by = formatDuration(Temporal.Duration.from({ minutes: Math.abs(result.shiftMinutes) }));
 
-    return `The clocks go ${direction} by ${by} during this range, so it reads as ${apparent} but lasts ${real}.`;
+    return this.msg.clockChange({ direction, by, apparent, real });
   });
 
   private commit(next: DateTimeRangeValue): void {

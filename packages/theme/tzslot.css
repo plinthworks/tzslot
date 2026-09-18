@@ -32,6 +32,13 @@
   --tz-danger: #b91c1c;
   --tz-warning: #b45309;
 
+  /**
+   * The components inherit the page's font by default, which is almost always
+   * what you want. Set this only to make them differ from their surroundings —
+   * tabular figures for a calendar, say, so the columns of numbers line up.
+   */
+  --tz-font: inherit;
+
   /* ── shape ───────────────────────────────────────────────── */
   --tz-radius: 0.375rem;
   --tz-gap: 0.25rem;

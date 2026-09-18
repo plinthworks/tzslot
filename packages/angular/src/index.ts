@@ -6,6 +6,8 @@
  * specificity.
  */
 export { TimeSlotPicker } from './time-slot-picker.js';
+export { TZSLOT_MESSAGES, provideTzslotMessages, EN, FR } from './messages.js';
+export type { TzslotMessages } from './messages.js';
 export { Calendar } from './calendar.js';
 export type { CalendarView } from './calendar.js';
 export { DateField } from './date-field.js';

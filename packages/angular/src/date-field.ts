@@ -13,6 +13,8 @@ import {
   DestroyRef,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
+import { TZSLOT_MESSAGES } from './messages.js';
+
 import { Overlay, OverlayRef } from '@angular/cdk/overlay';
 import { TemplatePortal } from '@angular/cdk/portal';
 import { ConfigurableFocusTrapFactory, type ConfigurableFocusTrap } from '@angular/cdk/a11y';
@@ -54,12 +56,14 @@ export type FieldMode = 'popup' | 'dialog';
       [class.tz-field__trigger--empty]="!value()"
       [attr.aria-haspopup]="'dialog'"
       [attr.aria-expanded]="isOpen()"
-      [attr.aria-label]="ariaLabel()"
+      [attr.aria-label]="ariaLabel() ?? msg.chooseDate"
       [disabled]="disabled() || formDisabled()"
       (click)="toggle()"
     >
-      <span class="tz-field__text">{{ display() || placeholder() }}</span>
-      <span class="tz-field__icon" aria-hidden="true">▾</span>
+      <span class="tz-field__text">{{ display() || placeholder() || msg.chooseDate }}</span>
+      <span class="tz-field__icon" aria-hidden="true">
+        <ng-content select="[tzIcon]">▾</ng-content>
+      </span>
     </button>
 
     <ng-template #panel>
@@ -67,7 +71,7 @@ export type FieldMode = 'popup' | 'dialog';
         class="tz-field__panel"
         [class.tz-field__panel--dialog]="mode() === 'dialog'"
         role="dialog"
-        [attr.aria-label]="ariaLabel()"
+        [attr.aria-label]="ariaLabel() ?? msg.chooseDate"
         (keydown.escape)="close()"
       >
         <tz-calendar
@@ -95,7 +99,7 @@ export type FieldMode = 'popup' | 'dialog';
       border-radius: var(--tz-field-radius, 0.375rem);
       background: var(--tz-field-bg, transparent);
       color: var(--tz-field-fg, inherit);
-      font: inherit;
+      font: var(--tz-font, inherit);
       cursor: pointer;
       text-align: left;
     }
@@ -107,8 +111,8 @@ export type FieldMode = 'popup' | 'dialog';
 export class DateField implements ControlValueAccessor {
   readonly value = model<PlainDate | null>(null);
   readonly mode = input<FieldMode>('popup');
-  readonly placeholder = input('Choose a date');
-  readonly ariaLabel = input('Choose a date');
+  readonly placeholder = input<string | undefined>(undefined);
+  readonly ariaLabel = input<string | undefined>(undefined);
   readonly locale = input<string | undefined>(undefined);
   readonly firstDayOfWeek = input<Weekday>(1);
   readonly min = input<PlainDate | null>(null);
@@ -135,6 +139,9 @@ export class DateField implements ControlValueAccessor {
 
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
+
+  /** Whether the panel is showing. Readable from a ViewChild. */
+  protected readonly msg = inject(TZSLOT_MESSAGES);
 
   /** Whether the panel is showing. Readable from a ViewChild. */
   readonly isOpen = signal(false);

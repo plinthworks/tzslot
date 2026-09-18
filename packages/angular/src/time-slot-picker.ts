@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   forwardRef,
+  inject,
   input,
   model,
   signal,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
+import { TZSLOT_MESSAGES } from './messages.js';
+
 import { getDaySlots } from '../../core/src/index.js';
 import type { Instant, PlainDate, Slot } from '../../core/src/index.js';
 
@@ -45,7 +48,7 @@ export interface SlotChoice {
   selector: 'tz-time-slots',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'tz-slots', role: 'listbox', '[attr.aria-label]': 'ariaLabel()' },
+  host: { class: 'tz-slots', role: 'listbox', '[attr.aria-label]': 'ariaLabel() ?? msg.availableTimes' },
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,
@@ -75,11 +78,11 @@ export interface SlotChoice {
           <span class="tz-slots__offset">{{ choice.offset }}</span>
         }
         @if (!choice.slot.exists) {
-          <span class="tz-slots__note">{{ missingLabel() }}</span>
+          <span class="tz-slots__note">{{ missingLabel() ?? msg.skipped }}</span>
         }
       </button>
     } @empty {
-      <p class="tz-slots__empty">{{ emptyLabel() }}</p>
+      <p class="tz-slots__empty">{{ emptyLabel() ?? msg.noTimes }}</p>
     }
   `,
   styles: `
@@ -98,7 +101,7 @@ export interface SlotChoice {
       border-radius: var(--tz-slot-radius, 0.375rem);
       background: var(--tz-slot-bg, transparent);
       color: var(--tz-slot-fg, inherit);
-      font: inherit;
+      font: var(--tz-font, inherit);
       cursor: pointer;
     }
     .tz-slots__slot--selected {
@@ -125,6 +128,9 @@ export interface SlotChoice {
   `,
 })
 export class TimeSlotPicker implements ControlValueAccessor {
+  /** The day to list, as a PlainDate or an ISO date string. */
+  protected readonly msg = inject(TZSLOT_MESSAGES);
+
   /** The day to list, as a PlainDate or an ISO date string. */
   readonly date = input.required<PlainDate | string>();
 
@@ -155,9 +161,9 @@ export class TimeSlotPicker implements ControlValueAccessor {
   /** What is selected, as a moment. Two-way: `[(value)]`. */
   readonly value = model<Instant | null>(null);
 
-  readonly ariaLabel = input('Available times');
-  readonly missingLabel = input('skipped');
-  readonly emptyLabel = input('No times available.');
+  readonly ariaLabel = input<string | undefined>(undefined);
+  readonly missingLabel = input<string | undefined>(undefined);
+  readonly emptyLabel = input<string | undefined>(undefined);
 
   /**
    * The rows to render.
@@ -250,10 +256,10 @@ export class TimeSlotPicker implements ControlValueAccessor {
   protected describe(choice: SlotChoice): string {
     const time = this.format(choice.slot);
     if (!choice.slot.exists) {
-      return `${time} does not exist on this date — the clocks move forward.`;
+      return this.msg.nonExistentTime(time);
     }
     if (choice.repeated) {
-      return `${time} happens twice on this date. This is the reading at UTC${choice.offset}.`;
+      return this.msg.repeatedTime(time, choice.offset ?? '');
     }
     return time;
   }

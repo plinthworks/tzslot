@@ -3,11 +3,14 @@ import {
   Component,
   computed,
   forwardRef,
+  inject,
   input,
   model,
   signal,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
+import { TZSLOT_MESSAGES } from './messages.js';
+
 import {
   Temporal,
   getMonthGrid,
@@ -67,11 +70,11 @@ interface DayCell {
       <button
         type="button"
         class="tz-cal__nav"
-        [attr.aria-label]="previousMonthLabel()"
+        [attr.aria-label]="msg.previousMonth"
         [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(-1)"
       >
-        ‹
+        <ng-content select="[tzPrev]">‹</ng-content>
       </button>
 
       <button
@@ -89,11 +92,11 @@ interface DayCell {
       <button
         type="button"
         class="tz-cal__nav"
-        [attr.aria-label]="nextMonthLabel()"
+        [attr.aria-label]="msg.nextMonth"
         [disabled]="disabled() || formDisabled()"
         (click)="shiftMonth(1)"
       >
-        ›
+        <ng-content select="[tzNext]">›</ng-content>
       </button>
     </div>
 
@@ -167,7 +170,7 @@ interface DayCell {
       border: 0;
       background: transparent;
       color: inherit;
-      font: inherit;
+      font: var(--tz-font, inherit);
       cursor: pointer;
       border-radius: var(--tz-cal-radius, 0.25rem);
     }
@@ -197,7 +200,7 @@ interface DayCell {
       border: 0;
       background: transparent;
       color: inherit;
-      font: inherit;
+      font: var(--tz-font, inherit);
       font-weight: var(--tz-cal-title-weight, 600);
       cursor: pointer;
       padding: 0.125rem 0.5rem;
@@ -217,7 +220,7 @@ interface DayCell {
       border: 0;
       background: transparent;
       color: inherit;
-      font: inherit;
+      font: var(--tz-font, inherit);
       cursor: pointer;
       padding: 0.5rem 0.25rem;
       border-radius: var(--tz-cal-radius, 0.25rem);
@@ -290,6 +293,8 @@ export class Calendar implements ControlValueAccessor {
    */
   readonly minView = input<CalendarView>('days');
 
+  protected readonly msg = inject(TZSLOT_MESSAGES);
+
   /** The month on screen, which is not the same as the selection. */
   private readonly cursor = signal<{ year: number; month: number } | null>(null);
 
@@ -350,7 +355,7 @@ export class Calendar implements ControlValueAccessor {
   });
 
   protected readonly zoomOutLabel = computed(() =>
-    this.view() === 'days' ? 'Choose a month' : 'Choose a year',
+    this.view() === 'days' ? this.msg.chooseMonth : this.msg.chooseYear,
   );
 
   protected readonly coarseCells = computed<CoarseCell[]>(() => {
@@ -388,8 +393,7 @@ export class Calendar implements ControlValueAccessor {
     });
   });
 
-  protected readonly previousMonthLabel = computed(() => `Previous month`);
-  protected readonly nextMonthLabel = computed(() => `Next month`);
+
 
   private formatter(options: Intl.DateTimeFormatOptions): Intl.DateTimeFormat {
     return new Intl.DateTimeFormat(this.locale(), { ...options, timeZone: 'UTC' });

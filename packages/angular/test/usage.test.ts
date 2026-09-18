@@ -160,3 +160,39 @@ describe('inputs are reactive', () => {
     expect(after).toContain('2028');
   });
 });
+
+describe('custom icons', () => {
+  @Component({
+    standalone: true,
+    imports: [Calendar],
+    template: `
+      <tz-calendar [today]="today">
+        <span tzPrev class="mine">PREV</span>
+        <span tzNext class="mine">NEXT</span>
+      </tz-calendar>
+    `,
+  })
+  class WithIcons {
+    readonly today = Temporal.PlainDate.from('2026-06-15');
+  }
+
+  it('replace the built-in chevrons', () => {
+    const f = TestBed.createComponent(WithIcons);
+    f.detectChanges();
+    const navs = Array.from(
+      (f.nativeElement as HTMLElement).querySelectorAll('.tz-cal__nav'),
+    );
+
+    expect(navs[0]!.textContent!.trim()).toBe('PREV');
+    expect(navs[1]!.textContent!.trim()).toBe('NEXT');
+    expect(navs[0]!.textContent).not.toContain('‹');
+  });
+
+  it('the chevrons remain when nothing is projected', () => {
+    const f = TestBed.createComponent(WithSignal);
+    f.detectChanges();
+    const nav = (f.nativeElement as HTMLElement).querySelector('.tz-cal__nav')!;
+    // ng-content fallback: a consumer who wants nothing keeps something.
+    expect(nav.textContent!.trim()).toBe('‹');
+  });
+});

@@ -16,7 +16,7 @@ import { Temporal, type Instant } from '../../core/src/index.js';
   standalone: true,
   imports: [TimeSlotPicker],
   template: `
-    <ngx-time-slot-picker
+    <tz-time-slots
       [date]="date()"
       [timeZone]="zone()"
       [stepMinutes]="step()"
@@ -37,11 +37,11 @@ let host: Host;
 const render = () => {
   fixture.detectChanges();
   return Array.from(
-    fixture.nativeElement.querySelectorAll('button.ngx-tsp__slot'),
+    fixture.nativeElement.querySelectorAll('button.tz-slots__slot'),
   ) as HTMLButtonElement[];
 };
 const labelOf = (b: HTMLButtonElement) =>
-  b.querySelector('.ngx-tsp__time')?.textContent?.trim() ?? '';
+  b.querySelector('.tz-slots__time')?.textContent?.trim() ?? '';
 
 beforeEach(async () => {
   await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
@@ -75,9 +75,9 @@ describe('an ordinary day', () => {
     fixture.detectChanges();
 
     const again = render();
-    expect(again[9]!.classList.contains('ngx-tsp__slot--selected')).toBe(true);
+    expect(again[9]!.classList.contains('tz-slots__slot--selected')).toBe(true);
     expect(again[9]!.getAttribute('aria-selected')).toBe('true');
-    expect(again[8]!.classList.contains('ngx-tsp__slot--selected')).toBe(false);
+    expect(again[8]!.classList.contains('tz-slots__slot--selected')).toBe(false);
   });
 });
 
@@ -93,7 +93,7 @@ describe('the morning an hour goes missing', () => {
 
     expect(two).toBeDefined();
     expect(two.disabled).toBe(true);
-    expect(two.classList.contains('ngx-tsp__slot--missing')).toBe(true);
+    expect(two.classList.contains('tz-slots__slot--missing')).toBe(true);
     expect(two.title).toContain('does not exist');
   });
 
@@ -119,7 +119,7 @@ describe('the morning an hour happens twice', () => {
     // This is the whole reason the library exists: one clock face, two moments,
     // and the user gets to say which.
     expect(twos).toHaveLength(2);
-    expect(twos.map((b) => b.querySelector('.ngx-tsp__offset')?.textContent?.trim())).toEqual([
+    expect(twos.map((b) => b.querySelector('.tz-slots__offset')?.textContent?.trim())).toEqual([
       '+02:00',
       '+01:00',
     ]);

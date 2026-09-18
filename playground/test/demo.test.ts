@@ -21,15 +21,15 @@ beforeEach(async () => {
 
 describe('the playground page', () => {
   it('mounts both components', () => {
-    expect(el().querySelector('ngx-calendar')).not.toBeNull();
-    expect(el().querySelector('ngx-time-slot-picker')).not.toBeNull();
+    expect(el().querySelector('tz-calendar')).not.toBeNull();
+    expect(el().querySelector('tz-time-slots')).not.toBeNull();
   });
 
   it('renders a full calendar and a day of slots', () => {
-    expect(el().querySelectorAll('button.ngx-cal__day')).toHaveLength(42);
+    expect(el().querySelectorAll('button.tz-cal__day')).toHaveLength(42);
     // Opens on 25 October 2026 in Paris: a 25-hour day, at half-hour steps,
     // so 50 rows — one of which is doubled by the repeated hour.
-    expect(el().querySelectorAll('button.ngx-tsp__slot').length).toBeGreaterThan(48);
+    expect(el().querySelectorAll('button.tz-slots__slot').length).toBeGreaterThan(48);
   });
 
   it('offers the preset days that break other pickers', () => {
@@ -48,13 +48,13 @@ describe('the playground page', () => {
     lordHowe.click();
     fixture.detectChanges();
 
-    const struck = el().querySelectorAll('button.ngx-tsp__slot--missing');
+    const struck = el().querySelectorAll('button.tz-slots__slot--missing');
     expect(struck.length).toBeGreaterThan(0);
   });
 
   it('shows the three readings once a time is chosen', () => {
     const usable = Array.from(
-      el().querySelectorAll<HTMLButtonElement>('button.ngx-tsp__slot'),
+      el().querySelectorAll<HTMLButtonElement>('button.tz-slots__slot'),
     ).find((b) => !b.disabled)!;
 
     usable.click();

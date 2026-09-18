@@ -1,5 +1,5 @@
 /**
- * @ngx-zoneddatepicker/core — date and time primitives that know about
+ * @tzslot/core — date and time primitives that know about
  * daylight saving.
  *
  * No DOM, no framework, no styling. Everything here is a pure function over

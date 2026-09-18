@@ -33,72 +33,72 @@ export interface SlotChoice {
  * clock shows; an instant is when it happened. Only one of those can be stored.
  */
 @Component({
-  selector: 'ngx-time-slot-picker',
+  selector: 'tz-time-slots',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'ngx-tsp', role: 'listbox', '[attr.aria-label]': 'ariaLabel()' },
+  host: { class: 'tz-slots', role: 'listbox', '[attr.aria-label]': 'ariaLabel()' },
   template: `
     @for (choice of choices(); track choice.key) {
       <button
         type="button"
-        class="ngx-tsp__slot"
+        class="tz-slots__slot"
         role="option"
-        [class.ngx-tsp__slot--missing]="!choice.slot.exists"
-        [class.ngx-tsp__slot--repeated]="choice.repeated"
-        [class.ngx-tsp__slot--selected]="isSelected(choice)"
+        [class.tz-slots__slot--missing]="!choice.slot.exists"
+        [class.tz-slots__slot--repeated]="choice.repeated"
+        [class.tz-slots__slot--selected]="isSelected(choice)"
         [attr.aria-selected]="isSelected(choice)"
         [attr.aria-disabled]="!choice.slot.exists || null"
         [disabled]="!choice.slot.exists || disabled()"
         [title]="describe(choice)"
         (click)="choose(choice)"
       >
-        <span class="ngx-tsp__time">{{ format(choice.slot) }}</span>
+        <span class="tz-slots__time">{{ format(choice.slot) }}</span>
 
         @if (choice.repeated) {
-          <span class="ngx-tsp__offset">{{ choice.offset }}</span>
+          <span class="tz-slots__offset">{{ choice.offset }}</span>
         }
         @if (!choice.slot.exists) {
-          <span class="ngx-tsp__note">{{ missingLabel() }}</span>
+          <span class="tz-slots__note">{{ missingLabel() }}</span>
         }
       </button>
     } @empty {
-      <p class="ngx-tsp__empty">{{ emptyLabel() }}</p>
+      <p class="tz-slots__empty">{{ emptyLabel() }}</p>
     }
   `,
   styles: `
-    .ngx-tsp {
+    .tz-slots {
       display: grid;
-      grid-template-columns: repeat(var(--dp-slot-columns, 4), minmax(0, 1fr));
-      gap: var(--dp-slot-gap, 0.375rem);
+      grid-template-columns: repeat(var(--tz-slot-columns, 4), minmax(0, 1fr));
+      gap: var(--tz-slot-gap, 0.375rem);
     }
-    .ngx-tsp__slot {
+    .tz-slots__slot {
       display: flex;
       flex-direction: column;
       align-items: center;
       gap: 0.125rem;
-      padding: var(--dp-slot-padding, 0.5rem 0.25rem);
-      border: 1px solid var(--dp-slot-border, currentColor);
-      border-radius: var(--dp-slot-radius, 0.375rem);
-      background: var(--dp-slot-bg, transparent);
-      color: var(--dp-slot-fg, inherit);
+      padding: var(--tz-slot-padding, 0.5rem 0.25rem);
+      border: 1px solid var(--tz-slot-border, currentColor);
+      border-radius: var(--tz-slot-radius, 0.375rem);
+      background: var(--tz-slot-bg, transparent);
+      color: var(--tz-slot-fg, inherit);
       font: inherit;
       cursor: pointer;
     }
-    .ngx-tsp__slot--selected {
-      background: var(--dp-slot-bg-selected, currentColor);
-      color: var(--dp-slot-fg-selected, canvas);
+    .tz-slots__slot--selected {
+      background: var(--tz-slot-bg-selected, currentColor);
+      color: var(--tz-slot-fg-selected, canvas);
     }
-    .ngx-tsp__slot--missing {
-      opacity: var(--dp-slot-missing-opacity, 0.4);
+    .tz-slots__slot--missing {
+      opacity: var(--tz-slot-missing-opacity, 0.4);
       cursor: not-allowed;
       text-decoration: line-through;
     }
-    .ngx-tsp__slot--repeated {
-      border-style: var(--dp-slot-repeated-border-style, dashed);
+    .tz-slots__slot--repeated {
+      border-style: var(--tz-slot-repeated-border-style, dashed);
     }
-    .ngx-tsp__offset,
-    .ngx-tsp__note {
-      font-size: var(--dp-slot-note-size, 0.75em);
+    .tz-slots__offset,
+    .tz-slots__note {
+      font-size: var(--tz-slot-note-size, 0.75em);
       opacity: 0.8;
     }
   `,

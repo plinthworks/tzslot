@@ -1,5 +1,5 @@
 import { Component, computed, signal } from '@angular/core';
-import { Calendar, TimeSlotPicker } from '../packages/ui/src/index.js';
+import { Calendar, TimeSlotPicker } from '../packages/angular/src/index.js';
 import { Temporal, usingPolyfill } from '../packages/core/src/index.js';
 import type { Instant, PlainDate } from '../packages/core/src/index.js';
 
@@ -17,7 +17,7 @@ import type { Instant, PlainDate } from '../packages/core/src/index.js';
   imports: [Calendar, TimeSlotPicker],
   template: `
     <header>
-      <h1>ngx-zoneddatepicker</h1>
+      <h1>tzslot</h1>
       <p class="sub">
         Temporal: <b>{{ usingPolyfill ? 'polyfilled' : 'native' }}</b>
       </p>
@@ -62,12 +62,12 @@ import type { Instant, PlainDate } from '../packages/core/src/index.js';
     <div class="panes">
       <div class="pane">
         <h2>Calendar</h2>
-        <ngx-calendar [value]="date()" (valueChange)="onDate($event)" [today]="today" />
+        <tz-calendar [value]="date()" (valueChange)="onDate($event)" [today]="today" />
       </div>
 
       <div class="pane">
         <h2>Times on {{ date().toString() }}</h2>
-        <ngx-time-slot-picker
+        <tz-time-slots
           [date]="date()"
           [timeZone]="zone()"
           [stepMinutes]="step()"
@@ -99,11 +99,11 @@ import type { Instant, PlainDate } from '../packages/core/src/index.js';
   `,
   styles: `
     :host {
-      --dp-cal-selected-bg: #2563eb;
-      --dp-cal-selected-fg: #fff;
-      --dp-slot-bg-selected: #2563eb;
-      --dp-slot-fg-selected: #fff;
-      --dp-slot-columns: 6;
+      --tz-cal-selected-bg: #2563eb;
+      --tz-cal-selected-fg: #fff;
+      --tz-slot-bg-selected: #2563eb;
+      --tz-slot-fg-selected: #fff;
+      --tz-slot-columns: 6;
       display: block;
       max-width: 62rem;
       margin: 2rem auto;

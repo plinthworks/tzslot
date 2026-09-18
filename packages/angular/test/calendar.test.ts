@@ -8,7 +8,7 @@ import { Temporal, type PlainDate, type Weekday } from '../../core/src/index.js'
   standalone: true,
   imports: [Calendar],
   template: `
-    <ngx-calendar
+    <tz-calendar
       [(value)]="chosen"
       [firstDayOfWeek]="firstDay()"
       [today]="today()"
@@ -34,12 +34,12 @@ const qa = <T extends Element>(sel: string) =>
   Array.from(fixture.nativeElement.querySelectorAll(sel)) as T[];
 const days = () => {
   fixture.detectChanges();
-  return qa<HTMLButtonElement>('button.ngx-cal__day');
+  return qa<HTMLButtonElement>('button.tz-cal__day');
 };
 const dayFor = (iso: string) => days().find((b) => b.dataset['date'] === iso)!;
 const title = () => {
   fixture.detectChanges();
-  return q<HTMLElement>('.ngx-cal__title').textContent!.trim();
+  return q<HTMLElement>('.tz-cal__title').textContent!.trim();
 };
 
 beforeEach(async () => {
@@ -67,13 +67,13 @@ describe('the grid', () => {
   });
 
   it('marks the days either side of the month as outside', () => {
-    const outside = days().filter((b) => b.classList.contains('ngx-cal__day--outside'));
+    const outside = days().filter((b) => b.classList.contains('tz-cal__day--outside'));
     expect(outside.map((b) => b.dataset['date'])).toContain('2026-08-31');
-    expect(days().filter((b) => !b.classList.contains('ngx-cal__day--outside'))).toHaveLength(30);
+    expect(days().filter((b) => !b.classList.contains('tz-cal__day--outside'))).toHaveLength(30);
   });
 
   it('marks today, and only today', () => {
-    const marked = days().filter((b) => b.classList.contains('ngx-cal__day--today'));
+    const marked = days().filter((b) => b.classList.contains('tz-cal__day--today'));
     expect(marked).toHaveLength(1);
     expect(marked[0]!.dataset['date']).toBe('2026-09-18');
     expect(marked[0]!.getAttribute('aria-current')).toBe('date');
@@ -81,10 +81,10 @@ describe('the grid', () => {
 
   it('starts the week where it is told to', () => {
     fixture.detectChanges();
-    expect(qa<HTMLElement>('.ngx-cal__weekday')[0]!.textContent!.trim()).toBe('Mon');
+    expect(qa<HTMLElement>('.tz-cal__weekday')[0]!.textContent!.trim()).toBe('Mon');
     host.firstDay.set(7);
     fixture.detectChanges();
-    expect(qa<HTMLElement>('.ngx-cal__weekday')[0]!.textContent!.trim()).toBe('Sun');
+    expect(qa<HTMLElement>('.tz-cal__weekday')[0]!.textContent!.trim()).toBe('Sun');
     expect(days()[0]!.dataset['date']).toBe('2026-08-30');
   });
 });
@@ -94,7 +94,7 @@ describe('selecting', () => {
     dayFor('2026-09-23').click();
     fixture.detectChanges();
     expect(host.chosen()!.toString()).toBe('2026-09-23');
-    expect(dayFor('2026-09-23').classList.contains('ngx-cal__day--selected')).toBe(true);
+    expect(dayFor('2026-09-23').classList.contains('tz-cal__day--selected')).toBe(true);
   });
 
   it('clicking a trailing day follows it into its month', () => {
@@ -121,7 +121,7 @@ describe('selecting', () => {
 
 describe('navigating with the mouse', () => {
   it('moves a month at a time, and across a year', () => {
-    const [prev, next] = qa<HTMLButtonElement>('button.ngx-cal__nav');
+    const [prev, next] = qa<HTMLButtonElement>('button.tz-cal__nav');
     next!.click();
     expect(title()).toBe('October 2026');
     for (let i = 0; i < 3; i++) next!.click();
@@ -133,7 +133,7 @@ describe('navigating with the mouse', () => {
 
 describe('navigating with the keyboard', () => {
   const press = (key: string) => {
-    const grid = q<HTMLElement>('.ngx-cal__grid');
+    const grid = q<HTMLElement>('.tz-cal__grid');
     grid.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }));
     fixture.detectChanges();
   };

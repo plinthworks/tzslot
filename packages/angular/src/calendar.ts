@@ -31,15 +31,15 @@ interface DayCell {
  * and they are bytes every visitor downloads for languages they do not read.
  */
 @Component({
-  selector: 'ngx-calendar',
+  selector: 'tz-calendar',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'ngx-cal' },
+  host: { class: 'tz-cal' },
   template: `
-    <div class="ngx-cal__header">
+    <div class="tz-cal__header">
       <button
         type="button"
-        class="ngx-cal__nav"
+        class="tz-cal__nav"
         [attr.aria-label]="previousMonthLabel()"
         [disabled]="disabled()"
         (click)="shiftMonth(-1)"
@@ -47,11 +47,11 @@ interface DayCell {
         ‹
       </button>
 
-      <span class="ngx-cal__title" aria-live="polite">{{ monthTitle() }}</span>
+      <span class="tz-cal__title" aria-live="polite">{{ monthTitle() }}</span>
 
       <button
         type="button"
-        class="ngx-cal__nav"
+        class="tz-cal__nav"
         [attr.aria-label]="nextMonthLabel()"
         [disabled]="disabled()"
         (click)="shiftMonth(1)"
@@ -60,25 +60,25 @@ interface DayCell {
       </button>
     </div>
 
-    <div class="ngx-cal__grid" role="grid" [attr.aria-label]="monthTitle()" (keydown)="onKeydown($event)">
-      <div class="ngx-cal__weekdays" role="row">
+    <div class="tz-cal__grid" role="grid" [attr.aria-label]="monthTitle()" (keydown)="onKeydown($event)">
+      <div class="tz-cal__weekdays" role="row">
         @for (name of weekdayNames(); track name.short) {
-          <span class="ngx-cal__weekday" role="columnheader" [attr.aria-label]="name.long">
+          <span class="tz-cal__weekday" role="columnheader" [attr.aria-label]="name.long">
             {{ name.short }}
           </span>
         }
       </div>
 
       @for (week of weeks(); track week[0]!.iso) {
-        <div class="ngx-cal__week" role="row">
+        <div class="tz-cal__week" role="row">
           @for (cell of week; track cell.iso) {
             <button
               type="button"
               role="gridcell"
-              class="ngx-cal__day"
-              [class.ngx-cal__day--outside]="cell.outside"
-              [class.ngx-cal__day--today]="cell.today"
-              [class.ngx-cal__day--selected]="cell.selected"
+              class="tz-cal__day"
+              [class.tz-cal__day--outside]="cell.outside"
+              [class.tz-cal__day--today]="cell.today"
+              [class.tz-cal__day--selected]="cell.selected"
               [attr.aria-selected]="cell.selected"
               [attr.aria-current]="cell.today ? 'date' : null"
               [attr.data-date]="cell.iso"
@@ -95,46 +95,46 @@ interface DayCell {
     </div>
   `,
   styles: `
-    .ngx-cal { display: inline-block; }
-    .ngx-cal__header {
+    .tz-cal { display: inline-block; }
+    .tz-cal__header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: var(--dp-cal-gap, 0.25rem);
-      padding: var(--dp-cal-header-padding, 0.25rem 0);
+      gap: var(--tz-cal-gap, 0.25rem);
+      padding: var(--tz-cal-header-padding, 0.25rem 0);
     }
-    .ngx-cal__title { font-weight: var(--dp-cal-title-weight, 600); }
-    .ngx-cal__nav,
-    .ngx-cal__day {
+    .tz-cal__title { font-weight: var(--tz-cal-title-weight, 600); }
+    .tz-cal__nav,
+    .tz-cal__day {
       border: 0;
       background: transparent;
       color: inherit;
       font: inherit;
       cursor: pointer;
-      border-radius: var(--dp-cal-radius, 0.25rem);
+      border-radius: var(--tz-cal-radius, 0.25rem);
     }
-    .ngx-cal__weekdays,
-    .ngx-cal__week {
+    .tz-cal__weekdays,
+    .tz-cal__week {
       display: grid;
-      grid-template-columns: repeat(7, var(--dp-cal-cell-size, 2rem));
-      gap: var(--dp-cal-gap, 0.25rem);
+      grid-template-columns: repeat(7, var(--tz-cal-cell-size, 2rem));
+      gap: var(--tz-cal-gap, 0.25rem);
     }
-    .ngx-cal__weekday {
+    .tz-cal__weekday {
       text-align: center;
-      font-size: var(--dp-cal-weekday-size, 0.75em);
+      font-size: var(--tz-cal-weekday-size, 0.75em);
       opacity: 0.7;
     }
-    .ngx-cal__day {
-      height: var(--dp-cal-cell-size, 2rem);
+    .tz-cal__day {
+      height: var(--tz-cal-cell-size, 2rem);
       text-align: center;
     }
-    .ngx-cal__day--outside { opacity: var(--dp-cal-outside-opacity, 0.35); }
-    .ngx-cal__day--today { outline: 1px solid var(--dp-cal-today-border, currentColor); }
-    .ngx-cal__day--selected {
-      background: var(--dp-cal-selected-bg, currentColor);
-      color: var(--dp-cal-selected-fg, canvas);
+    .tz-cal__day--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+    .tz-cal__day--today { outline: 1px solid var(--tz-cal-today-border, currentColor); }
+    .tz-cal__day--selected {
+      background: var(--tz-cal-selected-bg, currentColor);
+      color: var(--tz-cal-selected-fg, canvas);
     }
-    .ngx-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
+    .tz-cal__day:disabled { opacity: 0.3; cursor: not-allowed; }
   `,
 })
 export class Calendar {

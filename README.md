@@ -1,4 +1,6 @@
-# ngx-zoneddatepicker
+# tzslot
+
+Timezone-aware time slots, and the pickers that show them.
 
 An Angular date and time picker that knows what daylight saving does.
 
@@ -11,10 +13,23 @@ browser guessed.
 flatpickr has 1.6 million downloads a week and its last release was in April
 2022.
 
+## Packages
+
+| | |
+|---|---|
+| `@tzslot/core` | The logic. No DOM, no framework, no Angular. Usable from anything. |
+| `@tzslot/angular` | Standalone components over the core. CDK only. |
+
+The core is where the value is, and it is deliberately framework-free: the
+problem it solves — a wall time that happens twice, or not at all — is not an
+Angular problem. The Angular package is one way to show it; others can follow
+once the core has been proven.
+
 ## Status
 
-`@ngx-zoneddatepicker/core` — the date and time logic, no DOM, no framework.
-23 tests against real IANA rules.
+`@tzslot/core` — the date and time logic. 27 tests against real IANA rules,
+plus measurements: 0.40 ms for a day of half-hour slots, 650 bytes a slot, and
+nothing retained across five thousand discarded calls.
 
 The Angular components come next, and the design after that: the logic is worth
 nothing if it is wrong, and pretty is worth nothing if the logic is wrong.
@@ -22,7 +37,7 @@ nothing if it is wrong, and pretty is worth nothing if the logic is wrong.
 ## The part that matters
 
 ```ts
-import { getDaySlots } from '@ngx-zoneddatepicker/core';
+import { getDaySlots } from '@tzslot/core';
 
 const slots = getDaySlots('2026-10-25', 'Europe/Paris', { stepMinutes: 30 });
 
@@ -62,12 +77,12 @@ MIT.
 
 ## Components
 
-`@ngx-zoneddatepicker/ui` — Angular standalone components over the core. CDK
+`@tzslot/ui` — Angular standalone components over the core. CDK
 only; no Material, no design system. Structural class names and CSS custom
 properties, so restyling does not mean fighting specificity.
 
 ```html
-<ngx-time-slot-picker
+<tz-time-slots
   [date]="'2026-10-25'"
   [timeZone]="'Europe/Paris'"
   [stepMinutes]="30"
@@ -82,7 +97,7 @@ tooltip saying why.
 `value` is a `Temporal.Instant` — a moment, not a clock face.
 
 ```html
-<ngx-calendar [(value)]="day" [firstDayOfWeek]="1" [min]="from" [max]="until" />
+<tz-calendar [(value)]="day" [firstDayOfWeek]="1" [min]="from" [max]="until" />
 ```
 
 Six weeks always, so the calendar does not change height between months.

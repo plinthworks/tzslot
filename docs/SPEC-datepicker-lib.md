@@ -70,7 +70,7 @@ packages/
     - Composants Angular standalone (calendrier, time-slot-picker) consommant @core.
     - Utilise @angular/cdk/overlay + @angular/cdk/a11y uniquement.
     - Aucun styling imposé : classes CSS neutres (BEM ou équivalent), thème via CSS custom
-      properties (variables --dp-*), consommateur libre de tout resurfacer.
+      properties (variables --tz-*), consommateur libre de tout resurfacer.
     - Licence : MIT (tier gratuit / "Community").
 
   pro/                  → @tonscope/datepicker-pro

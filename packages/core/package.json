@@ -1,5 +1,5 @@
 {
-  "name": "@ngx-zoneddatepicker/core",
+  "name": "@tzslot/core",
   "version": "0.0.0",
   "description": "DST-safe date and time primitives, built on the Temporal API. No DOM, no framework.",
   "type": "module",

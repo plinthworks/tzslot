@@ -1,5 +1,5 @@
 {
-  "name": "@ngx-zoneddatepicker/ui",
+  "name": "@tzslot/angular",
   "version": "0.0.0",
   "description": "Angular components for DST-safe date and time selection. CDK only, no design system.",
   "type": "module",

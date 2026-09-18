@@ -5,7 +5,8 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit"
+    "typecheck": "tsc -p packages/core/tsconfig.json --noEmit",
+    "start": "vite"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",

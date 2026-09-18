@@ -6,7 +6,12 @@
     "experimentalDecorators": true,
     "strict": true,
     "skipLibCheck": true,
-    "types": ["vitest/globals"]
+    "types": [
+      "vitest/globals"
+    ]
   },
-  "include": ["packages/**/*.ts"]
+  "include": [
+    "packages/**/*.ts",
+    "playground/**/*.ts"
+  ]
 }

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
-import { getDaySlots, type Instant, type PlainDate, type Slot } from '../../core/src/index.js';
+import { getDaySlots } from '../../core/src/index.js';
+import type { Instant, PlainDate, Slot } from '../../core/src/index.js';
 
 /**
  * One row in the list: a slot, plus which of its readings this row stands for.

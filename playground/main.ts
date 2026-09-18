@@ -2,6 +2,11 @@ import { provideZonelessChangeDetection } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { Demo } from './demo.js';
 
+// The optional theme, imported the way a consumer would import it. Without it
+// the components still work and look plain — which is the point of it being a
+// separate package.
+import '../packages/theme/tzslot.css';
+
 /**
  * Bootstrap only.
  *

@@ -1,0 +1,198 @@
+/**
+ * @tzslot/theme — one import and the components are presentable.
+ *
+ *   import '@tzslot/theme';
+ *
+ * Optional by design. The components carry structural class names and read
+ * their colours from custom properties; this file only sets those properties.
+ * Nothing here is required, nothing here is imposed, and replacing it means
+ * writing your own values for the same names — not fighting selectors.
+ *
+ * No framework. A library that ships Tailwind classes forces Tailwind on
+ * everyone who installs it, and breaks for anyone on a different version or
+ * config. A stylesheet that only sets variables cannot do that.
+ *
+ * Light and dark both follow the system by default. Set data-theme="dark" or
+ * data-theme="light" on any ancestor to override.
+ *
+ * Contrast: every text/background pair below meets WCAG AA at the sizes the
+ * components use.
+ */
+
+:root {
+  /* ── palette ─────────────────────────────────────────────── */
+  --tz-bg: #ffffff;
+  --tz-bg-raised: #f4f4f5;
+  --tz-fg: #18181b;
+  --tz-fg-muted: #52525b;
+  --tz-border: #d4d4d8;
+  --tz-accent: #2563eb;
+  --tz-accent-fg: #ffffff;
+  --tz-accent-soft: #eff6ff;
+  --tz-danger: #b91c1c;
+  --tz-warning: #b45309;
+
+  /* ── shape ───────────────────────────────────────────────── */
+  --tz-radius: 0.375rem;
+  --tz-gap: 0.25rem;
+  --tz-focus-ring: 2px solid var(--tz-accent);
+
+  /* ── calendar ────────────────────────────────────────────── */
+  --tz-cal-cell-size: 2.25rem;
+  --tz-cal-radius: var(--tz-radius);
+  --tz-cal-gap: var(--tz-gap);
+  --tz-cal-header-padding: 0.25rem 0;
+  --tz-cal-title-weight: 600;
+  --tz-cal-weekday-size: 0.6875rem;
+  --tz-cal-outside-opacity: 0.32;
+  --tz-cal-today-border: var(--tz-accent);
+  --tz-cal-selected-bg: var(--tz-accent);
+  --tz-cal-selected-fg: var(--tz-accent-fg);
+
+  /* ── range ───────────────────────────────────────────────── */
+  --tz-range-within-bg: var(--tz-accent-soft);
+  --tz-range-error-fg: var(--tz-danger);
+
+  /* ── slots ───────────────────────────────────────────────── */
+  --tz-slot-columns: 4;
+  --tz-slot-gap: 0.375rem;
+  --tz-slot-padding: 0.4375rem 0.25rem;
+  --tz-slot-radius: var(--tz-radius);
+  --tz-slot-border: var(--tz-border);
+  --tz-slot-bg: var(--tz-bg);
+  --tz-slot-fg: var(--tz-fg);
+  --tz-slot-bg-selected: var(--tz-accent);
+  --tz-slot-fg-selected: var(--tz-accent-fg);
+  --tz-slot-note-size: 0.6875rem;
+  --tz-slot-missing-opacity: 0.38;
+  --tz-slot-unavailable-opacity: 0.45;
+  --tz-slot-repeated-border-style: dashed;
+
+  /* ── field ───────────────────────────────────────────────── */
+  --tz-field-width: 13rem;
+  --tz-field-padding: 0.5rem 0.75rem;
+  --tz-field-radius: var(--tz-radius);
+  --tz-field-border: var(--tz-border);
+  --tz-field-bg: var(--tz-bg);
+  --tz-field-fg: var(--tz-fg);
+  --tz-field-gap: 0.5rem;
+  --tz-field-placeholder-opacity: 0.55;
+
+  /* ── interval ────────────────────────────────────────────── */
+  --tz-dtr-gap: 1.25rem;
+  --tz-dtr-leg-min: 15rem;
+  --tz-dtr-legend-gap: 0.5rem;
+  --tz-dtr-legend-size: 0.6875rem;
+  --tz-dtr-summary-weight: 600;
+  --tz-dtr-warning-fg: var(--tz-warning);
+  --tz-dtr-error-fg: var(--tz-danger);
+}
+
+/**
+ * Dark values are defined twice on purpose: once for the system preference and
+ * once for an explicit data-theme, so a toggle wins in both directions. A
+ * single :root block plus a media query cannot express "the user asked for
+ * light while the system says dark".
+ */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --tz-bg: #18181b;
+    --tz-bg-raised: #27272a;
+    --tz-fg: #f4f4f5;
+    --tz-fg-muted: #a1a1aa;
+    --tz-border: #3f3f46;
+    --tz-accent: #60a5fa;
+    --tz-accent-fg: #0b1220;
+    --tz-accent-soft: #1e3a5f;
+    --tz-danger: #f87171;
+    --tz-warning: #fbbf24;
+  }
+}
+
+:root[data-theme='dark'] {
+  --tz-bg: #18181b;
+  --tz-bg-raised: #27272a;
+  --tz-fg: #f4f4f5;
+  --tz-fg-muted: #a1a1aa;
+  --tz-border: #3f3f46;
+  --tz-accent: #60a5fa;
+  --tz-accent-fg: #0b1220;
+  --tz-accent-soft: #1e3a5f;
+  --tz-danger: #f87171;
+  --tz-warning: #fbbf24;
+}
+
+/**
+ * The handful of rules the variables cannot express: hover, focus, and the
+ * surface the components sit on. Kept deliberately short — every rule here is
+ * one a consumer may have to override.
+ */
+.tz-cal,
+.tz-range,
+.tz-slots,
+.tz-dtr {
+  color: var(--tz-fg);
+}
+
+.tz-cal__day:hover:not(:disabled),
+.tz-range__day:hover:not(:disabled),
+.tz-cal__nav:hover:not(:disabled),
+.tz-range__nav:hover:not(:disabled) {
+  background: var(--tz-bg-raised);
+}
+
+.tz-slots__slot:hover:not(:disabled) {
+  border-color: var(--tz-accent);
+}
+
+.tz-field__trigger:hover:not(:disabled) {
+  border-color: var(--tz-accent);
+}
+
+/* Focus must be visible on every control, including the ones inside an
+   overlay — a keyboard user who cannot see where they are is stuck. */
+.tz-cal__day:focus-visible,
+.tz-range__day:focus-visible,
+.tz-cal__nav:focus-visible,
+.tz-range__nav:focus-visible,
+.tz-slots__slot:focus-visible,
+.tz-field__trigger:focus-visible {
+  outline: var(--tz-focus-ring);
+  outline-offset: 2px;
+}
+
+/* The panel is the one surface the components cannot style themselves: it is
+   rendered into an overlay container outside the component's own tree. */
+.tz-field__panel {
+  padding: 0.75rem;
+  border: 1px solid var(--tz-border);
+  border-radius: calc(var(--tz-radius) * 1.5);
+  background: var(--tz-bg);
+  color: var(--tz-fg);
+  box-shadow: 0 10px 30px -12px rgb(0 0 0 / 0.35);
+}
+
+.tz-field__panel--dialog {
+  box-shadow: 0 25px 60px -15px rgb(0 0 0 / 0.5);
+}
+
+.tz-field__backdrop {
+  background: rgb(0 0 0 / 0.45);
+}
+
+.tz-cal__weekday,
+.tz-range__weekday,
+.tz-dtr__legend {
+  color: var(--tz-fg-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .tz-cal__day,
+  .tz-range__day,
+  .tz-slots__slot,
+  .tz-field__trigger {
+    transition:
+      background-color 120ms ease,
+      border-color 120ms ease;
+  }
+}

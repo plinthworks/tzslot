@@ -81,6 +81,19 @@ tooltip saying why.
 
 `value` is a `Temporal.Instant` — a moment, not a clock face.
 
+```html
+<ngx-calendar [(value)]="day" [firstDayOfWeek]="1" [min]="from" [max]="until" />
+```
+
+Six weeks always, so the calendar does not change height between months.
+Arrow keys move a day, PageUp/PageDown a month, Home/End across the week, and
+one cell at a time is tabbable — the roving pattern the ARIA grid guidance
+describes.
+
+Month and weekday names come from `Intl`, which the browser already has. Air
+Datepicker ships thirty locale files to do the same job; those go stale, and
+they are bytes every visitor downloads for languages they do not read.
+
 ## A note on installing
 
 `npm install --legacy-peer-deps`.

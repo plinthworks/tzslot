@@ -30,6 +30,7 @@ export type PlainTime = Polyfill.PlainTime;
 export type PlainDateTime = Polyfill.PlainDateTime;
 export type ZonedDateTime = Polyfill.ZonedDateTime;
 export type Instant = Polyfill.Instant;
+export type Duration = Polyfill.Duration;
 
 const globalTemporal = (globalThis as { Temporal?: TemporalNamespace }).Temporal;
 

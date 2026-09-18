@@ -9,6 +9,8 @@ export { TimeSlotPicker } from './time-slot-picker.js';
 export { Calendar } from './calendar.js';
 export { DateField } from './date-field.js';
 export { DateRange } from './date-range.js';
+export { DateTimeRange } from './datetime-range.js';
+export type { DateTimeRangeValue } from './datetime-range.js';
 export type { DateRangeValue } from './date-range.js';
 export type { FieldMode } from './date-field.js';
 export type { SlotChoice } from './time-slot-picker.js';

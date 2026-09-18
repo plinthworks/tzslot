@@ -19,6 +19,17 @@ Updated 18 September 2026. 15 commits, 137 tests, 1 992 lines of source and
 Measured: 0.40 ms for a day of half-hour slots, 650 bytes a slot, nothing
 retained across five thousand discarded calls.
 
+### `@tzslot/dom` — the widgets, no framework
+
+Being extracted from the Angular package, one component at a time, so that
+Angular (and later React or Vue) only translates its own idioms.
+
+| | |
+|---|---|
+| `createCalendar(el, options)` | month grid, month and year views, keyboard, words, icons. `update`, `goTo`, `clear`, `setIcons`, `destroy` |
+
+Still Angular-only: the time slots, the date field, both ranges.
+
 ### `@tzslot/angular` — five components
 
 | | |

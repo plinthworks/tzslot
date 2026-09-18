@@ -110,7 +110,7 @@ function parisAt(iso: string): Instant {
     }
 
     @if (tab() === 'times') {
-    <section class="block">
+    <section class="block times">
       <h2>Times on one day</h2>
       <div class="row">
         @for (p of dayPresets; track p.label) {
@@ -219,7 +219,6 @@ function parisAt(iso: string): Instant {
   styles: `
     :host {
       /* Only what this page overrides; every colour comes from @tzslot/theme. */
-      --tz-slot-columns: 6;
       display: block;
       max-width: 68rem;
       margin: 2rem auto 4rem;
@@ -236,13 +235,17 @@ function parisAt(iso: string): Instant {
     .card { color-scheme: var(--tz-color-scheme, light dark); background: var(--tz-bg);
             color: var(--tz-fg); }
     .gap { margin-top: 1rem; }
+    /* A full-width day reads better as tidy rows of six than as one long run. */
+    .times tz-time-slots { --tz-slot-columns: 6; }
     .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
     .tabs { display: flex; gap: 0.25rem; border-bottom: 1px solid var(--tz-border);
             margin-bottom: 1.5rem; }
     .tab { border: 0; background: none; font: inherit; font-size: 0.875rem;
            padding: 0.5rem 0.9rem; cursor: pointer; color: var(--tz-fg-muted);
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
-    .tab--on { color: var(--tz-accent); border-bottom-color: var(--tz-accent); }
+    /* Marked by the accent's line, written in the text colour: an accent pale
+       enough to pick is often too pale to read. */
+    .tab--on { color: var(--tz-fg); font-weight: 600; border-bottom-color: var(--tz-accent); }
     h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em;
          opacity: 0.55; margin: 0 0 0.75rem; }
     .sub { margin: 0.25rem 0 2rem; opacity: 0.7; font-size: 0.875rem; }
@@ -258,7 +261,8 @@ function parisAt(iso: string): Instant {
     .chip { border: 1px solid var(--tz-border); background: var(--tz-bg); border-radius: 999px;
             color: inherit;
             padding: 0.3rem 0.75rem; font: inherit; font-size: 0.8125rem; cursor: pointer; }
-    .chip.on { border-color: var(--tz-accent); color: var(--tz-accent); background: var(--tz-accent-soft); }
+    .chip.on { border-color: var(--tz-accent); color: var(--tz-fg);
+               background: color-mix(in srgb, var(--tz-accent) 18%, var(--tz-bg)); }
     label { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.8125rem; }
     dl { display: grid; grid-template-columns: auto 1fr; gap: 0.3rem 1rem;
          margin: 1rem 0 0; font-size: 0.8125rem; }

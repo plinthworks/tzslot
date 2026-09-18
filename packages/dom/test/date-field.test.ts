@@ -172,6 +172,20 @@ describe('the theme follows the panel out of the field', () => {
     card.remove();
   });
 
+  it("the panel writes in the field's font, not the body's", () => {
+    // The body is often not where an application sets its font; the panel
+    // lives there, and opened in Times New Roman.
+    const card = document.createElement('div');
+    card.style.fontFamily = 'Inter, sans-serif';
+    document.body.append(card);
+    card.append(host);
+
+    mount();
+    field.open();
+    expect(panel()!.style.fontFamily).toBe('Inter, sans-serif');
+    card.remove();
+  });
+
   it('so does a contrast preference', () => {
     const card = document.createElement('div');
     card.dataset['contrast'] = 'more';

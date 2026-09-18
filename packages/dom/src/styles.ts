@@ -134,13 +134,20 @@ export const FIELD_CSS = `
 export const SLOTS_CSS = `
 .tz-slots {
   display: grid;
-  grid-template-columns: repeat(var(--tz-slot-columns, 4), minmax(0, 1fr));
+  /* As many columns as fit by default, none narrower than a time with its
+     offset under it; --tz-slot-columns fixes the count instead. */
+  grid-template-columns: repeat(
+    var(--tz-slot-columns, auto-fill),
+    minmax(var(--tz-slot-min-width, 4rem), 1fr)
+  );
   gap: var(--tz-slot-gap, 0.375rem);
 }
 .tz-slots__slot {
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* A row holding a repeated hour is taller; the others centre in it. */
+  justify-content: center;
   gap: 0.125rem;
   padding: var(--tz-slot-padding, 0.5rem 0.25rem);
   border: 1px solid var(--tz-slot-border, var(--tz-border, currentColor));

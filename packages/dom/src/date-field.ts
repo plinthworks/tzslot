@@ -90,6 +90,15 @@ function carryTheme(field: HTMLElement, panel: HTMLElement): void {
     const value = here.getPropertyValue(name).trim();
     if (value && value !== page.getPropertyValue(name).trim()) panel.style.setProperty(name, value);
   }
+  // By default the widgets use the font they sit in, and the panel sits in the
+  // body — which is often not where the application set its font. Take the
+  // field's, unless --tz-font names one explicitly.
+  const font = here.getPropertyValue('--tz-font').trim();
+  if (!font || font === 'inherit') {
+    panel.style.fontFamily = here.fontFamily;
+    panel.style.fontSize = here.fontSize;
+    panel.style.lineHeight = here.lineHeight;
+  }
 }
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createCalendar, FR, type CalendarInstance, type CalendarOptions } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 /**
  * No Angular anywhere in this file. If these pass, the calendar works for a

@@ -11,7 +11,7 @@ import {
   EN,
   type DateTimeRangeValue,
 } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 const paris = (iso: string) =>
   Temporal.PlainDateTime.from(iso)

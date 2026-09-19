@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createDateField, FR, type DateFieldInstance, type DateFieldOptions } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 /** No framework: a <div>, a function call, and the panel on the body. */
 

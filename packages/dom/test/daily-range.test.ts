@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createDailyRange, FR, type DailyRangeInstance } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 let host: HTMLElement;
 let widget: DailyRangeInstance;

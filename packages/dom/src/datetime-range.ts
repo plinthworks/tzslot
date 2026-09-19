@@ -1,5 +1,5 @@
-import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '../../core/src/index.js';
-import type { Instant, PlainDate, PlainTime, Slot } from '../../core/src/index.js';
+import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '@tzslot/core';
+import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { createDateField, type DateFieldInstance } from './date-field.js';
 import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
 import { EN, type TzslotMessages } from './messages.js';

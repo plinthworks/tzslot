@@ -8,7 +8,7 @@ import {
   type DateFieldInstance,
   type DateRangeInstance,
 } from '../src/index.js';
-import { Temporal, type PlainDate } from '../../core/src/index.js';
+import { Temporal, type PlainDate } from '@tzslot/core';
 
 const today = Temporal.PlainDate.from('2026-09-18');
 let host: HTMLElement;

@@ -10,9 +10,9 @@ import {
   type DailyRangeValue,
   type DateRangeValue,
   type DateTimeRangeValue,
-} from '../packages/angular/src/index.js';
-import { Temporal, usingPolyfill } from '../packages/core/src/index.js';
-import type { Instant, PlainDate, PlainTime } from '../packages/core/src/index.js';
+} from '@tzslot/angular';
+import { Temporal, usingPolyfill } from '@tzslot/core';
+import type { Instant, PlainDate, PlainTime } from '@tzslot/core';
 
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {

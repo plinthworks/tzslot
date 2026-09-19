@@ -15,7 +15,7 @@ export type {
   CellRender,
   DayCellInfo,
   RenderCell,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 export { DateField } from './date-field.js';
 export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';

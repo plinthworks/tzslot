@@ -5,8 +5,8 @@
  * Exported rather than run on import, so a test can mount it — the same lesson
  * as the Angular playground, whose page once failed to start unseen.
  */
-import { createCalendar, createDateField, createDateTimeRange } from '../packages/dom/src/index.js';
-import { Temporal } from '../packages/core/src/index.js';
+import { createCalendar, createDateField, createDateTimeRange } from '@tzslot/dom';
+import { Temporal } from '@tzslot/core';
 import '../packages/theme/tzslot.css';
 import '../packages/theme/contrast.css';
 

@@ -14,17 +14,17 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal } from '../../core/src/index.js';
-import type { DailyWindowsSummary, PlainDate, Weekday } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { DailyWindowsSummary, PlainDate, Weekday } from '@tzslot/core';
 import {
   createDailyRange,
   type DailyRangeInstance,
   type DailyRangeSettings,
   type DailyRangeValue,
   type RenderCell,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { DailyRangeValue } from '../../dom/src/index.js';
+export type { DailyRangeValue } from '@tzslot/dom';
 
 const EMPTY: DailyRangeValue = { start: null, end: null, from: null, to: null };
 

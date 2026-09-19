@@ -14,15 +14,15 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import type { PlainDate, Slot } from '../../core/src/index.js';
+import type { PlainDate, Slot } from '@tzslot/core';
 import {
   createDateTimeRange,
   type DateTimeRangeInstance,
   type DateTimeRangeSettings,
   type DateTimeRangeValue,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { DateTimeRangeValue } from '../../dom/src/index.js';
+export type { DateTimeRangeValue } from '@tzslot/dom';
 
 const EMPTY: DateTimeRangeValue = { start: null, end: null };
 

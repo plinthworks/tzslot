@@ -3,8 +3,8 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Calendar, DateField } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
-import type { ValueShape } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { ValueShape } from '@tzslot/core';
 
 /**
  * The migration path, tested.

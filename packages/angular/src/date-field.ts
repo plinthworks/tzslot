@@ -18,8 +18,8 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
-import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
+import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
+import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
 import {
   createDateField,
   type CalendarButton,
@@ -27,9 +27,9 @@ import {
   type DateFieldSettings,
   type RenderCell,
   type FieldMode,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { FieldMode } from '../../dom/src/index.js';
+export type { FieldMode } from '@tzslot/dom';
 
 /**
  * `<tz-date-field>` — the field from @tzslot/dom, spoken in Angular.

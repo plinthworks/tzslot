@@ -17,8 +17,8 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
-import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
+import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
+import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
 import {
   createMultiDate,
   type CalendarButton,
@@ -27,7 +27,7 @@ import {
   type MultiDateSettings,
   type RenderCell,
   type YearMonth,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
 /**
  * `<tz-multi-date>` — several days, not necessarily next to each other, from

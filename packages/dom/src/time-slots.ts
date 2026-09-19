@@ -1,5 +1,5 @@
-import { getDaySlots } from '../../core/src/index.js';
-import type { DaySlotsOptions, Instant, PlainDate, PlainTime, Slot } from '../../core/src/index.js';
+import { getDaySlots } from '@tzslot/core';
+import type { DaySlotsOptions, Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
 import { SLOTS_CSS, ensureStyles } from './styles.js';
 

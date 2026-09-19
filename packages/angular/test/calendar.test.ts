@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Calendar } from '../src/index.js';
-import { Temporal, type PlainDate, type Weekday } from '../../core/src/index.js';
+import { Temporal, type PlainDate, type Weekday } from '@tzslot/core';
 
 @Component({
   standalone: true,

@@ -14,16 +14,16 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import type { Instant, PlainDate, Slot } from '../../core/src/index.js';
+import type { Instant, PlainDate, Slot } from '@tzslot/core';
 import {
   createTimeSlots,
   getSlotChoices,
   type SlotChoice,
   type TimeSlotsInstance,
   type TimeSlotsSettings,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { SlotChoice } from '../../dom/src/index.js';
+export type { SlotChoice } from '@tzslot/dom';
 
 /**
  * `<tz-time-slots>` — the slot list from @tzslot/dom, spoken in Angular.

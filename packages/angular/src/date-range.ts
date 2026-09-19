@@ -17,17 +17,17 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { PlainDate, Weekday } from '@tzslot/core';
 import {
   createDateRange,
   type DateRangeInstance,
   type DateRangeSettings,
   type DateRangeValue,
   type RenderCell,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { DateRangeValue } from '../../dom/src/index.js';
+export type { DateRangeValue } from '@tzslot/dom';
 
 const EMPTY: DateRangeValue = { start: null, end: null };
 

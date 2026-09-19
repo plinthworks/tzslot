@@ -3,7 +3,7 @@
  * summary. Plain @tzslot/dom — the page's look is Tailwind, the widgets' look
  * is the theme bridged to Tailwind's colours.
  */
-import { createCalendar, createTimeSlots } from '../packages/dom/src/index.js';
+import { createCalendar, createTimeSlots } from '@tzslot/dom';
 
 const ZONE = 'Europe/Paris';
 

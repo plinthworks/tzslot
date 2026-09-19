@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createMultiDate, type MultiDateInstance } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 const today = Temporal.PlainDate.from('2026-09-18');
 let host: HTMLElement;

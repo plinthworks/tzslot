@@ -3,7 +3,7 @@ import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { DailyRange, type DailyRangeValue } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 @Component({
   standalone: true,

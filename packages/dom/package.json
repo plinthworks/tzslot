@@ -7,5 +7,8 @@
   "main": "./src/index.ts",
   "dependencies": {
     "@tzslot/core": "0.0.0"
+  },
+  "exports": {
+    ".": "./src/index.ts"
   }
 }

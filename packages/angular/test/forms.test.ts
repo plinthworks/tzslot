@@ -3,8 +3,8 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Calendar, TimeSlotPicker } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
-import type { Instant, PlainDate, PlainTime } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { Instant, PlainDate, PlainTime } from '@tzslot/core';
 
 /**
  * The components inside a reactive form.

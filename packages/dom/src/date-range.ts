@@ -1,5 +1,5 @@
-import { Temporal, getMonthGrid, getWeekdayOrder } from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+import { Temporal, getMonthGrid, getWeekdayOrder } from '@tzslot/core';
+import type { PlainDate, Weekday } from '@tzslot/core';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { RANGE_CSS, ensureStyles } from './styles.js';

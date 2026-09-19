@@ -3,8 +3,8 @@ import { Component, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Calendar, DateField } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { PlainDate } from '@tzslot/core';
 
 /**
  * The four ways to use these, because not every application has reactive

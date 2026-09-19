@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Component, signal } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { TimeSlotPicker } from '../src/index.js';
-import { Temporal, type Instant } from '../../core/src/index.js';
+import { Temporal, type Instant } from '@tzslot/core';
 
 /**
  * These render the real template.

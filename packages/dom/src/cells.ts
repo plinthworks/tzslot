@@ -1,4 +1,4 @@
-import type { PlainDate } from '../../core/src/index.js';
+import type { PlainDate } from '@tzslot/core';
 
 /** What a grid knows about a day, handed to renderCell. */
 export interface DayCellInfo {

@@ -3,7 +3,7 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed } from '@angular/core/testing';
 import { MultiDate } from '../src/index.js';
-import { Temporal, type PlainDate } from '../../core/src/index.js';
+import { Temporal, type PlainDate } from '@tzslot/core';
 
 @Component({
   standalone: true,

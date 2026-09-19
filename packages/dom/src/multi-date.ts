@@ -1,5 +1,5 @@
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { PlainDate } from '@tzslot/core';
 import {
   mountGrid,
   type CalendarOptions,

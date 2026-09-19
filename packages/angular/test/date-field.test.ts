@@ -3,8 +3,8 @@ import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { DateField, type FieldMode } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { PlainDate } from '@tzslot/core';
 
 @Component({
   standalone: true,

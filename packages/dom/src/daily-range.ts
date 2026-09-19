@@ -1,5 +1,5 @@
-import { Temporal, getDailyWindows, formatDuration } from '../../core/src/index.js';
-import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '../../core/src/index.js';
+import { Temporal, getDailyWindows, formatDuration } from '@tzslot/core';
+import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';

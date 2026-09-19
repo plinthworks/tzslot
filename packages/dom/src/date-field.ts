@@ -1,5 +1,5 @@
-import { Temporal } from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
+import type { PlainDate, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';

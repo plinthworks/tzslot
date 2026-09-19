@@ -17,8 +17,8 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
-import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
+import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
+import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
 import {
   createCalendar,
   type CalendarButton,
@@ -27,9 +27,9 @@ import {
   type RenderCell,
   type CalendarView,
   type YearMonth,
-} from '../../dom/src/index.js';
+} from '@tzslot/dom';
 
-export type { CalendarView } from '../../dom/src/index.js';
+export type { CalendarView } from '@tzslot/dom';
 
 /**
  * `<tz-calendar>` — the calendar from @tzslot/dom, spoken in Angular.

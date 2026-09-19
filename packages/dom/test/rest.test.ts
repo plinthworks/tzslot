@@ -7,7 +7,7 @@ import {
   type DateRangeInstance,
   type DateTimeRangeInstance,
 } from '../src/index.js';
-import { Temporal } from '../../core/src/index.js';
+import { Temporal } from '@tzslot/core';
 
 /** The other three widgets, driven the way a page without a framework would. */
 

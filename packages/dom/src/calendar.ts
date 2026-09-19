@@ -4,8 +4,8 @@ import {
   getWeekdayOrder,
   getDecadeYears,
   isOutsideDecade,
-} from '../../core/src/index.js';
-import type { PlainDate, Weekday } from '../../core/src/index.js';
+} from '@tzslot/core';
+import type { PlainDate, Weekday } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
 import { CALENDAR_CSS, ensureStyles } from './styles.js';
 import { paintCell, type RenderCell } from './cells.js';

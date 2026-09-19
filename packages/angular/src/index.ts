@@ -20,6 +20,7 @@ export { DateField } from './date-field.js';
 export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';
 export { DailyRange } from './daily-range.js';
+export { MultiDate } from './multi-date.js';
 export type { DailyRangeValue } from './daily-range.js';
 export type { DateTimeRangeValue } from './datetime-range.js';
 export type { DateRangeValue } from './date-range.js';

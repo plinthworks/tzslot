@@ -45,6 +45,8 @@ export type {
   DateTimeRangeSettings,
   DateTimeRangeValue,
 } from './datetime-range.js';
+export { createMultiDate } from './multi-date.js';
+export type { MultiDateInstance, MultiDateOptions, MultiDateSettings } from './multi-date.js';
 export { createDailyRange } from './daily-range.js';
 export type {
   DailyRangeInstance,

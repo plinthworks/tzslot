@@ -5,6 +5,7 @@ import {
   DateRange,
   DateTimeRange,
   DailyRange,
+  MultiDate,
   TimeSlotPicker,
   type DailyRangeValue,
   type DateRangeValue,
@@ -41,7 +42,7 @@ function parisAt(iso: string): Instant {
 @Component({
   selector: 'demo-root',
   standalone: true,
-  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange],
+  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange, MultiDate],
   template: `
     <header>
       <div class="titlebar">
@@ -239,6 +240,14 @@ function parisAt(iso: string): Instant {
       </section>
 
       <section class="block">
+        <h2>Several days</h2>
+        <p class="note">The sessions of a course: up to five, weekends closed.</p>
+        <tz-multi-date [(value)]="sessions" [locale]="'en-GB'" [maxDates]="5"
+                       [isDateDisabled]="noWeekends" [buttons]="['today', 'clear']" />
+        <p class="note">{{ sessionsText() }}</p>
+      </section>
+
+      <section class="block">
         <h2>Range</h2>
         <p class="note">Weekends are closed — a range may not step over one.</p>
         <tz-date-range [(value)]="stay" [locale]="'en-GB'" [isDateDisabled]="noWeekends" />
@@ -421,6 +430,12 @@ export class Demo {
   protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
 
   protected readonly pricedDate = signal<PlainDate | null>(null);
+
+  protected readonly sessions = signal<readonly PlainDate[]>([]);
+  protected sessionsText(): string {
+    const days = this.sessions();
+    return days.length ? `${days.length} of 5: ${days.map(String).join(', ')}` : 'nothing chosen';
+  }
 
   /** A small hotel: weekends cost more, and the 23rd of every month is sold out. */
   protected readonly prices = ({ date, outside }: { date: PlainDate; outside: boolean }) =>

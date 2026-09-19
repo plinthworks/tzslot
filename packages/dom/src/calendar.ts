@@ -97,6 +97,50 @@ export interface CalendarInstance {
 const ORDER: readonly CalendarView[] = ['days', 'months', 'years'];
 
 /**
+ * The grid's settings, whatever its value is. The single calendar holds one
+ * day; other widgets built on the same grid hold other shapes.
+ */
+export type GridSettings<V> = Omit<CalendarSettings, 'value' | 'onChange'> & {
+  value: V;
+  onChange: ((value: V) => void) | undefined;
+  /** Only meaningful where several days can be held. */
+  maxDates?: number | undefined;
+};
+
+export type GridOptions<V> = Partial<GridSettings<V>> &
+  Pick<CalendarOptions, 'icons' | 'injectStyles'>;
+
+export interface GridInstance<V> extends Omit<CalendarInstance, 'value' | 'update'> {
+  readonly value: V;
+  update(settings: Partial<GridSettings<V>>): void;
+}
+
+/**
+ * What choosing means. The grid draws, navigates and listens; this decides
+ * what a click on a day does to the value, and which days count as chosen.
+ */
+export interface SelectionMode<V> {
+  readonly empty: V;
+  readonly multiple: boolean;
+  dates(value: V): readonly PlainDate[];
+  /** A day clicked, or Entered, or reached at minView. */
+  pick(value: V, date: PlainDate, settings: GridSettings<V>): V;
+  /** The Today button. */
+  today(value: V, date: PlainDate, settings: GridSettings<V>): V;
+  /** No room for another day: the unchosen ones stop taking clicks. */
+  full(value: V, settings: GridSettings<V>): boolean;
+}
+
+const SINGLE: SelectionMode<PlainDate | null> = {
+  empty: null,
+  multiple: false,
+  dates: (value) => (value ? [value] : []),
+  pick: (_, date) => date,
+  today: (_, date) => date,
+  full: () => false,
+};
+
+/**
  * A month grid: pick a day. Plain DOM, so it works in any framework or none.
  *
  *   const cal = createCalendar(element, { onChange: (day) => … });
@@ -112,11 +156,20 @@ const ORDER: readonly CalendarView[] = ['days', 'months', 'years'];
  * click, so the element under the keyboard focus is never thrown away.
  */
 export function createCalendar(host: HTMLElement, options: CalendarOptions = {}): CalendarInstance {
+  return mountGrid(host, options, SINGLE);
+}
+
+/** The calendar grid, holding whatever the selection mode says it holds. */
+export function mountGrid<V>(
+  host: HTMLElement,
+  options: GridOptions<V>,
+  mode: SelectionMode<V>,
+): GridInstance<V> {
   const doc = host.ownerDocument;
   const { icons, injectStyles = true, ...initial } = options;
 
-  const s: CalendarSettings = {
-    value: null,
+  const s: GridSettings<V> = {
+    value: mode.empty,
     view: 'days',
     minView: 'days',
     firstDayOfWeek: 1,
@@ -174,6 +227,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
 
   const grid = el('div', 'tz-cal__grid');
   grid.setAttribute('role', 'grid');
+  if (mode.multiple) grid.setAttribute('aria-multiselectable', 'true');
 
   const weekdays = el('div', 'tz-cal__weekdays');
   weekdays.setAttribute('role', 'row');
@@ -215,7 +269,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
 
   const shown = (): YearMonth => {
     if (cursor) return cursor;
-    const anchor = s.value ?? s.today;
+    const anchor = mode.dates(s.value)[0] ?? s.today;
     return { year: anchor.year, month: anchor.month };
   };
 
@@ -251,7 +305,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
    */
   const tabbableIso = (dates: PlainDate[], { year, month }: YearMonth): string | null => {
     const inMonth = dates.filter((d) => d.year === year && d.month === month && !blocked(d));
-    const candidates = [focusedIso, s.value?.toString(), s.today.toString()];
+    const candidates = [focusedIso, ...mode.dates(s.value).map(String), s.today.toString()];
     for (const iso of candidates) {
       if (iso && dates.some((d) => d.toString() === iso)) return iso;
     }
@@ -301,7 +355,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     clearButton.textContent = s.messages.clear;
     todayButton.disabled = off;
     // Nothing to clear is not an error, but a button that does nothing is noise.
-    clearButton.disabled = off || s.value === null;
+    clearButton.disabled = off || mode.dates(s.value).length === 0;
     footer.replaceChildren(
       ...s.buttons.map((name) => (name === 'today' ? todayButton : clearButton)),
     );
@@ -324,10 +378,12 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     // renderCell runs first, so what it rules out is known before choosing
     // which cell Tab lands on.
     renderedOut = new Set();
+    const chosen = new Set(mode.dates(s.value).map(String));
+    const full = mode.full(s.value, s);
     const renders = dates.map((date) => {
       const outside = date.month !== at.month || date.year !== at.year;
       const today = date.equals(s.today);
-      const selected = s.value !== null && date.equals(s.value);
+      const selected = chosen.has(date.toString());
       const disabled = ruledOut(date);
       const render = s.renderCell?.({ date, outside, today, selected, disabled });
       if (render?.disabled) renderedOut.add(date.toString());
@@ -350,7 +406,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       if (today) cell.setAttribute('aria-current', 'date');
       else cell.removeAttribute('aria-current');
       cell.tabIndex = iso === tabbable ? 0 : -1;
-      cell.disabled = off || blocked(date);
+      cell.disabled = off || blocked(date) || (full && !selected);
     });
     // Cells grow to fit a note only when there is one to fit.
     flag(host, 'tz-cal--notes', notes);
@@ -366,9 +422,9 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       const current = months
         ? s.today.year === year && s.today.month === value
         : s.today.year === value;
-      const selected =
-        s.value !== null &&
-        (months ? s.value.year === year && s.value.month === value : s.value.year === value);
+      const selected = mode
+        .dates(s.value)
+        .some((d) => (months ? d.year === year && d.month === value : d.year === value));
 
       cell.textContent = months ? format.format(new Date(Date.UTC(year, value - 1, 1))) : String(value);
       cell.dataset['value'] = String(value);
@@ -382,10 +438,14 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
 
   // ── what the user does ──────────────────────────────────────
 
-  function choose(date: PlainDate | null): void {
-    s.value = date;
+  function commit(next: V): void {
+    s.value = next;
     render();
-    s.onChange?.(date);
+    s.onChange?.(next);
+  }
+
+  function choose(date: PlainDate): void {
+    commit(mode.pick(s.value, date, s));
   }
 
   function setView(view: CalendarView): void {
@@ -458,7 +518,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       return;
     }
 
-    const from = focusedIso ? Temporal.PlainDate.from(focusedIso) : (s.value ?? s.today);
+    const from = focusedIso ? Temporal.PlainDate.from(focusedIso) : (mode.dates(s.value)[0] ?? s.today);
     const intoWeek = (from.dayOfWeek - s.firstDayOfWeek + 7) % 7;
     const moves: Record<string, () => PlainDate> = {
       ArrowLeft: () => from.subtract({ days: 1 }),
@@ -499,7 +559,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       s.view = s.minView;
       s.onViewChange?.(s.view);
     }
-    if (allowed) choose(target);
+    if (allowed) commit(mode.today(s.value, target, s));
     else {
       cursor = { year: s.today.year, month: s.today.month };
       render();
@@ -510,7 +570,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
   const on = { signal: listening.signal };
 
   todayButton.addEventListener('click', goToday, on);
-  clearButton.addEventListener('click', () => !s.disabled && choose(null), on);
+  clearButton.addEventListener('click', () => !s.disabled && commit(mode.empty), on);
   prev.addEventListener('click', () => shift(-1), on);
   next.addEventListener('click', () => shift(1), on);
   title.addEventListener('click', zoomOut, on);
@@ -560,7 +620,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       render();
     },
     clear() {
-      choose(null);
+      commit(mode.empty);
     },
     destroy() {
       listening.abort();

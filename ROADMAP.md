@@ -32,6 +32,7 @@ Usable from a `<script>` tag; each returns an instance with `update`,
 | `createTimeSlots` | times on one day; `getSlotChoices` gives the rows without drawing them |
 | `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day; `renderCell` too |
 | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
+| `createMultiDate` | several days, not necessarily adjacent: the calendar's grid with a click that toggles, always in date order, `maxDates` |
 | `createDailyRange` | a range of days with the same hours on each, overnight allowed; the real total and the days that differ, with the reason. `getDailyWindows` in the core does the arithmetic |
 
 Layout CSS is injected once, first in the head, as plain class selectors: a
@@ -64,7 +65,6 @@ components still work, plain.
 
 1. **Publishing** — compiled JavaScript with generated `.d.ts`, a real
    `package.json` per package, the repository.
-2. **Multiple dates** — non-contiguous selection.
 
 **Deliberately not planned.**
 

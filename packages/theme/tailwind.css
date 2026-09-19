@@ -1,0 +1,55 @@
+/**
+ * @tzslot/theme/tailwind.css — the widgets in your Tailwind v4 theme.
+ *
+ * In the CSS file that imports Tailwind, after it:
+ *
+ *   @import "tailwindcss";
+ *   @import "@tzslot/theme";
+ *   @import "@tzslot/theme/tailwind.css";
+ *
+ * It has to go through Tailwind, not beside it: Tailwind v4 only emits the
+ * theme variables something references, and this file is what references
+ * them. Imported on its own, it would point at variables that do not exist.
+ *
+ * ── What it maps ────────────────────────────────────────────────────────────
+ *
+ *   surfaces and text  → the zinc scale
+ *   accent             → your --color-primary-600 / -400 if your @theme has
+ *                        them, Tailwind's blue otherwise
+ *   danger / warning   → red / amber
+ *   font, radius       → --font-sans, --radius-md
+ *
+ * Another grey (slate, neutral, stone…) is a matter of overriding the five
+ * surface lines below with your own scale.
+ *
+ * ── Dark mode ───────────────────────────────────────────────────────────────
+ *
+ * Tailwind's default dark mode follows the system, and so do the widgets:
+ * nothing to do. With the class strategy (a .dark class toggled by your
+ * app), the .dark rule below reaches them; add
+ *
+ *   :root { --tz-color-scheme: light; }
+ *
+ * so that no .dark means light even when the system is dark.
+ */
+
+:root {
+  --tz-bg: light-dark(var(--color-white), var(--color-zinc-900));
+  --tz-bg-raised: light-dark(var(--color-zinc-100), var(--color-zinc-800));
+  --tz-fg: light-dark(var(--color-zinc-900), var(--color-zinc-100));
+  --tz-fg-muted: light-dark(var(--color-zinc-600), var(--color-zinc-400));
+  --tz-border: light-dark(var(--color-zinc-300), var(--color-zinc-700));
+  --tz-accent: light-dark(
+    var(--color-primary-600, var(--color-blue-600)),
+    var(--color-primary-400, var(--color-blue-400))
+  );
+  --tz-accent-fg: light-dark(var(--color-white), var(--color-zinc-950));
+  --tz-danger: light-dark(var(--color-red-700), var(--color-red-400));
+  --tz-warning: light-dark(var(--color-amber-700), var(--color-amber-400));
+  --tz-font: var(--font-sans);
+  --tz-radius: var(--radius-md);
+}
+
+.dark {
+  --tz-color-scheme: dark;
+}

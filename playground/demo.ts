@@ -44,7 +44,10 @@ function parisAt(iso: string): Instant {
     <header>
       <div class="titlebar">
         <h1>tzslot</h1>
-        <a class="chip" href="/playground/vanilla.html">Without Angular →</a>
+        <span class="row links">
+          <a class="chip" href="/playground/tailwind.html">With Tailwind →</a>
+          <a class="chip" href="/playground/vanilla.html">Without Angular →</a>
+        </span>
       </div>
       <div class="row controls">
         <div class="seg" role="group" aria-label="Theme">
@@ -228,6 +231,7 @@ function parisAt(iso: string): Instant {
     }
     h1 { font-size: 1.5rem; margin: 0; }
     a.chip { text-decoration: none; }
+    .links { margin: 0; }
     .controls { margin: 0.75rem 0 0; }
     .seg { display: inline-flex; gap: 0.25rem; }
     input[type='color'] { width: 1.5rem; height: 1.1rem; padding: 0; border: 0; background: none; }

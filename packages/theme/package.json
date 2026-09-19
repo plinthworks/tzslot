@@ -12,12 +12,14 @@
     "./tzslot": {
       "sass": "./tzslot.scss",
       "default": "./tzslot.css"
-    }
+    },
+    "./tailwind.css": "./tailwind.css"
   },
   "files": [
     "tzslot.css",
     "tzslot.scss",
-    "contrast.css"
+    "contrast.css",
+    "tailwind.css"
   ],
   "sideEffects": [
     "*.css"

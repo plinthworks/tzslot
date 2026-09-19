@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tzslot — with Tailwind</title>
+    <link rel="stylesheet" href="/playground/tailwind.css" />
+  </head>
+  <body class="min-h-screen bg-zinc-50 text-zinc-900 antialiased dark:bg-zinc-950 dark:text-zinc-100">
+    <main class="mx-auto max-w-3xl px-4 py-10">
+      <header class="mb-8 flex items-center justify-between gap-4">
+        <div>
+          <h1 class="text-2xl font-semibold tracking-tight">Book a consultation</h1>
+          <p class="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+            Tailwind v4 page, <code class="rounded bg-zinc-200/60 px-1 dark:bg-zinc-800">@tzslot/theme/tailwind.css</code>,
+            brand colour from <code class="rounded bg-zinc-200/60 px-1 dark:bg-zinc-800">@theme</code>.
+          </p>
+        </div>
+        <button id="dark-toggle" type="button"
+                class="rounded-full border border-zinc-300 px-4 py-1.5 text-sm font-medium hover:border-primary-600 dark:border-zinc-700 dark:hover:border-primary-400">
+          Dark
+        </button>
+      </header>
+
+      <section class="rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+        <div class="grid gap-8 md:grid-cols-[auto_1fr]">
+          <div>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">1 · Day</h2>
+            <div id="day"></div>
+          </div>
+          <div>
+            <h2 class="mb-3 text-xs font-semibold uppercase tracking-wider text-zinc-500">2 · Time, Paris</h2>
+            <div id="slots"></div>
+            <p id="slots-hint" class="text-sm text-zinc-500">Choose a day first.</p>
+          </div>
+        </div>
+
+        <div class="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <p id="summary" class="text-sm text-zinc-600 dark:text-zinc-300">Nothing chosen yet.</p>
+          <button id="confirm" type="button" disabled
+                  class="rounded-lg bg-primary-600 px-5 py-2 text-sm font-semibold text-white shadow-sm hover:bg-primary-700 disabled:cursor-not-allowed disabled:opacity-40">
+            Confirm
+          </button>
+        </div>
+      </section>
+
+      <p class="mt-6 text-sm">
+        <a class="text-primary-600 underline dark:text-primary-400" href="/playground/index.html">← Angular playground</a>
+      </p>
+    </main>
+
+    <script type="module">
+      import { mountTailwind } from '/playground/tailwind.ts';
+      mountTailwind(document);
+    </script>
+  </body>
+</html>

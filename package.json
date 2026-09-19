@@ -18,9 +18,11 @@
     "@angular/compiler-cli": "^21.2.23",
     "@angular/core": "^21.2.23",
     "@angular/platform-browser": "^21.2.23",
+    "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.20.4",
     "jsdom": "^29.1.1",
     "sass": "^1.104.1",
+    "tailwindcss": "^4.3.3",
     "typescript": "^5.9.0",
     "vitest": "^4.0.8"
   },

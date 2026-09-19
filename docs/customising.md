@@ -149,6 +149,32 @@ Or scoped to a selector from your own variables:
 Everything still ends as `--tz-*` custom properties, so runtime changes —
 `data-theme` on a card, an accent picked by the user — keep working.
 
+## With Tailwind v4
+
+```css
+/* styles.css — the file that imports Tailwind */
+@import "tailwindcss";
+@import "@tzslot/theme";
+@import "@tzslot/theme/tailwind.css";
+
+@theme {
+  --color-primary-400: #fb7185;
+  --color-primary-600: #e11d48;
+}
+```
+
+Surfaces and text take the zinc scale, the accent takes `--color-primary-600`
+(light) and `-400` (dark), or Tailwind's blue without them, and the font and
+radius follow `--font-sans` and `--radius-md`.
+
+Import it in that file, after `tailwindcss`, not beside it: Tailwind v4 only
+emits the theme variables something references, and the bridge is what
+references them.
+
+Dark mode by class (`.dark` on `<html>`) is covered; add
+`:root { --tz-color-scheme: light; }` so that no `.dark` means light even on
+a dark system. The playground's `tailwind.html` is a complete example.
+
 ## More contrast
 
 ```js

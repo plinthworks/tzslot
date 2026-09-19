@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import angular from '@analogjs/vite-plugin-angular';
+import tailwindcss from '@tailwindcss/vite';
 
 /**
  * The playground. Not shipped; it exists so the components can be looked at.
@@ -10,7 +11,9 @@ import angular from '@analogjs/vite-plugin-angular';
  * which is not JavaScript, and the browser blames a brace several modules away.
  */
 export default defineConfig({
-  plugins: [angular({ tsconfig: 'tsconfig.spec.json' })],
+  // Tailwind only touches the stylesheets that import it: the Tailwind
+  // example's. The other pages never see its reset.
+  plugins: [angular({ tsconfig: 'tsconfig.spec.json' }), tailwindcss()],
   server: { port: 4500 },
   optimizeDeps: { include: ['temporal-polyfill'] },
 });

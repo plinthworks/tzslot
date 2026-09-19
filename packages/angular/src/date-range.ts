@@ -24,6 +24,7 @@ import {
   type DateRangeInstance,
   type DateRangeSettings,
   type DateRangeValue,
+  type RenderCell,
 } from '../../dom/src/index.js';
 
 export type { DateRangeValue } from '../../dom/src/index.js';
@@ -57,6 +58,9 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
   /** Refuse a range that steps over a day isDateDisabled rules out. On by default. */
   readonly blockAcrossDisabled = input(true);
 
+  /** Adds to each day: a price per night, places left, a class of your own. */
+  readonly renderCell = input<RenderCell | undefined>(undefined);
+
   /** Overrides the bundle for this one instance. */
   readonly rangeSpansBlockedMessage = input<string | undefined>(undefined);
 
@@ -77,6 +81,7 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
     today: this.today(),
     blockAcrossDisabled: this.blockAcrossDisabled(),
     rangeSpansBlockedMessage: this.rangeSpansBlockedMessage(),
+    renderCell: this.renderCell(),
     messages: this.messages,
   }));
 

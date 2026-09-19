@@ -10,6 +10,12 @@ export { TZSLOT_MESSAGES, provideTzslotMessages, EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
 export { Calendar } from './calendar.js';
 export type { CalendarView } from './calendar.js';
+export type {
+  CalendarButton,
+  CellRender,
+  DayCellInfo,
+  RenderCell,
+} from '../../dom/src/index.js';
 export { DateField } from './date-field.js';
 export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';

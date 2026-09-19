@@ -3,6 +3,7 @@ import type { PlainDate, Weekday } from '../../core/src/index.js';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { RANGE_CSS, ensureStyles } from './styles.js';
+import { paintCell, type RenderCell } from './cells.js';
 
 /** Either end may be unset while a range is being chosen. */
 export interface DateRangeValue {
@@ -31,6 +32,8 @@ export interface DateRangeSettings {
   /** Overrides messages.rangeCrossesUnavailable for this one instance. */
   rangeSpansBlockedMessage: string | undefined;
   messages: TzslotMessages;
+  /** Adds to each day: a price per night, places left, a class of your own. */
+  renderCell: RenderCell | undefined;
   onChange: ((value: DateRangeValue) => void) | undefined;
 }
 
@@ -75,9 +78,13 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     blockAcrossDisabled: true,
     rangeSpansBlockedMessage: undefined,
     messages: EN,
+    renderCell: undefined,
     onChange: undefined,
     ...initial,
   };
+
+  /** Days renderCell ruled out on the last paint. */
+  let renderedOut = new Set<string>();
 
   let cursor: YearMonth | null = null;
   /** The day under the pointer, previewing where the range would end. */
@@ -148,6 +155,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     (s.min !== null && before(date, s.min)) ||
     (s.max !== null && before(s.max, date)) ||
     (s.isDateDisabled?.(date) ?? false);
+  const blocked = (date: PlainDate) => ruledOut(date) || renderedOut.has(date.toString());
 
   function render(): void {
     if (stylesPending && host.isConnected) {
@@ -179,6 +187,8 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     const finish = start && !end ? hovered : end;
     const [from, to] = start && finish && before(finish, start) ? [finish, start] : [start, finish];
 
+    renderedOut = new Set();
+    let notes = false;
     getMonthGrid(at.year, at.month, s.firstDayOfWeek)
       .flat()
       .forEach((date, i) => {
@@ -186,16 +196,26 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         const isStart = from !== null && date.equals(from);
         const isEnd = to !== null && date.equals(to);
         const within = from !== null && to !== null && !before(date, from) && !before(to, date);
-        cell.textContent = String(date.day);
+        const outside = date.month !== at.month || date.year !== at.year;
+        const render = s.renderCell?.({
+          date,
+          outside,
+          today: date.equals(s.today),
+          selected: isStart || isEnd,
+          disabled: ruledOut(date),
+        });
+        if (render?.disabled) renderedOut.add(date.toString());
+        notes = paintCell(cell, 'tz-range', String(date.day), render) || notes;
         cell.dataset['date'] = date.toString();
-        cell.classList.toggle('tz-range__day--outside', date.month !== at.month || date.year !== at.year);
+        cell.classList.toggle('tz-range__day--outside', outside);
         cell.classList.toggle('tz-range__day--today', date.equals(s.today));
         cell.classList.toggle('tz-range__day--start', isStart);
         cell.classList.toggle('tz-range__day--end', isEnd);
         cell.classList.toggle('tz-range__day--within', within);
         cell.setAttribute('aria-selected', String(isStart || isEnd));
-        cell.disabled = off || ruledOut(date);
+        cell.disabled = off || blocked(date);
       });
+    host.classList.toggle('tz-range--notes', notes);
 
     if (error) {
       alert.textContent = error;
@@ -205,12 +225,15 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     }
   }
 
-  /** Walks the span looking for a day the caller ruled out. */
+  /**
+   * Walks the span looking for a day the caller ruled out — through
+   * isDateDisabled or renderCell. A day renderCell ruled out in a month not
+   * on screen is not known here; isDateDisabled is the one that sees them all.
+   */
   function crossesBlocked(from: PlainDate, to: PlainDate): boolean {
-    const blocked = s.isDateDisabled;
-    if (!blocked) return false;
+    if (!s.isDateDisabled && renderedOut.size === 0) return false;
     for (let day = from; !before(to, day); day = day.add({ days: 1 })) {
-      if (blocked(day)) return true;
+      if (s.isDateDisabled?.(day) || renderedOut.has(day.toString())) return true;
     }
     return false;
   }
@@ -222,7 +245,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   }
 
   function choose(date: PlainDate): void {
-    if (s.disabled || ruledOut(date)) return;
+    if (s.disabled || blocked(date)) return;
     const { start, end } = s.value;
     error = null;
 
@@ -315,6 +338,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
       header.remove();
       grid.remove();
       alert.remove();
+      host.classList.remove('tz-range--notes');
       if (addedHostClass) host.classList.remove('tz-range');
     },
   };

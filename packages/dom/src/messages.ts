@@ -21,6 +21,10 @@ export interface TzslotMessages {
   readonly chooseMonth: string;
   readonly chooseYear: string;
 
+  /** The buttons under the grid, when asked for. */
+  readonly today: string;
+  readonly clear: string;
+
   readonly availableTimes: string;
   /** Marks a time the clocks skipped. Short: it sits under a slot. */
   readonly skipped: string;
@@ -56,6 +60,8 @@ export const EN: TzslotMessages = {
   nextMonth: 'Next month',
   chooseMonth: 'Choose a month',
   chooseYear: 'Choose a year',
+  today: 'Today',
+  clear: 'Clear',
   availableTimes: 'Available times',
   skipped: 'skipped',
   noTimes: 'No times available.',
@@ -77,6 +83,8 @@ export const FR: TzslotMessages = {
   nextMonth: 'Mois suivant',
   chooseMonth: 'Choisir un mois',
   chooseYear: 'Choisir une année',
+  today: "Aujourd'hui",
+  clear: 'Effacer',
   availableTimes: 'Horaires disponibles',
   skipped: 'inexistant',
   noTimes: 'Aucun horaire disponible.',

@@ -159,6 +159,7 @@ $emit: true !default;
   .tz-range__day:hover:not(:disabled),
   .tz-cal__nav:hover:not(:disabled),
   .tz-cal__title:hover:not(:disabled),
+  .tz-cal__action:hover:not(:disabled),
   .tz-range__nav:hover:not(:disabled) {
     background: var(--tz-bg-raised);
   }
@@ -183,6 +184,7 @@ $emit: true !default;
   .tz-cal__title:focus-visible,
   .tz-range__day:focus-visible,
   .tz-cal__nav:focus-visible,
+  .tz-cal__action:focus-visible,
   .tz-range__nav:focus-visible,
   .tz-slots__slot:focus-visible,
   .tz-field__trigger:focus-visible {

@@ -27,10 +27,10 @@ Usable from a `<script>` tag; each returns an instance with `update`,
 
 | | |
 |---|---|
-| `createCalendar` | month grid, month and year views, keyboard, `goTo`, `setIcons` |
+| `createCalendar` | month grid, month and year views, keyboard, `goTo`, `setIcons`; `renderCell` for a note, a class or a veto per day; optional Today / Clear buttons |
 | `createDateField` | a field whose panel opens anchored or centred, on the body, carrying the field's `data-theme`; `open` / `close`, `onOpen` / `onClose` |
 | `createTimeSlots` | times on one day; `getSlotChoices` gives the rows without drawing them |
-| `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day |
+| `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day; `renderCell` too |
 | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
 
 Layout CSS is injected once, first in the head, as plain class selectors: a
@@ -61,13 +61,11 @@ components still work, plain.
 
 **Next, in this order.**
 
-1. **`onRenderCell`** — an extension point to paint each cell: availability,
-   prices, remaining places. Everyone eventually needs it and there is no
-   substitute.
-2. **Event outputs** — open, close, view change. Only `valueChange` exists, so a
-   form cannot react to the panel opening.
-3. **Today / clear buttons** — small, expected, absent.
-4. **Multiple dates** — non-contiguous selection.
+1. **Publishing** — compiled JavaScript with generated `.d.ts`, a real
+   `package.json` per package, the repository.
+2. **Multiple dates** — non-contiguous selection.
+3. **The range and the interval together** — "3rd to 7th, 09:00 to 17:00
+   each day" has no widget yet.
 
 **Deliberately not planned.**
 

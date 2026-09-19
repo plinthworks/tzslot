@@ -7,7 +7,9 @@
  * behaviour fixed here is fixed everywhere.
  */
 export { createCalendar } from './calendar.js';
+export type { DayCellInfo, CellRender, RenderCell } from './cells.js';
 export type {
+  CalendarButton,
   CalendarIcons,
   CalendarInstance,
   CalendarOptions,

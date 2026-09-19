@@ -104,7 +104,7 @@ describe('the date pickers', () => {
   beforeEach(() => tab('Dates'));
 
   it('the calendar renders a full six weeks', () => {
-    expect(el().querySelectorAll('tz-calendar button.tz-cal__day')).toHaveLength(42);
+    expect(el().querySelector('tz-calendar')!.querySelectorAll('button.tz-cal__day')).toHaveLength(42);
   });
 
   it('the range refuses to step over a closed weekend', () => {

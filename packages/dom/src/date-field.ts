@@ -1,6 +1,7 @@
 import { Temporal } from '../../core/src/index.js';
 import type { PlainDate, Weekday } from '../../core/src/index.js';
-import { createCalendar, type CalendarInstance } from './calendar.js';
+import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
+import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { CALENDAR_CSS, FIELD_CSS, ensureStyles } from './styles.js';
 
@@ -24,6 +25,10 @@ export interface DateFieldSettings {
   displayWith: ((date: PlainDate) => string) | undefined;
   today: PlainDate;
   messages: TzslotMessages;
+  /** Passed to the calendar in the panel. */
+  renderCell: RenderCell | undefined;
+  /** Under the panel's grid: 'today', 'clear'. Choosing either closes it. */
+  buttons: readonly CalendarButton[];
   onChange: ((value: PlainDate | null) => void) | undefined;
   onOpen: (() => void) | undefined;
   onClose: (() => void) | undefined;
@@ -136,6 +141,8 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     displayWith: undefined,
     today: Temporal.Now.plainDateISO(),
     messages: EN,
+    renderCell: undefined,
+    buttons: [],
     onChange: undefined,
     onOpen: undefined,
     onClose: undefined,
@@ -265,6 +272,8 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
       isDateDisabled: s.isDateDisabled,
       today: s.today,
       messages: s.messages,
+      renderCell: s.renderCell,
+      buttons: s.buttons,
       injectStyles: false,
       onChange: pick,
     });
@@ -357,6 +366,8 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
         isDateDisabled: s.isDateDisabled,
         today: s.today,
         messages: s.messages,
+        renderCell: s.renderCell,
+        buttons: s.buttons,
       });
       render();
     },

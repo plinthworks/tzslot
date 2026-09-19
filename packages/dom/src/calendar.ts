@@ -8,9 +8,13 @@ import {
 import type { PlainDate, Weekday } from '../../core/src/index.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { CALENDAR_CSS, ensureStyles } from './styles.js';
+import { paintCell, type RenderCell } from './cells.js';
 
 /** Days, months or years — what the grid is currently choosing between. */
 export type CalendarView = 'days' | 'months' | 'years';
+
+/** The buttons that can sit under the grid. */
+export type CalendarButton = 'today' | 'clear';
 
 /** Where a month is on screen, independently of what is selected. */
 export interface YearMonth {
@@ -45,6 +49,13 @@ export interface CalendarSettings {
   /** Today, settable so a test does not depend on the day it runs. */
   today: PlainDate;
   messages: TzslotMessages;
+  /**
+   * Adds to each day: a price, places left, a class of your own, or a reason
+   * to rule it out. See RenderCell.
+   */
+  renderCell: RenderCell | undefined;
+  /** Buttons under the grid, in the order given. None by default. */
+  buttons: readonly CalendarButton[];
   /** A day was chosen, or the selection cleared — by the user or by `clear()`. */
   onChange: ((value: PlainDate | null) => void) | undefined;
   onViewChange: ((view: CalendarView) => void) | undefined;
@@ -116,10 +127,15 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     isDateDisabled: undefined,
     today: Temporal.Now.plainDateISO(),
     messages: EN,
+    renderCell: undefined,
+    buttons: [],
     onChange: undefined,
     onViewChange: undefined,
     ...initial,
   };
+
+  /** Days renderCell ruled out on the last paint, so keyboard selection respects them too. */
+  let renderedOut = new Set<string>();
 
   /** The month on screen when the user has moved it; otherwise it follows the value. */
   let cursor: YearMonth | null = null;
@@ -189,6 +205,10 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
   });
   coarse.append(...coarseCells);
 
+  const footer = el('div', 'tz-cal__footer');
+  const todayButton = button('tz-cal__action tz-cal__action--today');
+  const clearButton = button('tz-cal__action tz-cal__action--clear');
+
   host.append(header, grid);
 
   // ── what is on screen ───────────────────────────────────────
@@ -203,6 +223,8 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     (s.min !== null && Temporal.PlainDate.compare(date, s.min) < 0) ||
     (s.max !== null && Temporal.PlainDate.compare(date, s.max) > 0) ||
     (s.isDateDisabled?.(date) ?? false);
+
+  const blocked = (date: PlainDate) => ruledOut(date) || renderedOut.has(date.toString());
 
   const formatter = (options: Intl.DateTimeFormatOptions) =>
     new Intl.DateTimeFormat(s.locale, { ...options, timeZone: 'UTC' });
@@ -228,7 +250,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
    * enter it.
    */
   const tabbableIso = (dates: PlainDate[], { year, month }: YearMonth): string | null => {
-    const inMonth = dates.filter((d) => d.year === year && d.month === month && !ruledOut(d));
+    const inMonth = dates.filter((d) => d.year === year && d.month === month && !blocked(d));
     const candidates = [focusedIso, s.value?.toString(), s.today.toString()];
     for (const iso of candidates) {
       if (iso && dates.some((d) => d.toString() === iso)) return iso;
@@ -267,6 +289,23 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
 
     if (want === 'days') paintDays(at, off);
     else paintCoarse(at, off);
+    paintFooter(off);
+  }
+
+  function paintFooter(off: boolean): void {
+    if (s.buttons.length === 0) {
+      footer.remove();
+      return;
+    }
+    todayButton.textContent = s.messages.today;
+    clearButton.textContent = s.messages.clear;
+    todayButton.disabled = off;
+    // Nothing to clear is not an error, but a button that does nothing is noise.
+    clearButton.disabled = off || s.value === null;
+    footer.replaceChildren(
+      ...s.buttons.map((name) => (name === 'today' ? todayButton : clearButton)),
+    );
+    if (!footer.isConnected) host.append(footer);
   }
 
   function paintDays(at: YearMonth, off: boolean): void {
@@ -281,25 +320,40 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     });
 
     const dates = getMonthGrid(at.year, at.month, s.firstDayOfWeek).flat();
+
+    // renderCell runs first, so what it rules out is known before choosing
+    // which cell Tab lands on.
+    renderedOut = new Set();
+    const renders = dates.map((date) => {
+      const outside = date.month !== at.month || date.year !== at.year;
+      const today = date.equals(s.today);
+      const selected = s.value !== null && date.equals(s.value);
+      const disabled = ruledOut(date);
+      const render = s.renderCell?.({ date, outside, today, selected, disabled });
+      if (render?.disabled) renderedOut.add(date.toString());
+      return { outside, today, selected, render };
+    });
     const tabbable = tabbableIso(dates, at);
+    let notes = false;
 
     dates.forEach((date, i) => {
       const cell = dayCells[i]!;
       const iso = date.toString();
-      const today = date.equals(s.today);
-      const selected = s.value !== null && date.equals(s.value);
+      const { outside, today, selected, render } = renders[i]!;
 
-      cell.textContent = String(date.day);
+      notes = paintCell(cell, 'tz-cal', String(date.day), render) || notes;
       cell.dataset['date'] = iso;
-      flag(cell, 'tz-cal__day--outside', date.month !== at.month || date.year !== at.year);
+      flag(cell, 'tz-cal__day--outside', outside);
       flag(cell, 'tz-cal__day--today', today);
       flag(cell, 'tz-cal__day--selected', selected);
       cell.setAttribute('aria-selected', String(selected));
       if (today) cell.setAttribute('aria-current', 'date');
       else cell.removeAttribute('aria-current');
       cell.tabIndex = iso === tabbable ? 0 : -1;
-      cell.disabled = off || ruledOut(date);
+      cell.disabled = off || blocked(date);
     });
+    // Cells grow to fit a note only when there is one to fit.
+    flag(host, 'tz-cal--notes', notes);
   }
 
   function paintCoarse({ year }: YearMonth, off: boolean): void {
@@ -341,7 +395,7 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
   }
 
   function select(date: PlainDate): void {
-    if (s.disabled || ruledOut(date)) return;
+    if (s.disabled || blocked(date)) return;
     // Clicking a trailing day of the next month follows it there, or the
     // selection lands on a date the grid no longer highlights.
     const at = shown();
@@ -430,9 +484,33 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
     if (hadFocus) dayCells.find((c) => c.dataset['date'] === focusedIso)?.focus();
   }
 
+  /**
+   * Back to this month and onto today — the way out after wandering a year
+   * away. At a coarser minView, the first of this month or year, as a click on
+   * that cell would give. A day ruled out is shown, not chosen.
+   */
+  function goToday(): void {
+    if (s.disabled) return;
+    cursor = null;
+    focusedIso = null;
+    const target = s.minView === 'days' ? s.today : s.today.with({ day: 1 });
+    const allowed = s.minView !== 'days' || !blocked(target);
+    if (s.view !== s.minView) {
+      s.view = s.minView;
+      s.onViewChange?.(s.view);
+    }
+    if (allowed) choose(target);
+    else {
+      cursor = { year: s.today.year, month: s.today.month };
+      render();
+    }
+  }
+
   const listening = new AbortController();
   const on = { signal: listening.signal };
 
+  todayButton.addEventListener('click', goToday, on);
+  clearButton.addEventListener('click', () => !s.disabled && choose(null), on);
   prev.addEventListener('click', () => shift(-1), on);
   next.addEventListener('click', () => shift(1), on);
   title.addEventListener('click', zoomOut, on);
@@ -488,6 +566,8 @@ export function createCalendar(host: HTMLElement, options: CalendarOptions = {})
       listening.abort();
       header.remove();
       grid.remove();
+      footer.remove();
+      host.classList.remove('tz-cal--notes');
       if (addedHostClass) host.classList.remove('tz-cal');
     },
   };

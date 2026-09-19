@@ -21,8 +21,10 @@ import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
 import {
   createCalendar,
+  type CalendarButton,
   type CalendarInstance,
   type CalendarSettings,
+  type RenderCell,
   type CalendarView,
   type YearMonth,
 } from '../../dom/src/index.js';
@@ -93,6 +95,12 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
   /** 'months' turns this into a month picker, 'years' into a year picker. */
   readonly minView = input<CalendarView>('days');
 
+  /** Adds to each day: a price, places left, a class, a reason to rule it out. */
+  readonly renderCell = input<RenderCell | undefined>(undefined);
+
+  /** Buttons under the grid: `['today', 'clear']`. None by default. */
+  readonly buttons = input<readonly CalendarButton[]>([]);
+
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;
   private readonly messages = inject(TZSLOT_MESSAGES);
   private readonly prevSlot = viewChild.required<ElementRef<HTMLElement>>('prev');
@@ -110,6 +118,8 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
     disabled: this.disabled() || this.formDisabled(),
     isDateDisabled: this.isDateDisabled(),
     today: this.today(),
+    renderCell: this.renderCell(),
+    buttons: this.buttons(),
     messages: this.messages,
   }));
 

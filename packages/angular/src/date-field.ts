@@ -22,8 +22,10 @@ import { Temporal, toPlainDate, fromPlainDate } from '../../core/src/index.js';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '../../core/src/index.js';
 import {
   createDateField,
+  type CalendarButton,
   type DateFieldInstance,
   type DateFieldSettings,
+  type RenderCell,
   type FieldMode,
 } from '../../dom/src/index.js';
 
@@ -75,6 +77,12 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
 
+  /** Passed to the calendar in the panel. */
+  readonly renderCell = input<RenderCell | undefined>(undefined);
+
+  /** Under the panel's grid: `['today', 'clear']`. Choosing either closes it. */
+  readonly buttons = input<readonly CalendarButton[]>([]);
+
   readonly opened = output<void>();
   readonly closed = output<void>();
 
@@ -98,6 +106,8 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     isDateDisabled: this.isDateDisabled(),
     disabled: this.disabled() || this.formDisabled(),
     displayWith: this.displayWith(),
+    renderCell: this.renderCell(),
+    buttons: this.buttons(),
     messages: this.messages,
   }));
 

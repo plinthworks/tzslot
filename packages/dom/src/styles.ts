@@ -80,6 +80,44 @@ export const CALENDAR_CSS = `
   width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, var(--tz-gap, 0.25rem)));
 }
 .tz-cal__coarse-cell { padding: 0.5rem 0.25rem; }
+/* A note under the number: the cells widen and grow, and only then. */
+.tz-cal--notes { --tz-cal-cell-size: var(--tz-cal-note-cell-size, 2.75rem); }
+.tz-cal--notes .tz-cal__day {
+  height: auto;
+  min-height: calc(var(--tz-cal-cell-size) * 1.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.0625rem;
+  padding: 0.25rem 0;
+}
+.tz-cal__note {
+  font-size: var(--tz-cal-note-size, 0.625rem);
+  line-height: 1;
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.tz-cal__footer {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+}
+.tz-cal__action {
+  border: 0;
+  background: transparent;
+  color: var(--tz-accent, inherit);
+  font: var(--tz-font, inherit);
+  font-size: 0.875em;
+  font-weight: 500;
+  padding: 0.25rem 0.5rem;
+  border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+  cursor: pointer;
+}
+.tz-cal__action:disabled { opacity: 0.4; cursor: default; }
 `;
 
 /**
@@ -229,6 +267,23 @@ export const RANGE_CSS = `
 .tz-range__day--end { border-radius: 0 var(--tz-cal-radius, var(--tz-radius, 0.25rem)) var(--tz-cal-radius, var(--tz-radius, 0.25rem)) 0; }
 .tz-range__day--start.tz-range__day--end { border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem)); }
 .tz-range__day:disabled { opacity: 0.3; cursor: not-allowed; }
+.tz-range--notes { --tz-cal-cell-size: var(--tz-cal-note-cell-size, 2.75rem); }
+.tz-range--notes .tz-range__day {
+  height: auto;
+  min-height: calc(var(--tz-cal-cell-size) * 1.15);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.0625rem;
+  padding: 0.25rem 0;
+}
+.tz-range__note {
+  font-size: var(--tz-cal-note-size, 0.625rem);
+  line-height: 1;
+  opacity: 0.75;
+  white-space: nowrap;
+}
 .tz-range__error { font-size: 0.8em; color: var(--tz-range-error-fg, var(--tz-danger, currentColor)); }
 `;
 

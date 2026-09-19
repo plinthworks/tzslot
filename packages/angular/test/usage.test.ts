@@ -196,3 +196,30 @@ describe('custom icons', () => {
     expect(nav.textContent!.trim()).toBe('‹');
   });
 });
+
+describe('renderCell and buttons, from a template', () => {
+  @Component({
+    standalone: true,
+    imports: [Calendar],
+    template: `<tz-calendar [(value)]="day" [today]="today" [renderCell]="prices" [buttons]="['today', 'clear']" />`,
+  })
+  class WithExtras {
+    readonly today = Temporal.PlainDate.from('2026-06-15');
+    readonly day = signal<PlainDate | null>(null);
+    readonly prices = ({ date }: { date: PlainDate }) =>
+      date.day === 20 ? { note: 'Full', disabled: true } : { note: '89€' };
+  }
+
+  it('reach the calendar, and Today updates the bound value', () => {
+    const f = TestBed.createComponent(WithExtras);
+    f.detectChanges();
+    const el = f.nativeElement as HTMLElement;
+
+    expect(el.querySelector('[data-date="2026-06-10"] .tz-cal__note')!.textContent).toBe('89€');
+    expect(el.querySelector<HTMLButtonElement>('[data-date="2026-06-20"]')!.disabled).toBe(true);
+
+    el.querySelector<HTMLButtonElement>('.tz-cal__action--today')!.click();
+    f.detectChanges();
+    expect(f.componentInstance.day()!.toString()).toBe('2026-06-15');
+  });
+});

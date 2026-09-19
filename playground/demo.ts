@@ -211,6 +211,15 @@ function parisAt(iso: string): Instant {
       </section>
 
       <section class="block">
+        <h2>Prices, and Today / Clear</h2>
+        <p class="note">renderCell: a price per night, the 23rd sold out.</p>
+        <tz-calendar [(value)]="pricedDate" [locale]="'en-GB'" [renderCell]="prices"
+                     [buttons]="['today', 'clear']" />
+        <p class="note">The same buttons in a field's panel:</p>
+        <tz-date-field [(value)]="pricedDate" [locale]="'en-GB'" [buttons]="['today', 'clear']" />
+      </section>
+
+      <section class="block">
         <h2>Range</h2>
         <p class="note">Weekends are closed — a range may not step over one.</p>
         <tz-date-range [(value)]="stay" [locale]="'en-GB'" [isDateDisabled]="noWeekends" />
@@ -239,6 +248,8 @@ function parisAt(iso: string): Instant {
     .card { color-scheme: var(--tz-color-scheme, light dark); background: var(--tz-bg);
             color: var(--tz-fg); }
     .gap { margin-top: 1rem; }
+    /* A class from renderCell, styled by the page, not by the library. */
+    :host ::ng-deep .sold-out .tz-cal__note { color: var(--tz-danger); opacity: 1; font-weight: 600; }
     /* A full-width day reads better as tidy rows of six than as one long run. */
     .times tz-time-slots { --tz-slot-columns: 6; }
     .titlebar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
@@ -365,6 +376,16 @@ export class Demo {
   protected readonly lunchIsTaken = (slot: { time: PlainTime }) => slot.time.hour === 13;
 
   protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
+
+  protected readonly pricedDate = signal<PlainDate | null>(null);
+
+  /** A small hotel: weekends cost more, and the 23rd of every month is sold out. */
+  protected readonly prices = ({ date, outside }: { date: PlainDate; outside: boolean }) =>
+    outside
+      ? undefined
+      : date.day === 23
+        ? { note: 'Full', className: 'sold-out', disabled: true, title: 'No rooms left' }
+        : { note: date.dayOfWeek > 5 ? '120€' : '89€' };
 
   protected stayText(): string {
     const { start, end } = this.stay();

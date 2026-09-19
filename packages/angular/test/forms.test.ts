@@ -4,7 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Calendar, TimeSlotPicker } from '../src/index.js';
 import { Temporal } from '../../core/src/index.js';
-import type { Instant, PlainDate } from '../../core/src/index.js';
+import type { Instant, PlainDate, PlainTime } from '../../core/src/index.js';
 
 /**
  * The components inside a reactive form.
@@ -43,7 +43,7 @@ class Host {
     at: new FormControl<Instant | null>(null),
   });
   readonly noWeekends = (d: PlainDate) => d.dayOfWeek > 5;
-  readonly lunch = (s: { time: Temporal.PlainTime }) => s.time.hour === 13;
+  readonly lunch = (s: { time: PlainTime }) => s.time.hour === 13;
 }
 
 let fixture: ComponentFixture<Host>;

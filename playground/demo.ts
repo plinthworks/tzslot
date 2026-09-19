@@ -9,7 +9,7 @@ import {
   type DateTimeRangeValue,
 } from '../packages/angular/src/index.js';
 import { Temporal, usingPolyfill } from '../packages/core/src/index.js';
-import type { Instant, PlainDate } from '../packages/core/src/index.js';
+import type { Instant, PlainDate, PlainTime } from '../packages/core/src/index.js';
 
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {
@@ -358,7 +358,7 @@ export class Demo {
   protected readonly shiftLabel = signal('Clocks going back');
 
   /** Lunch is booked every day: a slot that exists but is unavailable. */
-  protected readonly lunchIsTaken = (slot: { time: Temporal.PlainTime }) => slot.time.hour === 13;
+  protected readonly lunchIsTaken = (slot: { time: PlainTime }) => slot.time.hour === 13;
 
   protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
 

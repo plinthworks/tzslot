@@ -63,8 +63,14 @@ components still work, plain.
 
 **Next, in this order.**
 
-1. **Publishing** — compiled JavaScript with generated `.d.ts`, a real
-   `package.json` per package, the repository.
+1. **Publishing** — the build is done: `npm run build` puts each package in its
+   own `dist/`, and a real Angular 21 app compiles against the packed
+   tarballs. Left: the licence, the polyfill question below, a first version
+   number, and the `tzslot` organisation on npmjs.com. Then, per package:
+   `npm publish packages/<name>/dist --access public`.
+2. **The polyfill** — a static import, so every bundle carries its 19 kB
+   gzipped, even where Temporal is native. Keep it, make it the user's to
+   load, or load it on demand.
 
 **Deliberately not planned.**
 
@@ -77,9 +83,7 @@ they do not.
 
 - No React or Vue wrapper. The core is framework-free and usable from either
   today; a wrapper waits until the core has been proven.
-- No repository on GitHub, nothing published to npm.
-- No build step. Sources are TypeScript and every `package.json` points at
-  `src/index.ts`; publishing needs compiled JavaScript plus generated `.d.ts`.
+- Nothing published to npm yet. The repository is github.com/plinthworks/tzslot.
 - Tests run in jsdom. They cover behaviour and the DOM, never layout — a
   screenshot found five components whose layout CSS had never applied while all
   122 tests were green.

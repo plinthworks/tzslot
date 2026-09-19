@@ -2,8 +2,10 @@
  * Where Temporal comes from.
  *
  * Native on Chrome, Firefox and Edge; absent from Safari and from Node before
- * it ships. The polyfill is loaded only when the global is missing, so a modern
- * browser pays nothing for it — 19 kB gzipped that most visitors never fetch.
+ * it ships. The native one is used whenever it exists, but the polyfill is a
+ * static import: a bundler includes it for every visitor, about 19 kB gzipped
+ * of the core's 20. Measured, not assumed — an earlier version of this comment
+ * claimed the opposite.
  *
  * Every other file imports Temporal from here rather than touching the global,
  * so there is one place that decides, and one place to change when Safari ships.

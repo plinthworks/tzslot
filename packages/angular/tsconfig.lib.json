@@ -1,0 +1,21 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "bundler",
+    "lib": ["ES2022", "DOM"],
+    "strict": true,
+    "declaration": true,
+    "skipLibCheck": true,
+    "useDefineForClassFields": false,
+    "paths": {
+      "@tzslot/core": ["../core/dist/index.d.ts"],
+      "@tzslot/dom": ["../dom/dist/index.d.ts"]
+    }
+  },
+  "angularCompilerOptions": {
+    "compilationMode": "partial",
+    "strictTemplates": true
+  },
+  "include": ["src/**/*.ts"]
+}

@@ -8,7 +8,8 @@
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/dom/tsconfig.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "start": "vite",
     "test:memory": "NODE_OPTIONS=--expose-gc vitest run packages/core/test/perf.test.ts",
-    "build:theme": "sass --no-source-map --style=expanded packages/theme/tzslot.scss packages/theme/tzslot.css"
+    "build:theme": "sass --no-source-map --style=expanded packages/theme/tzslot.scss packages/theme/tzslot.css",
+    "build": "node scripts/build.mjs"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",
@@ -21,6 +22,7 @@
     "@tailwindcss/vite": "^4.3.3",
     "@types/node": "^22.20.4",
     "jsdom": "^29.1.1",
+    "ng-packagr": "^21.2.7",
     "sass": "^1.104.1",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.9.0",

@@ -4,11 +4,13 @@
   "description": "DST-safe date and time primitives, built on the Temporal API. No DOM, no framework.",
   "type": "module",
   "license": "MIT",
-  "main": "./src/index.ts",
   "dependencies": {
     "temporal-polyfill": "^1.0.5"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
   }
 }

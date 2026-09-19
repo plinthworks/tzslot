@@ -1,119 +1,150 @@
 # tzslot
 
-Timezone-aware time slots, and the pickers that show them.
+Date and time pickers that know what daylight saving does.
 
-An Angular date and time picker that knows what daylight saving does.
+Most pickers — flatpickr, Air Datepicker, nearly every Angular wrapper — are
+built on `Date`, which has no notion of an IANA time zone. They will let
+someone book 02:30 on a morning when 02:30 does not happen, or on one when it
+happens twice, and store whichever reading the browser guessed. They call a
+night shift from 23:00 to 05:00 six hours on the night it lasts seven.
 
-Most pickers — flatpickr, Air Datepicker, and nearly every Angular wrapper —
-are built on the `Date` object, which has no concept of an IANA time zone. They
-will happily let someone book 02:30 on a morning when 02:30 does not happen,
-or on one when it happens twice, and then store whichever of the two the
-browser guessed.
-
-flatpickr has 1.6 million downloads a week and its last release was in April
-2022.
+tzslot is built on [Temporal](https://tc39.es/proposal-temporal/docs/). It
+shows the hour that does not exist, offers both readings of the one that
+happens twice, and says in words when an interval lasts something other than
+what the clock faces suggest.
 
 ## Packages
 
 | | |
 |---|---|
-| `@tzslot/core` | The logic. No DOM, no framework, no Angular. Usable from anything. |
-| `@tzslot/angular` | Standalone components over the core. CDK only. |
+| `@tzslot/core` | The arithmetic. No DOM, no framework — usable on a server too. |
+| `@tzslot/dom` | Every widget, in plain DOM. Works in any framework, or none. |
+| `@tzslot/angular` | Angular 21 components over `@tzslot/dom`: signals, forms, zoneless. |
+| `@tzslot/theme` | Optional. CSS (or Sass) setting the widgets' colours; light, dark, high contrast, a Tailwind v4 bridge. |
 
-The core is where the value is, and it is deliberately framework-free: the
-problem it solves — a wall time that happens twice, or not at all — is not an
-Angular problem. The Angular package is one way to show it; others can follow
-once the core has been proven.
+The widgets live in `@tzslot/dom`; a framework package only translates its own
+idioms into calls on them. A behaviour fixed there is fixed everywhere.
 
-## Status
+## The widgets
 
-`@tzslot/core` — the date and time logic. 27 tests against real IANA rules,
-plus measurements: 0.40 ms for a day of half-hour slots, 650 bytes a slot, and
-nothing retained across five thousand discarded calls.
+| Angular | Plain DOM | What it chooses |
+|---|---|---|
+| `<tz-calendar>` | `createCalendar` | a day — month and year views, keyboard, Today / Clear |
+| `<tz-multi-date>` | `createMultiDate` | several days, not necessarily adjacent |
+| `<tz-date-field>` | `createDateField` | a day, from a field that opens a panel, anchored or centred |
+| `<tz-date-range>` | `createDateRange` | two days, refusing a range across a closed one |
+| `<tz-time-slots>` | `createTimeSlots` | a moment on one day: the skipped hour struck through, the repeated one offered twice |
+| `<tz-datetime-range>` | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
+| `<tz-daily-range>` | `createDailyRange` | a range of days with the same hours on each, overnight allowed |
 
-The Angular components come next, and the design after that: the logic is worth
-nothing if it is wrong, and pretty is worth nothing if the logic is wrong.
+`renderCell` puts a price, places left or your own class on any day.
 
-## The part that matters
+## Angular
 
-```ts
-import { getDaySlots } from '@tzslot/core';
-
-const slots = getDaySlots('2026-10-25', 'Europe/Paris', { stepMinutes: 30 });
-
-slots.find(s => s.time.hour === 2 && s.time.minute === 30);
-// {
-//   exists: true,
-//   ambiguous: true,                       ← 02:30 happens twice that morning
-//   offsets: ['+02:00', '+01:00'],         ← how a user tells them apart
-//   instants: [Instant, Instant],          ← an hour apart; store one of these
-// }
+```bash
+npm install @tzslot/angular @tzslot/theme
 ```
 
-And on the spring morning:
-
-```ts
-getDaySlots('2026-03-29', 'Europe/Paris').find(s => s.time.hour === 2);
-// { exists: false, ambiguous: false, offsets: [], instants: [] }
+```jsonc
+// angular.json → build.options
+"styles": ["@tzslot/theme/tzslot.css", "src/styles.css"]
 ```
 
-Store an instant, never a wall time. An instant is unambiguous everywhere, and
-survives a change of zone, a change of the rules, and being read back next year.
+```ts
+import { Component, signal } from '@angular/core';
+import { Calendar, TimeSlotPicker, provideTzslotMessages, FR } from '@tzslot/angular';
+import type { Instant, PlainDate } from '@tzslot/core';
+
+@Component({
+  imports: [Calendar, TimeSlotPicker],
+  template: `
+    <tz-calendar [(value)]="day" [buttons]="['today', 'clear']" />
+    @if (day(); as d) {
+      <tz-time-slots [date]="d" timeZone="Europe/Paris" [(value)]="moment" />
+    }
+  `,
+})
+export class Booking {
+  readonly day = signal<PlainDate | null>(null);
+  readonly moment = signal<Instant | null>(null);
+}
+
+// French everywhere: bootstrapApplication(App, { providers: [provideTzslotMessages(FR)] })
+```
+
+Every component is a `ControlValueAccessor` — `formControlName`, `ngModel` and
+`[(value)]` all work — and takes `valueAs="date"` to keep an existing
+`FormControl<Date>` untouched. See `docs/migrating-from-flatpickr.md`.
+
+## Without a framework
+
+```bash
+npm install @tzslot/dom @tzslot/theme
+```
+
+```js
+import { createCalendar } from '@tzslot/dom';
+import { Temporal } from '@tzslot/core';
+import '@tzslot/theme';
+
+const calendar = createCalendar(document.querySelector('#day'), {
+  onChange: (day) => console.log(day?.toString()),
+});
+calendar.update({ min: Temporal.Now.plainDateISO() });
+```
+
+Each `create…` returns an instance with `update`, `clear` and `destroy`.
+Layout CSS is injected once; pass `injectStyles: false` under a strict
+Content-Security-Policy and include the exported `*_CSS` strings yourself.
+
+## The arithmetic
+
+```ts
+import { getDaySlots, getDailyWindows } from '@tzslot/core';
+
+getDaySlots('2026-10-25', 'Europe/Paris').filter((s) => s.time.hour === 2);
+// 02:00 is ambiguous: offsets ['+02:00', '+01:00'], two instants an hour apart
+
+getDailyWindows('2026-10-23', '2026-10-26', '22:00', '06:00', 'Europe/Paris').minutes / 60;
+// 33 — four night shifts, one of them nine hours long
+```
+
+Store an instant, never a wall time: it is unambiguous everywhere and
+survives a change of zone, of the rules, and being read back next year.
+
+## Theming
+
+Nine palette colours, each `light-dark(light, dark)`. `data-theme="dark"` on
+any element themes everything inside it; `--tz-accent` on any element
+recolours the selection, the range tint and the focus ring beneath it.
+`@tzslot/theme/contrast.css` follows `prefers-contrast: more`, and
+`@tzslot/theme/tailwind.css` maps the palette to a Tailwind v4 theme. From
+Sass, `@use '@tzslot/theme/tzslot' with ($accent: …)`. All of it in
+`docs/customising.md`.
+
+## Browsers
+
+Temporal is used natively where it exists and polyfilled where it does not.
+The polyfill is a static import, so a bundle carries it for every visitor —
+about 19 kB gzipped. There is deliberately no fallback to `Date`: it would
+bring back the exact bug this library exists to fix.
+
+The theme uses `light-dark()` and `color-mix()`: Chrome 123, Safari 17.5,
+Firefox 120 and later.
 
 ## Development
 
 ```bash
 npm install
-npm test            # 23 tests, real time zone rules
+npm start            # playground: http://localhost:4500/playground/index.html
+npm test             # 263 tests, against real time zone rules
 npm run typecheck
+npm run build        # every package into its own dist/, ready to publish
 ```
 
-Temporal is used natively where the browser has it, and polyfilled where it does
-not — 19 kB gzipped that a modern browser never downloads. There is deliberately
-no fallback to `Date`: it would reintroduce exactly the bug this library exists
-to fix, on the platforms least able to reveal it.
+The playground has a page per way of using it: Angular, Tailwind, and plain
+DOM.
+
+## Licence
 
 MIT.
-
-## Components
-
-`@tzslot/ui` — Angular standalone components over the core. CDK
-only; no Material, no design system. Structural class names and CSS custom
-properties, so restyling does not mean fighting specificity.
-
-```html
-<tz-time-slots
-  [date]="'2026-10-25'"
-  [timeZone]="'Europe/Paris'"
-  [stepMinutes]="30"
-  [(value)]="chosen" />
-```
-
-On the morning the clocks go back, 02:00 renders as **two** buttons, labelled
-`+02:00` and `+01:00`. They are an hour apart and the user picks one. On the
-morning they go forward, 02:00 renders struck through and disabled, with a
-tooltip saying why.
-
-`value` is a `Temporal.Instant` — a moment, not a clock face.
-
-```html
-<tz-calendar [(value)]="day" [firstDayOfWeek]="1" [min]="from" [max]="until" />
-```
-
-Six weeks always, so the calendar does not change height between months.
-Arrow keys move a day, PageUp/PageDown a month, Home/End across the week, and
-one cell at a time is tabbable — the roving pattern the ARIA grid guidance
-describes.
-
-Month and weekday names come from `Intl`, which the browser already has. Air
-Datepicker ships thirty locale files to do the same job; those go stale, and
-they are bytes every visitor downloads for languages they do not read.
-
-## A note on installing
-
-`npm install --legacy-peer-deps`.
-
-npm 10.9.3 fails with `Cannot read properties of null (reading 'edgesOut')` on
-vitest 4's dependency graph, and vitest 4 is what Angular 21 supports. The flag
-is a workaround for that npm bug, not a sign of a broken tree — `npm ls` is
-clean afterwards.

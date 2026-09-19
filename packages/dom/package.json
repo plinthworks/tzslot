@@ -4,11 +4,13 @@
   "description": "DST-safe date and time pickers in plain DOM. No framework; wrappers for Angular and others sit on top.",
   "type": "module",
   "license": "MIT",
-  "main": "./src/index.ts",
   "dependencies": {
     "@tzslot/core": "0.0.0"
   },
   "exports": {
-    ".": "./src/index.ts"
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    }
   }
 }

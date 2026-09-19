@@ -80,7 +80,10 @@ function angular() {
   // makes sense in the repository, and pin the internal dependencies.
   const file = join(dir, 'dist', 'package.json');
   const manifest = read(file);
+  // The repository's main and types point at the sources; ng-packagr's own
+  // exports, module and typings are the ones that ship.
   delete manifest.main;
+  delete manifest.types;
   Object.assign(manifest, shared('angular'));
   manifest.dependencies = internal(manifest.dependencies);
   writeFileSync(file, JSON.stringify(manifest, null, 2) + '\n');
@@ -107,4 +110,14 @@ typescript('core');
 typescript('dom');
 angular();
 theme();
+
+// A published manifest that points at src/ points at a file npm never
+// received: the install succeeds and the import fails. Refuse to finish.
+for (const name of ['core', 'dom', 'angular', 'theme']) {
+  const text = readFileSync(join(pkg(name), 'dist', 'package.json'), 'utf8');
+  if (text.includes('src/')) {
+    console.error(`packages/${name}/dist/package.json still points at src/`);
+    process.exit(1);
+  }
+}
 console.log('\nBuilt: packages/{core,dom,angular,theme}/dist');

@@ -116,6 +116,20 @@ describe('the date pickers', () => {
   });
 });
 
+describe('the same hours every day', () => {
+  it('opens on night shifts across the end of summer time, one of them nine hours', () => {
+    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('4 days · 33h');
+    expect(el().querySelector('.tz-daily__day')!.textContent).toContain('9h');
+  });
+
+  it('an office week has nothing unusual to say', () => {
+    chip('An office week').click();
+    fixture.detectChanges();
+    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('5 days · 40h');
+    expect(el().querySelector('.tz-daily__unusual')).toBeNull();
+  });
+});
+
 describe('the theme controls', () => {
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme');

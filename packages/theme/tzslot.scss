@@ -141,7 +141,8 @@ $emit: true !default;
   .tz-field,
   .tz-field__panel,
   .tz-field__backdrop,
-  .tz-dtr {
+  .tz-dtr,
+  .tz-daily {
     color-scheme: var(--tz-color-scheme, light dark);
     color: var(--tz-fg);
     font: var(--tz-font);
@@ -209,7 +210,8 @@ $emit: true !default;
 
   .tz-cal__weekday,
   .tz-range__weekday,
-  .tz-dtr__legend {
+  .tz-dtr__legend,
+  .tz-daily__legend {
     color: var(--tz-fg-muted);
   }
 

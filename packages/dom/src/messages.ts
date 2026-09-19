@@ -35,6 +35,22 @@ export interface TzslotMessages {
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
+  /** The daily range: its two parts, and the two ends of the hours. */
+  readonly days: string;
+  readonly hours: string;
+  readonly timeFrom: string;
+  readonly timeTo: string;
+  /** Under an end time that falls on the following day. Short. */
+  readonly nextDay: string;
+  /** "5 days · 40h" */
+  dailySummary(parts: { days: number; total: string }): string;
+  /**
+   * A day that differs from the others, and why: the clocks went back or
+   * forward during it, or one of its times fell in the hour they skipped or
+   * repeated.
+   */
+  unusualDay(parts: { date: string; real: string; change: 'back' | 'forward' | 'skipped' | 'repeated' }): string;
+
   /** Said on a slot that the clocks skipped, as a tooltip. */
   nonExistentTime(time: string): string;
   /** Said on one of the two readings of a repeated hour. */
@@ -69,6 +85,19 @@ export const EN: TzslotMessages = {
   to: 'To',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
+  days: 'Days',
+  hours: 'Hours',
+  timeFrom: 'From',
+  timeTo: 'Until',
+  nextDay: 'next day',
+  dailySummary: ({ days, total }) => `${days} ${days === 1 ? 'day' : 'days'} · ${total}`,
+  unusualDay: ({ date, real, change }) =>
+    ({
+      back: `${date} lasts ${real}: the clocks go back.`,
+      forward: `${date} lasts ${real}: the clocks go forward.`,
+      skipped: `${date}: a time falls in the hour the clocks skip, so it is read an hour later.`,
+      repeated: `${date}: a time falls in the hour that happens twice; the window covers both.`,
+    })[change],
   nonExistentTime: (time) => `${time} does not exist on this date — the clocks move forward.`,
   repeatedTime: (time, offset) =>
     `${time} happens twice on this date. This is the reading at UTC${offset}.`,
@@ -92,6 +121,19 @@ export const FR: TzslotMessages = {
   to: 'Au',
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
+  days: 'Jours',
+  hours: 'Horaires',
+  timeFrom: 'De',
+  timeTo: "Jusqu'à",
+  nextDay: 'lendemain',
+  dailySummary: ({ days, total }) => `${days} ${days === 1 ? 'jour' : 'jours'} · ${total}`,
+  unusualDay: ({ date, real, change }) =>
+    ({
+      back: `${date} dure ${real} : les pendules reculent.`,
+      forward: `${date} dure ${real} : les pendules avancent.`,
+      skipped: `${date} : une heure tombe dans l'heure sautée, elle est lue une heure plus tard.`,
+      repeated: `${date} : une heure tombe dans l'heure répétée ; la plage couvre les deux.`,
+    })[change],
   nonExistentTime: (time) => `${time} n'existe pas ce jour-là : les pendules avancent.`,
   repeatedTime: (time, offset) =>
     `${time} a lieu deux fois ce jour-là. Voici la lecture à UTC${offset}.`,

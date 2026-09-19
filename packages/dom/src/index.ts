@@ -45,6 +45,13 @@ export type {
   DateTimeRangeSettings,
   DateTimeRangeValue,
 } from './datetime-range.js';
+export { createDailyRange } from './daily-range.js';
+export type {
+  DailyRangeInstance,
+  DailyRangeOptions,
+  DailyRangeSettings,
+  DailyRangeValue,
+} from './daily-range.js';
 export { EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
-export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS } from './styles.js';
+export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS, DAILY_CSS } from './styles.js';

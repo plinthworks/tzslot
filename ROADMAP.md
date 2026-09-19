@@ -32,6 +32,7 @@ Usable from a `<script>` tag; each returns an instance with `update`,
 | `createTimeSlots` | times on one day; `getSlotChoices` gives the rows without drawing them |
 | `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day; `renderCell` too |
 | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
+| `createDailyRange` | a range of days with the same hours on each, overnight allowed; the real total and the days that differ, with the reason. `getDailyWindows` in the core does the arithmetic |
 
 Layout CSS is injected once, first in the head, as plain class selectors: a
 page's element resets cannot reach it, and any class rule loaded after it
@@ -64,8 +65,6 @@ components still work, plain.
 1. **Publishing** — compiled JavaScript with generated `.d.ts`, a real
    `package.json` per package, the repository.
 2. **Multiple dates** — non-contiguous selection.
-3. **The range and the interval together** — "3rd to 7th, 09:00 to 17:00
-   each day" has no widget yet.
 
 **Deliberately not planned.**
 
@@ -81,8 +80,6 @@ they do not.
 - No repository on GitHub, nothing published to npm.
 - No build step. Sources are TypeScript and every `package.json` points at
   `src/index.ts`; publishing needs compiled JavaScript plus generated `.d.ts`.
-- `tz-date-range` and `tz-datetime-range` do not know about each other, so
-  "3rd to 7th, 09:00 to 17:00 each day" has no component.
 - Tests run in jsdom. They cover behaviour and the DOM, never layout — a
   screenshot found five components whose layout CSS had never applied while all
   122 tests were green.

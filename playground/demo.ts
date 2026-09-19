@@ -4,7 +4,9 @@ import {
   DateField,
   DateRange,
   DateTimeRange,
+  DailyRange,
   TimeSlotPicker,
+  type DailyRangeValue,
   type DateRangeValue,
   type DateTimeRangeValue,
 } from '../packages/angular/src/index.js';
@@ -39,7 +41,7 @@ function parisAt(iso: string): Instant {
 @Component({
   selector: 'demo-root',
   standalone: true,
-  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange],
+  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange],
   template: `
     <header>
       <div class="titlebar">
@@ -109,6 +111,23 @@ function parisAt(iso: string): Instant {
 
       <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'"
                          [stepMinutes]="60" [locale]="'en-GB'" />
+    </section>
+
+    <section class="block">
+      <h2>The same hours every day</h2>
+      <p class="lede">
+        A range of days and one pair of hours. Night shifts are eight hours — except one.
+      </p>
+      <div class="row">
+        @for (p of dailyPresets; track p.label) {
+          <button type="button" class="chip"
+                  [class.on]="dailyLabel() === p.label" (click)="useDaily(p)">
+            {{ p.label }}
+          </button>
+        }
+      </div>
+      <tz-daily-range [(value)]="rota" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
+                      [locale]="'en-GB'" [today]="rotaToday" />
     </section>
     }
 
@@ -371,6 +390,30 @@ export class Demo {
     end: parisAt('2026-10-25T05:00'),
   });
   protected readonly shiftLabel = signal('Clocks going back');
+
+  protected readonly dailyPresets = [
+    { label: 'Night shifts, clocks going back', start: '2026-10-23', end: '2026-10-26', from: '22:00', to: '06:00' },
+    { label: 'Night shifts, clocks going forward', start: '2026-03-27', end: '2026-03-30', from: '22:00', to: '06:00' },
+    { label: 'An office week', start: '2026-06-15', end: '2026-06-19', from: '09:00', to: '17:00' },
+  ];
+  protected readonly dailyLabel = signal('Night shifts, clocks going back');
+  protected readonly rotaToday = Temporal.PlainDate.from('2026-10-20');
+  protected readonly rota = signal<DailyRangeValue>({
+    start: Temporal.PlainDate.from('2026-10-23'),
+    end: Temporal.PlainDate.from('2026-10-26'),
+    from: Temporal.PlainTime.from('22:00'),
+    to: Temporal.PlainTime.from('06:00'),
+  });
+
+  protected useDaily(p: { label: string; start: string; end: string; from: string; to: string }): void {
+    this.rota.set({
+      start: Temporal.PlainDate.from(p.start),
+      end: Temporal.PlainDate.from(p.end),
+      from: Temporal.PlainTime.from(p.from),
+      to: Temporal.PlainTime.from(p.to),
+    });
+    this.dailyLabel.set(p.label);
+  }
 
   /** Lunch is booked every day: a slot that exists but is unavailable. */
   protected readonly lunchIsTaken = (slot: { time: PlainTime }) => slot.time.hour === 13;

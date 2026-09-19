@@ -328,6 +328,56 @@ export const DTR_CSS = `
 .tz-dtr__error { color: var(--tz-dtr-error-fg, var(--tz-danger, currentColor)); font-size: 0.9em; }
 `;
 
+/** The daily range: the answer on top, then the days beside the two lists of hours. */
+export const DAILY_CSS = `
+.tz-daily { display: block; }
+.tz-daily__body {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
+  gap: var(--tz-dtr-gap, 1.25rem);
+  align-items: start;
+}
+.tz-daily__legend {
+  margin: 0 0 var(--tz-dtr-legend-gap, 0.5rem);
+  font-size: var(--tz-dtr-legend-size, 0.8em);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.7;
+}
+.tz-daily__times {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.tz-daily__column-label { margin: 0 0 0.375rem; font-size: 0.8125em; font-weight: 600; }
+.tz-daily__list {
+  --tz-slot-columns: var(--tz-daily-slot-columns, 2);
+  max-height: var(--tz-daily-list-height, 16rem);
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 0.25rem;
+}
+.tz-daily__result {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.75rem;
+  margin-bottom: var(--tz-dtr-gap, 1.25rem);
+}
+.tz-daily__summary {
+  font-weight: var(--tz-dtr-summary-weight, 600);
+  font-size: var(--tz-dtr-summary-size, 1.375rem);
+}
+.tz-daily__overnight { font-size: 0.9em; opacity: 0.75; }
+.tz-daily__unusual {
+  flex-basis: 100%;
+  margin: 0;
+  padding-left: 1.1rem;
+  font-size: 0.9em;
+  color: var(--tz-dtr-warning-fg, var(--tz-warning, currentColor));
+}
+`;
+
 /**
  * Puts a stylesheet where the host will see it, once.
  *

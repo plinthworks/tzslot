@@ -91,7 +91,7 @@ function toTime(value: PlainTime | string | undefined): PlainTime | null {
  * later reading separates them — if the wall time survives the round trip, the
  * time exists twice; if it comes back shifted, it does not exist at all.
  */
-function resolve(
+export function resolve(
   date: PlainDate,
   time: PlainTime,
   timeZone: string,

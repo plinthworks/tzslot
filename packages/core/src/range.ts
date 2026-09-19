@@ -98,10 +98,14 @@ export function isRangeProblem(result: RangeInfo | RangeProblem): result is Rang
  * DurationFormat and the `duration` field. This is the version that has to work
  * in a log line and a unit test.
  */
-export function formatDuration(duration: Duration): string {
+export function formatDuration(
+  duration: Duration,
+  { days: inDays = true }: { days?: boolean } = {},
+): string {
   const total = Math.round(duration.total({ unit: 'minute' }));
-  const days = Math.floor(total / 1440);
-  const hours = Math.floor((total % 1440) / 60);
+  // Forty hours of work is "40h", not "1d 16h": days are optional.
+  const days = inDays ? Math.floor(total / 1440) : 0;
+  const hours = Math.floor((total - days * 1440) / 60);
   const minutes = total % 60;
 
   const parts: string[] = [];

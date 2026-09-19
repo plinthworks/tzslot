@@ -19,6 +19,8 @@ export { getDaySlots } from './slots.js';
 export type { Slot, DaySlotsOptions } from './slots.js';
 export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade } from './grid.js';
 export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
+export { getDailyWindows } from './daily.js';
+export type { DailyWindow, DailyWindowsSummary } from './daily.js';
 export {
   toPlainDate,
   fromPlainDate,

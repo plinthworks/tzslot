@@ -10,7 +10,9 @@
     "test:memory": "NODE_OPTIONS=--expose-gc vitest run packages/core/test/perf.test.ts",
     "build:theme": "sass --no-source-map --style=expanded packages/theme/tzslot.scss packages/theme/tzslot.css",
     "build": "node scripts/build.mjs",
-    "pack:local": "npm run build && rm -rf packed && mkdir packed && for p in core dom angular theme; do (cd packages/$p/dist && npm pack --pack-destination ../../../packed >/dev/null); done && ls packed"
+    "pack:local": "npm run build && rm -rf packed && mkdir packed && for p in core dom angular theme; do (cd packages/$p/dist && npm pack --pack-destination ../../../packed >/dev/null); done && ls packed",
+    "publish:next": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public --tag next || exit 1; done",
+    "publish:dry": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public --tag next --dry-run 2>&1 | grep -E 'name:|version:|total files:|package size:'; done"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",

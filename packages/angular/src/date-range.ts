@@ -95,7 +95,14 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
   });
 
   constructor() {
-    effect(() => this.range.update(this.settings()));
+    // The settings are read here, so the effect follows them; the call into the
+    // widget runs untracked. A widget may answer by calling back — closing a
+    // panel, say — and a callback that writes a signal inside an effect is an
+    // error on Angular 18 (NG0600), and a hidden dependency on any version.
+    effect(() => {
+      const settings = this.settings();
+      untracked(() => this.range.update(settings));
+    });
     inject(DestroyRef).onDestroy(() => this.range.destroy());
   }
 

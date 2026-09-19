@@ -19,7 +19,7 @@ what the clock faces suggest.
 |---|---|
 | `@tzslot/core` | The arithmetic. No DOM, no framework — usable on a server too. |
 | `@tzslot/dom` | Every widget, in plain DOM. Works in any framework, or none. |
-| `@tzslot/angular` | Angular 21 components over `@tzslot/dom`: signals, forms, zoneless. |
+| `@tzslot/angular` | Angular components over `@tzslot/dom`: signals, forms, zoneless or not. Angular 18 to 21. |
 | `@tzslot/theme` | Optional. CSS (or Sass) setting the widgets' colours; light, dark, high contrast, a Tailwind v4 bridge. |
 
 The widgets live in `@tzslot/dom`; a framework package only translates its own
@@ -147,4 +147,6 @@ DOM.
 
 ## Licence
 
-MIT.
+[MIT](LICENSE). Free to use, in personal and commercial projects alike, free
+to copy, modify and redistribute; keep the copyright notice. It comes with no
+warranty.

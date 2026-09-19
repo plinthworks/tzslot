@@ -139,7 +139,14 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
   });
 
   constructor() {
-    effect(() => this.calendar.update(this.settings()));
+    // The settings are read here, so the effect follows them; the call into the
+    // widget runs untracked. A widget may answer by calling back — closing a
+    // panel, say — and a callback that writes a signal inside an effect is an
+    // error on Angular 18 (NG0600), and a hidden dependency on any version.
+    effect(() => {
+      const settings = this.settings();
+      untracked(() => this.calendar.update(settings));
+    });
   }
 
   /** Projected content only exists once the view does. */

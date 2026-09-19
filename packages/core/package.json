@@ -1,6 +1,6 @@
 {
   "name": "@tzslot/core",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "DST-safe date and time primitives, built on the Temporal API. No DOM, no framework.",
   "type": "module",
   "license": "MIT",

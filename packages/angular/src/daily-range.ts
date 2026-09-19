@@ -10,6 +10,7 @@ import {
   input,
   model,
   signal,
+  untracked,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
@@ -93,9 +94,16 @@ export class DailyRange implements ControlValueAccessor {
   });
 
   constructor() {
+    // The settings are read here, so the effect follows them; the call into the
+    // widget runs untracked. A widget may answer by calling back — closing a
+    // panel, say — and a callback that writes a signal inside an effect is an
+    // error on Angular 18 (NG0600), and a hidden dependency on any version.
     effect(() => {
-      this.range.update(this.settings());
-      this.summary.set(this.range.summary);
+      const settings = this.settings();
+      untracked(() => {
+        this.range.update(settings);
+        this.summary.set(this.range.summary);
+      });
     });
     inject(DestroyRef).onDestroy(() => this.range.destroy());
   }

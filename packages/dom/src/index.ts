@@ -46,6 +46,7 @@ export type {
   DateTimeRangeValue,
 } from './datetime-range.js';
 export { formatWith, parseWith, patternFor, maskWith } from './format.js';
+export { zoneName, distinguish } from './zone-names.js';
 export { createTimeSelect } from './time-select.js';
 export type {
   TimeSelectInstance,

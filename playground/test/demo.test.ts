@@ -152,7 +152,7 @@ describe('the date-and-time field', () => {
     fixture.detectChanges();
     expect(
       Array.from(panel.querySelectorAll('.tz-datetime__reading')).map((b) => b.textContent),
-    ).toEqual(['UTC+02:00', 'UTC+01:00']);
+    ).toEqual(['Summer', 'Standard']);
   });
 });
 

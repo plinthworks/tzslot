@@ -19,6 +19,8 @@ export interface TzslotMessages {
   readonly timeLabel: string;
   /** The two readings of a repeated hour, offered side by side. */
   readonly whichReading: string;
+  /** Which of the two is in force, once one has been chosen. */
+  readingChosen(parts: { name: string; offset: string }): string;
 
   readonly previousMonth: string;
   readonly nextMonth: string;
@@ -88,6 +90,7 @@ export const EN: TzslotMessages = {
   chooseDateTime: 'Choose a date and a time',
   timeLabel: 'Time',
   whichReading: 'This hour happens twice. Which one?',
+  readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
   previousMonth: 'Previous month',
   nextMonth: 'Next month',
   chooseMonth: 'Choose a month',
@@ -132,6 +135,7 @@ export const FR: TzslotMessages = {
   chooseDateTime: 'Choisir une date et une heure',
   timeLabel: 'Heure',
   whichReading: 'Cette heure a lieu deux fois. Laquelle ?',
+  readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
   previousMonth: 'Mois précédent',
   nextMonth: 'Mois suivant',
   chooseMonth: 'Choisir un mois',

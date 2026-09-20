@@ -44,8 +44,10 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
 `'list'` for the times on offer that day. The menus show the chosen day as the
 zone really has it: the hour the clocks skip is not offered, and the hour they
-repeat appears twice, by its two offsets — so there is nothing left to ask
-afterwards.
+repeat appears twice, by the name the zone gives each reading — "02 — Summer"
+and "02 — Standard", in the reader's own language — so there is nothing left
+to ask afterwards. The compact field does ask, with the same names, and then
+says which of the two it holds: 02:30 looks identical either way.
 
 ## The text in a field
 

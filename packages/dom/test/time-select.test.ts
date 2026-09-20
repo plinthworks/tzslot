@@ -131,8 +131,9 @@ describe('the day the menus are choosing on', () => {
       timeZone: paris,
       minuteStep: 30,
     });
-    expect(hours()).toContain('02 (UTC+02:00)');
-    expect(hours()).toContain('02 (UTC+01:00)');
+    // Named rather than numbered: nobody books a room at UTC+02:00.
+    expect(hours()).toContain('02 — Summer');
+    expect(hours()).toContain('02 — Standard');
     expect(hours().filter((h) => h?.startsWith('02'))).toHaveLength(2);
   });
 

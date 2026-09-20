@@ -8,6 +8,7 @@ import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
+import { distinguish, zoneName } from './zone-names.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATETIME_CSS, FIELD_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
 
@@ -152,7 +153,7 @@ export function createDateTimeField(
   /** The day and time being built, which exist before a moment does. */
   let draft: { date: PlainDate | null; time: PlainTime | null } = readOff(s.value, s.timeZone);
   /** The two readings of a repeated hour, while the choice is open. */
-  let readings: { instant: Instant; offset: string }[] = [];
+  let readings: { instant: Instant; offset: string; name: string; full: string }[] = [];
   /**
    * What the panel says about the moment: that the clocks skipped it, or that
    * it happens twice. Held, not passed to one render: a framework that hands
@@ -328,7 +329,19 @@ export function createDateTimeField(
       return;
     }
     if (found.ambiguous) {
-      readings = found.instants.map((instant, i) => ({ instant, offset: found.offsets[i] ?? '' }));
+      // Named, not numbered: "heure d'été" is something a person can answer,
+      // "+02:00" is something they have to work out.
+      const [first, second] = found.instants;
+      const names = distinguish(
+        zoneName(first!, s.timeZone, s.locale),
+        zoneName(second!, s.timeZone, s.locale),
+      );
+      readings = found.instants.map((instant, i) => ({
+        instant,
+        offset: found.offsets[i] ?? '',
+        name: names[i] ?? '',
+        full: zoneName(instant, s.timeZone, s.locale),
+      }));
       notice = s.messages.whichReading;
       commit(readings[0]!.instant);
       return;
@@ -424,21 +437,35 @@ export function createDateTimeField(
     });
 
     if (note) {
-      note.textContent = notice ?? '';
-      note.hidden = notice === null;
+      // Once one of the two is chosen, say which: the field shows 02:00
+      // either way, and that alone never told anyone what they picked.
+      const chosen = readings.find((reading) => s.value?.equals(reading.instant));
+      const said = chosen
+        ? `${notice ?? ''} ${s.messages.readingChosen({ name: chosen.full, offset: chosen.offset })}`.trim()
+        : notice;
+      note.textContent = said ?? '';
+      note.hidden = !said;
     }
     if (choice) {
-      choice.replaceChildren(
-        ...readings.map(({ instant, offset }) => {
-          const button = el('button', 'tz-datetime__reading');
+      // The same two buttons are kept and repainted. Rebuilding them would
+      // take the one under the pointer away mid-click — pressing it moves the
+      // focus out of the text field, which repaints before the click lands.
+      const buttons = readings.map(({ instant, offset, name, full }, index) => {
+        let button = choice!.children[index] as HTMLButtonElement | undefined;
+        if (!button) {
+          button = el('button', 'tz-datetime__reading');
           button.type = 'button';
-          button.textContent = `UTC${offset}`;
-          button.setAttribute('aria-pressed', String(s.value?.equals(instant) ?? false));
-          button.classList.toggle('tz-datetime__reading--on', s.value?.equals(instant) ?? false);
-          button.addEventListener('click', () => commit(instant));
-          return button;
-        }),
-      );
+          choice!.append(button);
+        }
+        const picked = s.value?.equals(instant) ?? false;
+        button.textContent = name || `UTC${offset}`;
+        button.title = `${full} (UTC${offset})`;
+        button.setAttribute('aria-pressed', String(picked));
+        button.classList.toggle('tz-datetime__reading--on', picked);
+        button.onclick = () => commit(instant);
+        return button;
+      });
+      while (choice.children.length > buttons.length) choice.lastElementChild!.remove();
       choice.hidden = readings.length === 0;
     }
     panel.place();

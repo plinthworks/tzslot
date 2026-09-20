@@ -125,7 +125,7 @@ describe('the hour the clocks skip', () => {
 });
 
 describe('the hour that happens twice', () => {
-  it('offers both readings by their offset instead of guessing', () => {
+  it('offers both readings by name instead of guessing', () => {
     // 02:30 happens twice in Paris on 25 October 2026.
     mount({ today: Temporal.PlainDate.from('2026-10-25') });
     field.open();
@@ -133,14 +133,19 @@ describe('the hour that happens twice', () => {
     typeTime('hour', '02');
     typeTime('minute', '30');
 
-    expect(readings().map((b) => b.textContent)).toEqual(['UTC+02:00', 'UTC+01:00']);
+    // The words that tell the two apart, with the full name on hover.
+    expect(readings().map((b) => b.textContent)).toEqual(['Summer', 'Standard']);
+    expect(readings()[0]!.title).toBe('Central European Summer Time (UTC+02:00)');
     expect(note().textContent).toContain('happens twice');
+    // And which of the two stands, since the field shows 02:30 either way.
+    expect(note().textContent).toContain('Central European Summer Time (UTC+02:00)');
     // The first reading is shown, but the choice is the user's.
     expect(field.value!.toString()).toBe('2026-10-25T00:30:00Z');
 
     readings()[1]!.click();
     expect(field.value!.toString()).toBe('2026-10-25T01:30:00Z');
     expect(readings()[1]!.getAttribute('aria-pressed')).toBe('true');
+    expect(note().textContent).toContain('Central European Standard Time (UTC+01:00)');
   });
 
   it('keeps the explanation when the value it just reported is handed back', () => {

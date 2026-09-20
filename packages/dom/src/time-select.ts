@@ -1,6 +1,7 @@
 import { Temporal, getDaySlots } from '@tzslot/core';
 import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
+import { distinguish, zoneName } from './zone-names.js';
 import { TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 export interface TimeSelectSettings {
@@ -120,15 +121,23 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
   }
 
   /** One entry per choosable hour: twice over for the hour that happens twice. */
-  function realHours(slots: Slot[]): { hour: number; offset: string | null }[] {
-    const seen = new Map<string, { hour: number; offset: string | null }>();
+  function realHours(slots: Slot[]): { hour: number; offset: string | null; name: string }[] {
+    const seen = new Map<string, { hour: number; offset: string | null; name: string }>();
     for (const slot of slots) {
       const hour = slot.time.hour;
       if (hour % s.hourStep !== 0) continue;
-      if (slot.ambiguous) {
-        for (const offset of slot.offsets) seen.set(`${hour}|${offset}`, { hour, offset });
+      if (slot.ambiguous && s.timeZone) {
+        // What the zone calls each reading, cut down to the words that differ:
+        // "Summer" and "Standard", "d'été" and "normale".
+        const names = distinguish(
+          zoneName(slot.instants[0]!, s.timeZone, s.locale),
+          zoneName(slot.instants[1]!, s.timeZone, s.locale),
+        );
+        slot.offsets.forEach((offset, i) => {
+          seen.set(`${hour}|${offset}`, { hour, offset, name: names[i] ?? offset });
+        });
       } else if (!seen.has(`${hour}|`)) {
-        seen.set(`${hour}|`, { hour, offset: null });
+        seen.set(`${hour}|`, { hour, offset: null, name: '' });
       }
     }
     return [...seen.values()];
@@ -232,9 +241,9 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       // twice told apart by its offset, so nothing is left to ask afterwards.
       fillKeyed(
         hour,
-        realHours(slots).map(({ hour: h, offset }) => ({
+        realHours(slots).map(({ hour: h, offset, name }) => ({
           value: `${h}|${offset ?? ''}`,
-          label: offset === null ? shownHour(h) : `${shownHour(h)} (UTC${offset})`,
+          label: offset === null ? shownHour(h) : `${shownHour(h)} — ${name}`,
         })),
         time === null ? null : `${time.hour}|${s.offset ?? ''}`,
       );

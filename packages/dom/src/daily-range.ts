@@ -1,9 +1,10 @@
 import { Temporal, getDailyWindows, formatDuration } from '@tzslot/core';
 import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
+import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DAILY_CSS, SLOTS_CSS, ensureStyles } from './styles.js';
+import { DAILY_CSS, SLOTS_CSS, TIME_CSS, ensureStyles } from './styles.js';
 
 /**
  * Two dates and two clock times: "the 3rd to the 7th, 09:00 to 17:00 each day".
@@ -19,8 +20,19 @@ export interface DailyRangeValue {
   readonly to: PlainTime | null;
 }
 
+/** Two compact fields, or a list of times to click. */
+export type TimeLayout = 'input' | 'list';
+
 export interface DailyRangeSettings {
   value: DailyRangeValue;
+  /**
+   * How the two hours are chosen. 'input' by default: two lists of forty-eight
+   * buttons are a long way to say 09:00. 'list' is the right one when the
+   * times on offer are the point — opening hours, say.
+   */
+  timeLayout: TimeLayout;
+  /** 12-hour fields with an AM/PM button; the locale decides when unset. */
+  hour12: boolean | undefined;
   /** An IANA identifier. The hours are read on the clocks of this zone. */
   timeZone: string;
   stepMinutes: number;
@@ -83,6 +95,8 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     renderCell: undefined,
     today: Temporal.Now.plainDateISO(),
     disabled: false,
+    timeLayout: 'input',
+    hour12: undefined,
     messages: EN,
     onChange: undefined,
     ...initial,
@@ -126,12 +140,16 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     const list = el('div', 'tz-slots tz-daily__list');
     list.setAttribute('role', 'listbox');
     list.dataset['edge'] = edge;
-    column.append(label, list);
+    const inputHost = el('div', 'tz-daily__input');
+    inputHost.dataset['edge'] = edge;
+    const note = el('span', 'tz-daily__note');
+    column.append(label);
     columns.append(column);
-    return { label, list };
+    return { edge, column, label, list, inputHost, note, input: null as TimeInputInstance | null };
   };
   const fromColumn = makeColumn('from');
   const toColumn = makeColumn('to');
+  const both = [fromColumn, toColumn];
 
   body.append(datesBox, hoursBox);
   host.append(body);
@@ -154,6 +172,36 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     }
     return out;
   };
+
+  /** The compact form: one field per end, and a word under an end that is tomorrow's. */
+  function paintInput(column: (typeof both)[number], label: string): void {
+    column.list.remove();
+    if (!column.input) {
+      column.input = createTimeInput(column.inputHost, {
+        injectStyles,
+        onChange: (time) => commit({ ...s.value, [column.edge]: time }),
+      });
+    }
+    column.input.update({
+      value: s.value[column.edge],
+      stepMinutes: s.stepMinutes,
+      minTime: s.minTime,
+      maxTime: s.maxTime,
+      hour12: s.hour12,
+      locale: s.locale,
+      disabled: s.disabled,
+      messages: s.messages,
+    });
+    column.inputHost.setAttribute('aria-label', label);
+    if (!column.inputHost.isConnected) column.column.append(column.inputHost);
+
+    const { from, to } = s.value;
+    const nextDay = column.edge === 'to' && from !== null && to !== null && minutesOf(to) <= minutesOf(from);
+    if (nextDay) {
+      column.note.textContent = s.messages.nextDay;
+      if (!column.note.isConnected) column.column.append(column.note);
+    } else column.note.remove();
+  }
 
   function paintList(list: HTMLElement, edge: 'from' | 'to', label: string): void {
     const chosen = s.value[edge];
@@ -225,6 +273,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
   function render(): void {
     if (stylesPending && host.isConnected) {
       ensureStyles(host, 'slots', SLOTS_CSS);
+      ensureStyles(host, 'time', TIME_CSS);
       ensureStyles(host, 'daily', DAILY_CSS);
       stylesPending = false;
     }
@@ -247,8 +296,18 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       disabled: s.disabled,
       messages: s.messages,
     });
-    paintList(fromColumn.list, 'from', s.messages.timeFrom);
-    paintList(toColumn.list, 'to', s.messages.timeTo);
+    for (const column of both) {
+      const label = column.edge === 'from' ? s.messages.timeFrom : s.messages.timeTo;
+      if (s.timeLayout === 'input') paintInput(column, label);
+      else {
+        column.input?.destroy();
+        column.input = null;
+        column.inputHost.remove();
+        column.note.remove();
+        if (!column.list.isConnected) column.column.append(column.list);
+        paintList(column.list, column.edge, label);
+      }
+    }
     paintResult();
   }
 
@@ -289,6 +348,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     },
     destroy() {
       listening.abort();
+      for (const column of both) column.input?.destroy();
       range.destroy();
       result.remove();
       body.remove();

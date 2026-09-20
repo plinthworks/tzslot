@@ -40,6 +40,13 @@ export interface TzslotMessages {
   readonly hours: string;
   readonly timeFrom: string;
   readonly timeTo: string;
+  /** The compact time input: its two fields and its AM/PM button. */
+  readonly hourLabel: string;
+  readonly minuteLabel: string;
+  readonly meridiemLabel: string;
+  readonly am: string;
+  readonly pm: string;
+
   /** Under an end time that falls on the following day. Short. */
   readonly nextDay: string;
   /** "5 days · 40h" */
@@ -90,6 +97,11 @@ export const EN: TzslotMessages = {
   timeFrom: 'From',
   timeTo: 'Until',
   nextDay: 'next day',
+  hourLabel: 'Hour',
+  minuteLabel: 'Minute',
+  meridiemLabel: 'Before or after noon',
+  am: 'AM',
+  pm: 'PM',
   dailySummary: ({ days, total }) => `${days} ${days === 1 ? 'day' : 'days'} · ${total}`,
   unusualDay: ({ date, real, change }) =>
     ({
@@ -126,6 +138,11 @@ export const FR: TzslotMessages = {
   timeFrom: 'De',
   timeTo: "Jusqu'à",
   nextDay: 'lendemain',
+  hourLabel: 'Heure',
+  minuteLabel: 'Minute',
+  meridiemLabel: 'Avant ou après midi',
+  am: 'AM',
+  pm: 'PM',
   dailySummary: ({ days, total }) => `${days} ${days === 1 ? 'jour' : 'jours'} · ${total}`,
   unusualDay: ({ date, real, change }) =>
     ({

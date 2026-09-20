@@ -17,9 +17,22 @@ afterEach(() => {
 const day = (iso: string) => host.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 const time = (edge: 'from' | 'to', t: string) =>
   host.querySelector<HTMLButtonElement>(`.tz-daily__list[data-edge="${edge}"] [data-time="${t}"]`)!;
+const field = (edge: 'from' | 'to', part: 'hour' | 'minute') =>
+  host.querySelector<HTMLInputElement>(`.tz-daily__input[data-edge="${edge}"] [data-part="${part}"]`)!;
+const arrow = (edge: 'from' | 'to', part: 'hour' | 'minute', dir: 'up' | 'down') =>
+  host.querySelector<HTMLButtonElement>(
+    `.tz-daily__input[data-edge="${edge}"] .tz-time__arrow[data-part="${part}"][data-step="${dir}"]`,
+  )!;
+const typeTime = (edge: 'from' | 'to', part: 'hour' | 'minute', text: string) => {
+  const b = field(edge, part);
+  b.focus();
+  b.value = text;
+  b.dispatchEvent(new Event('input', { bubbles: true }));
+  b.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+};
 const text = (sel: string) => host.querySelector(sel)?.textContent ?? null;
 
-describe('choosing', () => {
+describe('choosing, with the compact fields', () => {
   it('two days and two times make a summary, in any order', () => {
     const onChange = vi.fn();
     widget = createDailyRange(host, {
@@ -27,6 +40,7 @@ describe('choosing', () => {
       today: Temporal.PlainDate.from('2026-06-15'),
       locale: 'en-GB',
       stepMinutes: 60,
+      timeLayout: 'list',
       onChange,
     });
     expect(host.querySelector('.tz-daily__result')).toBeNull();
@@ -50,6 +64,7 @@ describe('night shifts across the end of summer time', () => {
       timeZone: 'Europe/Paris',
       locale: 'en-GB',
       stepMinutes: 60,
+      timeLayout: 'list',
       today: Temporal.PlainDate.from('2026-10-20'),
       value: {
         start: Temporal.PlainDate.from('2026-10-23'),
@@ -82,7 +97,7 @@ describe('night shifts across the end of summer time', () => {
 
 describe('bounds and state', () => {
   it('offers only the hours asked for', () => {
-    widget = createDailyRange(host, { stepMinutes: 30, minTime: '08:00', maxTime: '18:00' });
+    widget = createDailyRange(host, { stepMinutes: 30, minTime: '08:00', maxTime: '18:00', timeLayout: 'list' });
     const times = Array.from(host.querySelectorAll('.tz-daily__list[data-edge="from"] .tz-slots__slot'));
     expect(times[0]!.textContent).toBe('08:00');
     expect(times.at(-1)!.textContent).toBe('18:00');
@@ -90,17 +105,79 @@ describe('bounds and state', () => {
   });
 
   it('disabled stops the times and the days', () => {
-    widget = createDailyRange(host, { disabled: true });
+    widget = createDailyRange(host, { disabled: true, timeLayout: 'list' });
     expect(time('from', '09:00').disabled).toBe(true);
     expect(Array.from(host.querySelectorAll<HTMLButtonElement>('.tz-range__day')).every((b) => b.disabled)).toBe(true);
   });
 
   it('clear empties all four parts', () => {
     const onChange = vi.fn();
-    widget = createDailyRange(host, { onChange });
+    widget = createDailyRange(host, { onChange, timeLayout: 'list' });
     time('from', '09:00').click();
     widget.clear();
     expect(onChange).toHaveBeenLastCalledWith({ start: null, end: null, from: null, to: null });
     expect(time('from', '09:00').classList.contains('tz-slots__slot--selected')).toBe(false);
+  });
+});
+
+describe('the two ways of choosing the hours', () => {
+  it('compact fields by default: no list of forty-eight buttons', () => {
+    widget = createDailyRange(host, { timeZone: 'Europe/Paris', locale: 'en-GB' });
+    expect(host.querySelectorAll('.tz-daily__list')).toHaveLength(0);
+    expect(host.querySelectorAll('.tz-daily__input')).toHaveLength(2);
+  });
+
+  it('typing and stepping a field sets the value', () => {
+    const onChange = vi.fn();
+    widget = createDailyRange(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      stepMinutes: 30,
+      today: Temporal.PlainDate.from('2026-06-15'),
+      onChange,
+    });
+    typeTime('from', 'hour', '09');
+    expect(widget.value.from!.toString()).toBe('09:00:00');
+    arrow('from', 'minute', 'up').click();
+    expect(widget.value.from!.toString()).toBe('09:30:00');
+    expect(onChange).toHaveBeenCalledTimes(2);
+  });
+
+  it('says when the end falls on the next day, and counts the night as nine hours', () => {
+    widget = createDailyRange(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      value: {
+        start: Temporal.PlainDate.from('2026-10-24'),
+        end: Temporal.PlainDate.from('2026-10-24'),
+        from: Temporal.PlainTime.from('22:00'),
+        to: Temporal.PlainTime.from('06:00'),
+      },
+    });
+    expect(field('from', 'hour').value).toBe('22');
+    expect(field('to', 'hour').value).toBe('06');
+    expect(host.querySelector('.tz-daily__note')!.textContent).toBe('next day');
+    expect(text('.tz-daily__summary')).toBe('1 day · 9h');
+  });
+
+  it('switches between the two without losing the value', () => {
+    widget = createDailyRange(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      stepMinutes: 60,
+      value: {
+        start: null,
+        end: null,
+        from: Temporal.PlainTime.from('09:00'),
+        to: Temporal.PlainTime.from('17:00'),
+      },
+    });
+    widget.update({ timeLayout: 'list' });
+    expect(host.querySelectorAll('.tz-daily__input')).toHaveLength(0);
+    expect(time('from', '09:00').classList.contains('tz-slots__slot--selected')).toBe(true);
+
+    widget.update({ timeLayout: 'input' });
+    expect(field('to', 'hour').value).toBe('17');
+    expect(widget.value.from!.toString()).toBe('09:00:00');
   });
 });

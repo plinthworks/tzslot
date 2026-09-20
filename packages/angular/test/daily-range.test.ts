@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { Component } from '@angular/core';
+import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { DailyRange, type DailyRangeValue } from '../src/index.js';
+import { DailyRange, type DailyRangeValue, type TimeLayout } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
 
 @Component({
@@ -11,11 +11,12 @@ import { Temporal } from '@tzslot/core';
   template: `
     <form [formGroup]="form">
       <tz-daily-range formControlName="rota" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
-                      [locale]="'en-GB'" [today]="today" />
+                      [locale]="'en-GB'" [today]="today" [timeLayout]="layout()" />
     </form>
   `,
 })
 class Host {
+  readonly layout = signal<TimeLayout>('list');
   readonly today = Temporal.PlainDate.from('2026-06-15');
   readonly form = new FormGroup({
     rota: new FormControl<DailyRangeValue>({ start: null, end: null, from: null, to: null }),
@@ -57,5 +58,21 @@ describe('<tz-daily-range> in a form', () => {
     fixture.componentInstance.form.controls.rota.disable();
     fixture.detectChanges();
     expect(el().querySelector<HTMLButtonElement>('[data-edge="from"] [data-time="09:00"]')!.disabled).toBe(true);
+  });
+});
+
+describe('<tz-daily-range> with the compact fields', () => {
+  it('is what the component shows by default, and typing fills the control', () => {
+    fixture.componentInstance.layout.set('input');
+    fixture.detectChanges();
+
+    const hour = el().querySelector<HTMLInputElement>('.tz-daily__input[data-edge="from"] [data-part="hour"]')!;
+    hour.focus();
+    hour.value = '09';
+    hour.dispatchEvent(new Event('input', { bubbles: true }));
+    hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    fixture.detectChanges();
+
+    expect(fixture.componentInstance.form.controls.rota.value!.from!.toString()).toBe('09:00:00');
   });
 });

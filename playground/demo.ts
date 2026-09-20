@@ -7,6 +7,7 @@ import {
   DailyRange,
   MultiDate,
   TimeSlotPicker,
+  type TimeLayout,
   type DailyRangeValue,
   type DateRangeValue,
   type DateTimeRangeValue,
@@ -127,8 +128,15 @@ function parisAt(iso: string): Instant {
           </button>
         }
       </div>
-      <tz-daily-range [(value)]="rota" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
-                      [locale]="'en-GB'" [today]="rotaToday" />
+      <div class="row">
+        <span class="note">Hours as</span>
+        @for (l of layouts; track l) {
+          <button type="button" class="chip" [class.on]="timeLayout() === l"
+                  (click)="timeLayout.set(l)">{{ l }}</button>
+        }
+      </div>
+      <tz-daily-range [(value)]="rota" [timeZone]="'Europe/Paris'" [stepMinutes]="30"
+                      [locale]="'en-GB'" [today]="rotaToday" [timeLayout]="timeLayout()" />
     </section>
     }
 
@@ -406,6 +414,8 @@ export class Demo {
     { label: 'An office week', start: '2026-06-15', end: '2026-06-19', from: '09:00', to: '17:00' },
   ];
   protected readonly dailyLabel = signal('Night shifts, clocks going back');
+  protected readonly layouts: TimeLayout[] = ['input', 'list'];
+  protected readonly timeLayout = signal<TimeLayout>('input');
   protected readonly rotaToday = Temporal.PlainDate.from('2026-10-20');
   protected readonly rota = signal<DailyRangeValue>({
     start: Temporal.PlainDate.from('2026-10-23'),

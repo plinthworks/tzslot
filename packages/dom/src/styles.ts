@@ -357,6 +357,7 @@ export const DAILY_CSS = `
   align-content: start;
   padding-right: 0.25rem;
 }
+.tz-daily__note { display: block; margin-top: 0.25rem; font-size: 0.75em; opacity: 0.7; }
 .tz-daily__result {
   display: flex;
   flex-wrap: wrap;
@@ -375,6 +376,66 @@ export const DAILY_CSS = `
   padding-left: 1.1rem;
   font-size: 0.9em;
   color: var(--tz-dtr-warning-fg, var(--tz-warning, currentColor));
+}
+`;
+
+/** The compact time input: two fields, their arrows, and an AM/PM button. */
+export const TIME_CSS = `
+.tz-time {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  font: var(--tz-font, inherit);
+}
+.tz-time__field {
+  display: inline-flex;
+  align-items: stretch;
+  border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
+  background: var(--tz-time-bg, var(--tz-bg, transparent));
+  overflow: hidden;
+}
+.tz-time__input {
+  width: var(--tz-time-width, 2.5rem);
+  border: 0;
+  padding: 0.375rem 0.25rem;
+  background: transparent;
+  color: var(--tz-time-fg, var(--tz-fg));
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.tz-time__input:focus { outline: none; }
+.tz-time__field:focus-within {
+  border-color: var(--tz-accent, currentColor);
+  outline: var(--tz-focus-ring, 2px solid var(--tz-accent));
+  outline-offset: 1px;
+}
+.tz-time__input:disabled { opacity: 0.5; cursor: not-allowed; }
+.tz-time__arrows { display: flex; flex-direction: column; }
+.tz-time__arrow {
+  flex: 1;
+  border: 0;
+  border-left: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
+  padding: 0 0.3rem;
+  background: transparent;
+  color: inherit;
+  font-size: 0.6rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.tz-time__arrow + .tz-time__arrow { border-top: 1px solid var(--tz-time-border, var(--tz-border, currentColor)); }
+.tz-time__separator { opacity: 0.6; }
+.tz-time__meridiem {
+  margin-left: 0.25rem;
+  border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
+  padding: 0.375rem 0.5rem;
+  background: var(--tz-time-bg, var(--tz-bg, transparent));
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125em;
+  cursor: pointer;
 }
 `;
 

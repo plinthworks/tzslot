@@ -23,6 +23,7 @@ import {
   type DailyRangeSettings,
   type DailyRangeValue,
   type RenderCell,
+  type TimeLayout,
 } from '@tzslot/dom';
 
 export type { DailyRangeValue } from '@tzslot/dom';
@@ -48,6 +49,12 @@ export class DailyRange implements ControlValueAccessor {
   /** An IANA identifier. The hours are read on the clocks of this zone. */
   readonly timeZone = input.required<string>();
   readonly stepMinutes = input(30);
+
+  /** 'input' (default) for two compact fields, 'list' for times to click. */
+  readonly timeLayout = input<TimeLayout>('input');
+
+  /** 12-hour fields with an AM/PM button; the locale decides when unset. */
+  readonly hour12 = input<boolean | undefined>(undefined);
   /** The first and last times offered. */
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
@@ -70,6 +77,8 @@ export class DailyRange implements ControlValueAccessor {
     value: this.value(),
     timeZone: this.timeZone(),
     stepMinutes: this.stepMinutes(),
+    timeLayout: this.timeLayout(),
+    hour12: this.hour12(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     firstDayOfWeek: this.firstDayOfWeek(),

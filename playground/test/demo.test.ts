@@ -130,6 +130,16 @@ describe('the same hours every day', () => {
   });
 });
 
+describe('the hours, compact or listed', () => {
+  it('starts compact and switches to a list on request', () => {
+    expect(el().querySelectorAll('.tz-daily__input')).toHaveLength(2);
+    chip('list').click();
+    fixture.detectChanges();
+    expect(el().querySelectorAll('.tz-daily__list')).toHaveLength(2);
+    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('4 days · 33h');
+  });
+});
+
 describe('the theme controls', () => {
   afterEach(() => {
     document.documentElement.removeAttribute('data-theme');

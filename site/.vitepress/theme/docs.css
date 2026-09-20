@@ -1,0 +1,32 @@
+/* The widgets sit on the page's own colours, whichever theme VitePress is in. */
+:root {
+  --tz-accent: var(--vp-c-brand-1);
+  --tz-accent-fg: var(--vp-c-white);
+  --tz-bg: var(--vp-c-bg);
+  --tz-bg-raised: var(--vp-c-bg-soft);
+  --tz-fg: var(--vp-c-text-1);
+  --tz-fg-muted: var(--vp-c-text-2);
+  --tz-border: var(--vp-c-divider);
+}
+.dark { --tz-color-scheme: dark; }
+
+.live {
+  margin: 1.25rem 0;
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.live__stage {
+  padding: 1.25rem;
+  background: var(--vp-c-bg-soft);
+}
+.live__value {
+  padding: 0.5rem 1.25rem;
+  border-top: 1px solid var(--vp-c-divider);
+  font-family: var(--vp-font-family-mono);
+  font-size: 0.8125rem;
+  color: var(--vp-c-text-2);
+  overflow-x: auto;
+  white-space: pre;
+}
+.live div[class*='language-'] { margin: 0; border-radius: 0; }

@@ -1,12 +1,12 @@
-<!-- Written by scripts/api.mjs from packages/dom/src/calendar.ts. Do not edit. -->
+<!-- Written by scripts/api.mjs from packages/dom/src/multi-date.ts. Do not edit. -->
 
-# createCalendar · `<tz-calendar>`
+# createMultiDate · `<tz-multi-date>`
 
 ### Options
 
 | Option | Type | Default | |
 |---|---|---|---|
-| `value` | `PlainDate \| null` | `mode.empty` | The selected day. |
+| `value` | `readonly PlainDate[]` | `[]` | The chosen days, always in date order. |
 | `view` | `CalendarView` | `'days'` | Which level the grid is choosing between. |
 | `minView` | `CalendarView` | `'days'` | How far down the view may go. 'months' turns this into a month picker, 'years' into a year picker, with no further code. |
 | `firstDayOfWeek` | `Weekday` | `1` | Monday by default, as ISO-8601 numbers the week. |
@@ -19,6 +19,7 @@
 | `messages` | `TzslotMessages` | `EN` |  |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a price, places left, a class of your own, or a reason to rule it out. See RenderCell. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid, in the order given. None by default. |
+| `maxDates` | `number \| undefined` | — | Once this many days are chosen, the others stop taking clicks until one is removed. |
 
 ### Callbacks
 

@@ -473,6 +473,9 @@ export function createDateTimeField(
     });
     timeInput?.update({
       value: draft.time,
+      // The day it is on, so the arrows step over an hour that does not exist.
+      date: draft.date,
+      timeZone: s.timeZone,
       stepMinutes: s.stepMinutes,
       minTime: s.minTime,
       maxTime: s.maxTime,

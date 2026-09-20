@@ -130,3 +130,40 @@ describe('words and state', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 });
+
+describe('the morning an hour goes missing', () => {
+  it('steps over it instead of into it', () => {
+    // 02:00 to 02:59 do not exist in Paris on 29 March 2026.
+    mount({
+      value: Temporal.PlainTime.from('03:00'),
+      date: '2026-03-29',
+      timeZone: 'Europe/Paris',
+    });
+    arrow('hour', 'down').click();
+    expect(shown()).toBe('01:00');
+
+    arrow('hour', 'up').click();
+    expect(shown()).toBe('03:00');
+  });
+
+  it('steps the minutes over a missing half hour, within their own hour', () => {
+    // Lord Howe moves by half an hour: on 4 October 2026, 02:00 to 02:29 are
+    // skipped. The minutes wrap inside their hour, so this is where stepping
+    // them can land in a gap at all.
+    mount({
+      value: Temporal.PlainTime.from('02:30'),
+      stepMinutes: 15,
+      date: '2026-10-04',
+      timeZone: 'Australia/Lord_Howe',
+    });
+    arrow('minute', 'down').click();
+    // 02:15 and 02:00 are not there; the wrap lands on 02:45.
+    expect(shown()).toBe('02:45');
+  });
+
+  it('leaves an ordinary day alone', () => {
+    mount({ value: Temporal.PlainTime.from('03:00'), date: '2026-06-15', timeZone: 'Europe/Paris' });
+    arrow('hour', 'down').click();
+    expect(shown()).toBe('02:00');
+  });
+});

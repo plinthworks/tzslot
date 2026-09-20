@@ -1,5 +1,5 @@
-import { Temporal } from '@tzslot/core';
-import type { PlainTime } from '@tzslot/core';
+import { Temporal, resolveWallTime } from '@tzslot/core';
+import type { PlainDate, PlainTime } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
 import { TIME_CSS, ensureStyles } from './styles.js';
 
@@ -16,6 +16,14 @@ export interface TimeInputSettings {
    */
   hour12: boolean | undefined;
   locale: string | undefined;
+  /**
+   * The day this time is on, and the zone it is read in. Given both, the
+   * arrows step over an hour the clocks skip instead of landing in it — from
+   * 03:00 down is 01:00 on the morning of the change, not 02:00, which would
+   * be corrected straight back and look like a stuck arrow.
+   */
+  date: PlainDate | string | null;
+  timeZone: string | undefined;
   /**
    * 'boxed' stands on its own, in a form. 'bare' is the row under a calendar:
    * big figures, no frame, arrows only when the pointer or the focus is there.
@@ -71,6 +79,8 @@ export function createTimeInput(host: HTMLElement, options: TimeInputOptions = {
     maxTime: undefined,
     hour12: undefined,
     locale: undefined,
+    date: null,
+    timeZone: undefined,
     variant: 'boxed',
     disabled: false,
     messages: EN,
@@ -179,20 +189,31 @@ export function createTimeInput(host: HTMLElement, options: TimeInputOptions = {
     } else meridiem.remove();
   }
 
+  /** Whether a wall time happens at all, on the day this field is about. */
+  function exists(time: PlainTime): boolean {
+    if (s.date === null || s.timeZone === undefined) return true;
+    const day = typeof s.date === 'string' ? Temporal.PlainDate.from(s.date) : s.date;
+    return resolveWallTime(day, time, s.timeZone).exists;
+  }
+
   /** Moving a field by the wheel, the arrows or the keyboard. */
   function step(part: 'hour' | 'minute', direction: 1 | -1): void {
     if (s.disabled) return;
     const from = s.value ?? asTime(s.minTime) ?? Temporal.PlainTime.from('09:00');
-    const moved =
-      part === 'hour'
-        ? from.add({ hours: direction })
-        : from.add({ minutes: direction * s.stepMinutes });
-    // A field of its own wraps within itself: stepping the minutes past the
-    // hour would move an appointment by an hour nobody asked for.
-    const kept =
-      part === 'hour'
-        ? from.with({ hour: moved.hour })
-        : from.with({ minute: moved.minute });
+    const once = (time: PlainTime) => {
+      const moved =
+        part === 'hour'
+          ? time.add({ hours: direction })
+          : time.add({ minutes: direction * s.stepMinutes });
+      // A field of its own wraps within itself: stepping the minutes past the
+      // hour would move an appointment by an hour nobody asked for.
+      return part === 'hour' ? time.with({ hour: moved.hour }) : time.with({ minute: moved.minute });
+    };
+
+    let kept = once(from);
+    // Step over the hour the clocks skip rather than into it. Bounded, so a
+    // zone that somehow offered nothing could not spin here forever.
+    for (let tries = 0; tries < 60 && !exists(kept); tries += 1) kept = once(kept);
     commit(kept);
   }
 

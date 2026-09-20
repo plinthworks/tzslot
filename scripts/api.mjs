@@ -16,7 +16,25 @@ const root = new URL('..', import.meta.url).pathname;
 /** Every widget, with the interface that describes what it takes. */
 export const WIDGETS = [
   { name: 'createCalendar', file: 'calendar.ts', settings: 'CalendarSettings', angular: 'tz-calendar' },
-  { name: 'createMultiDate', file: 'multi-date.ts', settings: 'MultiDateSettings', angular: 'tz-multi-date' },
+  {
+    name: 'createMultiDate',
+    file: 'multi-date.ts',
+    // Its settings are the calendar's, with a different value and one addition.
+    settings: 'CalendarSettings',
+    from: 'calendar.ts',
+    overrides: {
+      value: { type: 'readonly PlainDate[]', note: 'The chosen days, always in date order.', fallback: '[]' },
+    },
+    extra: [
+      {
+        name: 'maxDates',
+        type: 'number | undefined',
+        fallback: 'undefined',
+        note: 'Once this many days are chosen, the others stop taking clicks until one is removed.',
+      },
+    ],
+    angular: 'tz-multi-date',
+  },
   { name: 'createDateField', file: 'date-field.ts', settings: 'DateFieldSettings', angular: 'tz-date-field' },
   { name: 'createDateTimeField', file: 'datetime-field.ts', settings: 'DateTimeFieldSettings', angular: 'tz-datetime-field' },
   { name: 'createDateRange', file: 'date-range.ts', settings: 'DateRangeSettings', angular: 'tz-date-range' },
@@ -35,7 +53,11 @@ function commentOf(node, text) {
   const ranges = ts.getLeadingCommentRanges(text, node.getFullStart()) ?? [];
   const raw = ranges.map((r) => text.slice(r.pos, r.end)).join('\n');
   return raw
-    .replace(/\/\*\*?|\*\/|^\s*\*\s?/gm, '')
+    // The fences first: stripping line by line would leave the closing slash
+    // behind, because the star of "*/" looks like the star of a comment line.
+    .replace(/\/\*\*?/g, '')
+    .replace(/\*\//g, '')
+    .replace(/^\s*\*\s?/gm, '')
     .split('\n')
     .map((line) => line.trim())
     .filter(Boolean)
@@ -91,8 +113,14 @@ export function defaultsOf(file) {
 const escape = (text) => text.replace(/\|/g, '\\|');
 
 export function tableFor(widget) {
-  const fields = fieldsOf(widget.file, widget.settings);
-  const defaults = defaultsOf(widget.file);
+  const fields = fieldsOf(widget.from ?? widget.file, widget.settings)
+    .map((field) => {
+      const override = widget.overrides?.[field.name];
+      return override ? { ...field, ...override } : field;
+    })
+    .concat(widget.extra ?? []);
+  const defaults = { ...defaultsOf(widget.from ?? widget.file) };
+  for (const field of fields) if (field.fallback !== undefined) defaults[field.name] = field.fallback;
   const rows = fields
     .filter((field) => !field.name.startsWith('on'))
     .map((field) => {

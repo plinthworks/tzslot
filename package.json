@@ -13,7 +13,10 @@
     "pack:local": "npm run build && rm -rf packed && mkdir packed && for p in core dom angular theme; do (cd packages/$p/dist && npm pack --pack-destination ../../../packed >/dev/null); done && ls packed",
     "publish:next": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public --tag next || exit 1; done",
     "publish:dry": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public --tag next --dry-run 2>&1 | grep -E 'name:|version:|total files:|package size:'; done",
-    "publish:latest": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public || exit 1; done"
+    "publish:latest": "npm run build && for p in core dom theme angular; do npm publish packages/$p/dist --access public || exit 1; done",
+    "docs:api": "node scripts/api.mjs",
+    "docs": "npm run docs:api && vitepress dev site",
+    "docs:build": "npm run docs:api && vitepress build site"
   },
   "devDependencies": {
     "@analogjs/vite-plugin-angular": "^2.7.2",

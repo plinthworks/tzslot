@@ -133,7 +133,7 @@ describe('the same hours every day', () => {
 describe('the date-and-time field', () => {
   it('asks which reading of a repeated hour was meant', () => {
     tab('Dates');
-    el().querySelector<HTMLButtonElement>('tz-datetime-field .tz-field__trigger')!.click();
+    el().querySelector<HTMLButtonElement>('tz-datetime-field .tz-field__icon-button')!.click();
     fixture.detectChanges();
 
     const panel = document.querySelector('.tz-field__panel')!;

@@ -43,6 +43,30 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 `timeLayout` chooses how a time is asked for: `'input'` for the compact field,
 `'list'` for the times on offer.
 
+## The text in a field
+
+A field can be typed into as well as chosen from, and what it writes is what
+it reads back:
+
+```html
+<!-- the locale's own numeric form: 20/09/2026 09:15 in French -->
+<tz-datetime-field [(value)]="at" timeZone="Europe/Paris" />
+
+<!-- a pattern, when the shape matters more than the reader -->
+<tz-datetime-field format="yyyy-MM-dd HH:mm" />
+
+<!-- read-only, and then free to be written any way at all -->
+<tz-datetime-field [editable]="false" dateStyle="long" timeStyle="short" />
+<tz-datetime-field [editable]="false" [displayWith]="mine" />
+```
+
+Tokens: `yyyy yy MMMM MMM MM M dd d EEEE EEE HH H hh h mm a`, anything else
+kept as written, `'quoted'` to keep letters. Text that cannot be read is
+refused rather than guessed at, and the field goes back to the last moment it
+held when you leave it. A pattern that names its month is for display only:
+"sept.", "Sept" and "septembre" are one month in three spellings, and picking
+between them is how a field stores the wrong date quietly.
+
 ## Angular
 
 ```bash

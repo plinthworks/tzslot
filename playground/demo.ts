@@ -261,9 +261,16 @@ function parisAt(iso: string): Instant {
                     (click)="fieldLayout.set(l)">{{ l }}</button>
           }
         </div>
+        <div class="row">
+          <span class="note">Format</span>
+          @for (f of formats; track f.label) {
+            <button type="button" class="chip" [class.on]="format() === f.value"
+                    (click)="format.set(f.value)">{{ f.label }}</button>
+          }
+        </div>
         <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="'en-GB'"
                            [timeLayout]="fieldLayout()" [stepMinutes]="30"
-                           [buttons]="['today', 'clear']" />
+                           [format]="format()" [buttons]="['today', 'clear']" />
         <p class="note">{{ momentText() }}</p>
       </section>
 
@@ -462,6 +469,12 @@ export class Demo {
   protected readonly pricedDate = signal<PlainDate | null>(null);
 
   protected readonly fieldLayout = signal<TimeLayout>('input');
+  protected readonly formats = [
+    { label: "the locale's", value: undefined },
+    { label: 'yyyy-MM-dd HH:mm', value: 'yyyy-MM-dd HH:mm' },
+    { label: "EEE d MMM 'at' HH:mm", value: "EEE d MMM 'at' HH:mm" },
+  ];
+  protected readonly format = signal<string | undefined>(undefined);
   protected readonly moment = signal<Instant | null>(null);
   protected momentText(): string {
     const at = this.moment();

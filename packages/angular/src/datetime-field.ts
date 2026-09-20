@@ -72,6 +72,18 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly hour12 = input<boolean | undefined>(undefined);
 
   readonly disabled = input(false);
+
+  /** The text can be typed as well as chosen. On by default. */
+  readonly editable = input(true);
+
+  /** A pattern — `yyyy-MM-dd HH:mm` — when the shape matters more than the reader. */
+  readonly format = input<string | undefined>(undefined);
+
+  /** Used when the field is not typable and no pattern is given. */
+  readonly dateStyle = input<'full' | 'long' | 'medium' | 'short'>('medium');
+  readonly timeStyle = input<'full' | 'long' | 'medium' | 'short'>('short');
+
+  /** The last word on the text. Given both, this one wins. */
   readonly displayWith = input<((value: Instant, timeZone: string) => string) | undefined>(undefined);
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly renderCell = input<RenderCell | undefined>(undefined);
@@ -111,6 +123,10 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     isSlotDisabled: this.isSlotDisabled(),
     hour12: this.hour12(),
     disabled: this.disabled() || this.formDisabled(),
+    editable: this.editable(),
+    format: this.format(),
+    dateStyle: this.dateStyle(),
+    timeStyle: this.timeStyle(),
     displayWith: this.displayWith(),
     today: this.today(),
     renderCell: this.renderCell(),

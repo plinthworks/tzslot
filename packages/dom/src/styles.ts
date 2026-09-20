@@ -145,6 +145,27 @@ export const FIELD_CSS = `
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
+.tz-field__wrap { display: inline-flex; align-items: stretch; position: relative; }
+.tz-field__trigger--editable {
+  min-width: var(--tz-field-width, 12rem);
+  padding-right: 2rem;
+  font: var(--tz-font, inherit);
+  font-variant-numeric: tabular-nums;
+}
+.tz-field__trigger--invalid { border-color: var(--tz-danger, currentColor); }
+.tz-field__icon-button {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.6rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
 .tz-field__panel {
   position: fixed;
   z-index: var(--tz-panel-z, 1000);
@@ -436,6 +457,43 @@ export const TIME_CSS = `
   font: inherit;
   font-size: 0.8125em;
   cursor: pointer;
+}
+
+/* The row under a calendar, as flatpickr draws it: large figures, no frames,
+   and arrows that only appear when they are wanted. */
+.tz-time--bare {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  width: 100%;
+  font-size: 1.05rem;
+}
+.tz-time--bare .tz-time__field {
+  flex: 1;
+  border: 0;
+  border-radius: var(--tz-radius, 0.375rem);
+  background: transparent;
+  justify-content: center;
+}
+.tz-time--bare .tz-time__input {
+  width: 100%;
+  padding: 0.35rem 0.1rem;
+  font-weight: 600;
+}
+.tz-time--bare .tz-time__arrows { opacity: 0; transition: opacity 120ms ease; }
+.tz-time--bare .tz-time__field:hover .tz-time__arrows,
+.tz-time--bare .tz-time__field:focus-within .tz-time__arrows { opacity: 1; }
+.tz-time--bare .tz-time__arrow { border: 0; opacity: 0.6; }
+.tz-time--bare .tz-time__meridiem {
+  border: 0;
+  background: transparent;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.tz-time--bare .tz-time__field:focus-within {
+  background: var(--tz-bg-raised, transparent);
+  outline: none;
 }
 `;
 

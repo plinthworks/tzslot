@@ -16,6 +16,11 @@ export interface TimeInputSettings {
    */
   hour12: boolean | undefined;
   locale: string | undefined;
+  /**
+   * 'boxed' stands on its own, in a form. 'bare' is the row under a calendar:
+   * big figures, no frame, arrows only when the pointer or the focus is there.
+   */
+  variant: 'boxed' | 'bare';
   disabled: boolean;
   messages: TzslotMessages;
   onChange: ((value: PlainTime | null) => void) | undefined;
@@ -66,6 +71,7 @@ export function createTimeInput(host: HTMLElement, options: TimeInputOptions = {
     maxTime: undefined,
     hour12: undefined,
     locale: undefined,
+    variant: 'boxed',
     disabled: false,
     messages: EN,
     onChange: undefined,
@@ -144,6 +150,7 @@ export function createTimeInput(host: HTMLElement, options: TimeInputOptions = {
       ensureStyles(host, 'time', TIME_CSS);
       stylesPending = false;
     }
+    host.classList.toggle('tz-time--bare', s.variant === 'bare');
     const time = s.value;
     const twelve = uses12();
 

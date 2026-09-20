@@ -18,7 +18,12 @@ afterEach(() => {
 const mount = (o = {}) =>
   (field = createDateTimeField(host, { timeZone: paris, locale: 'en-GB', ...o }));
 const panel = () => document.querySelector<HTMLElement>('.tz-field__panel');
-const trigger = () => host.querySelector<HTMLButtonElement>('.tz-field__trigger')!;
+const trigger = () => host.querySelector<HTMLInputElement | HTMLButtonElement>('.tz-field__trigger')!;
+/** What the field shows: the input's text, or the button's. */
+const shown = () => {
+  const node = trigger();
+  return node instanceof HTMLInputElement ? node.value : (node.textContent ?? '');
+};
 const day = (iso: string) => panel()!.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 const timeBox = (part: 'hour' | 'minute') =>
   panel()!.querySelector<HTMLInputElement>(`[data-part="${part}"].tz-time__input`)!;
@@ -47,13 +52,13 @@ describe('choosing a moment', () => {
     // 14:30 in Paris in June is 12:30 UTC.
     expect(field.value!.toString()).toBe('2026-06-17T12:30:00Z');
     expect(onChange.mock.calls.at(-1)![0].toString()).toBe('2026-06-17T12:30:00Z');
-    expect(trigger().textContent).toContain('17 Jun 2026');
-    expect(trigger().textContent).toContain('14:30');
+    // Typable by default, so it writes what it would read back: 17/06/2026 14:30.
+    expect(shown()).toBe('17/06/2026 14:30');
   });
 
   it('shows what it is given, read on the zone’s clocks', () => {
     mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
-    expect(trigger().textContent).toContain('14:30');
+    expect(shown()).toContain('14:30');
     field.open();
     expect(timeBox('hour').value).toBe('14');
     expect(day('2026-06-17').classList.contains('tz-cal__day--selected')).toBe(true);
@@ -65,7 +70,7 @@ describe('choosing a moment', () => {
     field.clear();
     expect(field.value).toBeNull();
     expect(onChange).toHaveBeenCalledWith(null);
-    expect(trigger().textContent).toContain('Choose a date and a time');
+    expect(shown()).toBe('');
   });
 });
 
@@ -156,9 +161,91 @@ describe('the list layout', () => {
 
 describe('words', () => {
   it('speaks French when given French', () => {
-    mount({ messages: FR, locale: 'fr-FR' });
-    expect(trigger().textContent).toContain('Choisir une date et une heure');
+    mount({ messages: FR, locale: 'fr-FR', editable: false, timeLayout: 'list', stepMinutes: 60 });
+    expect(shown()).toContain('Choisir une date et une heure');
     field.open();
     expect(panel()!.querySelector('.tz-datetime__label')!.textContent).toBe('Heure');
+  });
+});
+
+describe('typing in the field', () => {
+  it('does not report a change when the text is merely re-read', () => {
+    // Opening the panel moves the focus out of the field, which re-reads it.
+    const onChange = vi.fn();
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z'), onChange });
+    (trigger() as HTMLInputElement).focus();
+    (trigger() as HTMLInputElement).dispatchEvent(new FocusEvent('blur'));
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('reads what it writes, and the calendar follows the text', () => {
+    const onChange = vi.fn();
+    mount({ onChange, today: Temporal.PlainDate.from('2026-06-15') });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '17/06/2026 14:30';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(field.value!.toString()).toBe('2026-06-17T12:30:00Z');
+    expect(day('2026-06-17').classList.contains('tz-cal__day--selected')).toBe(true);
+    expect(onChange).toHaveBeenCalled();
+  });
+
+  it('takes the pattern it is given, both ways', () => {
+    mount({ format: 'yyyy-MM-dd HH:mm', value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
+    expect(shown()).toBe('2026-06-17 14:30');
+
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '2026-07-01 08:00';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainDateTime().toString()).toBe('2026-07-01T08:00:00');
+  });
+
+  it('what cannot be read is refused, and the field goes back to the last moment', () => {
+    const onChange = vi.fn();
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z'), onChange });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = 'demain matin';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(box.getAttribute('aria-invalid')).toBe('true');
+    expect(field.value!.toString()).toBe('2026-06-17T12:30:00Z');
+
+    box.dispatchEvent(new FocusEvent('blur'));
+    expect(shown()).toBe('17/06/2026 14:30');
+    expect(box.hasAttribute('aria-invalid')).toBe(false);
+    expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('a date outside the bounds is refused too', () => {
+    mount({
+      value: Temporal.Instant.from('2026-06-17T12:30:00Z'),
+      max: Temporal.PlainDate.from('2026-06-30'),
+    });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '17/09/2026 14:30';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toString()).toBe('2026-06-17T12:30:00Z');
+  });
+
+  it('emptying it clears the moment', () => {
+    const onChange = vi.fn();
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z'), onChange });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    box.dispatchEvent(new FocusEvent('blur'));
+    expect(field.value).toBeNull();
+    expect(onChange).toHaveBeenLastCalledWith(null);
+  });
+
+  it('a plain button instead, when the text is only to be read', () => {
+    mount({ editable: false, value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
+    expect(trigger()).toBeInstanceOf(HTMLButtonElement);
+    expect(shown()).toContain('17 Jun 2026');
   });
 });

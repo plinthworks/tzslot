@@ -45,6 +45,7 @@ export type {
   DateTimeRangeSettings,
   DateTimeRangeValue,
 } from './datetime-range.js';
+export { formatWith, parseWith, patternFor } from './format.js';
 export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';

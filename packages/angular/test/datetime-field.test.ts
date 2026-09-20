@@ -24,6 +24,11 @@ class Host {
 let fixture: ComponentFixture<Host>;
 const el = () => fixture.nativeElement as HTMLElement;
 const panel = () => document.querySelector<HTMLElement>('.tz-field__panel')!;
+const openField = () => {
+  el().querySelector<HTMLButtonElement>('.tz-field__icon-button')!.click();
+  fixture.detectChanges();
+};
+const box = () => el().querySelector<HTMLInputElement>('input.tz-field__trigger')!;
 
 beforeEach(async () => {
   await TestBed.configureTestingModule({ imports: [Host] }).compileComponents();
@@ -33,8 +38,7 @@ beforeEach(async () => {
 
 describe('<tz-datetime-field> in a form', () => {
   it('writes an ISO instant once a day and a time are chosen', () => {
-    el().querySelector<HTMLButtonElement>('.tz-field__trigger')!.click();
-    fixture.detectChanges();
+    openField();
 
     panel().querySelector<HTMLButtonElement>('[data-date="2026-10-20"]')!.click();
     const hour = panel().querySelector<HTMLInputElement>('[data-part="hour"]')!;
@@ -49,8 +53,7 @@ describe('<tz-datetime-field> in a form', () => {
   });
 
   it('offers both readings of the hour that happens twice', () => {
-    el().querySelector<HTMLButtonElement>('.tz-field__trigger')!.click();
-    fixture.detectChanges();
+    openField();
     panel().querySelector<HTMLButtonElement>('[data-date="2026-10-25"]')!.click();
     for (const [part, text] of [['minute', '30'], ['hour', '02']] as const) {
       const box = panel().querySelector<HTMLInputElement>(`[data-part="${part}"]`)!;
@@ -71,14 +74,44 @@ describe('<tz-datetime-field> in a form', () => {
   it('shows the control it is given, and a disabled control cannot be opened', () => {
     fixture.componentInstance.form.controls.at.setValue('2026-10-20T12:00:00Z');
     fixture.detectChanges();
-    expect(el().querySelector('.tz-field__trigger')!.textContent).toContain('14:00');
+    // Typable, so it writes what it would read back.
+    expect(box().value).toBe('20/10/2026 14:00');
 
     fixture.componentInstance.form.controls.at.disable();
     fixture.detectChanges();
-    const trigger = el().querySelector<HTMLButtonElement>('.tz-field__trigger')!;
-    expect(trigger.disabled).toBe(true);
-    trigger.click();
+    expect(box().disabled).toBe(true);
+    el().querySelector<HTMLButtonElement>('.tz-field__icon-button')!.click();
     fixture.detectChanges();
     expect(document.querySelector('.tz-field__panel')).toBeNull();
+  });
+});
+
+@Component({
+  standalone: true,
+  imports: [ReactiveFormsModule, DateTimeField],
+  template: `
+    <form [formGroup]="form">
+      <tz-datetime-field formControlName="at" [timeZone]="'Europe/Paris'" [locale]="'en-GB'"
+                         format="yyyy-MM-dd HH:mm" valueAs="iso" />
+    </form>
+  `,
+})
+class Patterned {
+  readonly form = new FormGroup({ at: new FormControl<string | null>('2026-10-20T12:00:00Z') });
+}
+
+describe('<tz-datetime-field> typed into', () => {
+  it('writes and reads the pattern it is given', () => {
+    const f = TestBed.createComponent(Patterned);
+    f.detectChanges();
+    const box = (f.nativeElement as HTMLElement).querySelector<HTMLInputElement>('input.tz-field__trigger')!;
+    expect(box.value).toBe('2026-10-20 14:00');
+
+    box.focus();
+    box.value = '2026-11-03 08:30';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    f.detectChanges();
+    // 08:30 in Paris in November is 07:30 UTC.
+    expect(f.componentInstance.form.controls.at.value).toBe('2026-11-03T07:30:00Z');
   });
 });

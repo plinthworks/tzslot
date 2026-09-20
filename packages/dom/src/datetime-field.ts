@@ -6,6 +6,7 @@ import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
 import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
+import { formatWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATETIME_CSS, FIELD_CSS, ensureStyles } from './styles.js';
 
@@ -31,7 +32,21 @@ export interface DateTimeFieldSettings {
   isSlotDisabled: ((slot: Omit<Slot, 'disabled'>) => boolean) | undefined;
   hour12: boolean | undefined;
   disabled: boolean;
-  /** How the moment is written in the field. Defaults to the locale's medium forms. */
+  /**
+   * The text can be typed as well as chosen. What is typed is read with the
+   * same pattern the field writes, so the two always agree; anything that is
+   * not a date goes back to the last one when the field is left.
+   */
+  editable: boolean;
+  /**
+   * A pattern — `yyyy-MM-dd HH:mm` — when the shape matters more than the
+   * reader. Unset, the field follows the locale: its numeric order when it can
+   * be typed into, dateStyle and timeStyle when it cannot.
+   */
+  format: string | undefined;
+  dateStyle: 'full' | 'long' | 'medium' | 'short';
+  timeStyle: 'full' | 'long' | 'medium' | 'short';
+  /** The last word on the text. Given both, this one wins. */
   displayWith: ((value: Instant, timeZone: string) => string) | undefined;
   today: PlainDate;
   renderCell: RenderCell | undefined;
@@ -101,6 +116,10 @@ export function createDateTimeField(
     isSlotDisabled: undefined,
     hour12: undefined,
     disabled: false,
+    editable: true,
+    format: undefined,
+    dateStyle: 'medium',
+    timeStyle: 'short',
     displayWith: undefined,
     today: Temporal.Now.plainDateISO(),
     renderCell: undefined,
@@ -133,16 +152,49 @@ export function createDateTimeField(
   const addedHostClass = !host.classList.contains('tz-field');
   host.classList.add('tz-field');
 
-  const trigger = doc.createElement('button');
-  trigger.type = 'button';
-  trigger.className = 'tz-field__trigger';
-  trigger.setAttribute('aria-haspopup', 'dialog');
+  /**
+   * Two shapes of the same field. A button when the text is only read — there
+   * is nothing to type, so nothing that can be mistyped. An input when it can
+   * be typed, with the icon beside it as its own button.
+   */
+  const wrap = el('div', 'tz-field__wrap');
+  const button = doc.createElement('button');
+  button.type = 'button';
+  button.className = 'tz-field__trigger';
+  button.setAttribute('aria-haspopup', 'dialog');
   const text = el('span', 'tz-field__text');
+  const typed = doc.createElement('input');
+  typed.type = 'text';
+  typed.className = 'tz-field__trigger tz-field__trigger--editable';
+  typed.autocomplete = 'off';
+  typed.setAttribute('aria-haspopup', 'dialog');
   const iconSlot = el('span', 'tz-field__icon');
-  iconSlot.setAttribute('aria-hidden', 'true');
   iconSlot.append(icon ?? '▾');
-  trigger.append(text, iconSlot);
-  host.append(trigger);
+  const iconButton = doc.createElement('button');
+  iconButton.type = 'button';
+  iconButton.className = 'tz-field__icon-button';
+  host.append(wrap);
+
+  /** Which of the two is in the document, and what the panel hangs from. */
+  let trigger: HTMLElement = button;
+  /** True while someone is typing: their text is not to be rewritten under them. */
+  let typing = false;
+
+  function mountTrigger(): void {
+    const wanted = s.editable ? typed : button;
+    if (trigger === wanted && wrap.contains(wanted)) return;
+    trigger = wanted;
+    if (s.editable) {
+      iconSlot.removeAttribute('aria-hidden');
+      iconButton.replaceChildren(iconSlot);
+      wrap.replaceChildren(typed, iconButton);
+    } else {
+      iconSlot.setAttribute('aria-hidden', 'true');
+      button.replaceChildren(text, iconSlot);
+      wrap.replaceChildren(button);
+    }
+  }
+  mountTrigger();
 
   let calendar: CalendarInstance | null = null;
   let timeInput: TimeInputInstance | null = null;
@@ -152,15 +204,51 @@ export function createDateTimeField(
 
   const label = () => s.ariaLabel ?? s.messages.chooseDateTime;
 
+  /** The pattern the field writes and reads, when it is written by pattern at all. */
+  const pattern = () => s.format ?? (s.editable ? patternFor(s.locale, { time: true }) : null);
+
   const display = (): string => {
     if (!s.value) return '';
     if (s.displayWith) return s.displayWith(s.value, s.timeZone);
+    const shape = pattern();
+    if (shape) {
+      const zoned = s.value.toZonedDateTimeISO(s.timeZone);
+      return formatWith(shape, { date: zoned.toPlainDate(), time: zoned.toPlainTime() }, s.locale);
+    }
     return new Intl.DateTimeFormat(s.locale, {
-      dateStyle: 'medium',
-      timeStyle: 'short',
+      dateStyle: s.dateStyle,
+      timeStyle: s.timeStyle,
       timeZone: s.timeZone,
     }).format(new Date(s.value.epochMilliseconds));
   };
+
+  /**
+   * What was typed. Anything that is not a date is refused rather than
+   * guessed at — and refused quietly, until the field is left.
+   */
+  function readTyped(commitEmpty: boolean): boolean {
+    const text = typed.value.trim();
+    if (text === '') {
+      if (commitEmpty && s.value !== null) {
+        draft = { date: null, time: null };
+        settle();
+      }
+      return true;
+    }
+    const shape = pattern();
+    const read = shape ? parseWith(shape, text) : null;
+    if (!read?.date) return false;
+    if (read.date && (blocked(read.date) || false)) return false;
+    draft = { date: read.date, time: read.time ?? draft.time };
+    settle();
+    return true;
+  }
+
+  /** The bounds and the rules the calendar applies, applied to typed text too. */
+  const blocked = (date: PlainDate) =>
+    (s.min !== null && Temporal.PlainDate.compare(date, s.min) < 0) ||
+    (s.max !== null && Temporal.PlainDate.compare(date, s.max) > 0) ||
+    (s.isDateDisabled?.(date) ?? false);
 
   /**
    * A day and a wall time become a moment — or say why they cannot be one.
@@ -194,9 +282,15 @@ export function createDateTimeField(
   }
 
   function commit(value: Instant | null): void {
+    // Only a different moment is reported. Opening the panel moves the focus
+    // out of the text field, which re-reads it — and re-reading the same text
+    // must not look like a change to a form.
+    const changed =
+      (value === null) !== (s.value === null) ||
+      (value !== null && s.value !== null && !value.equals(s.value));
     s.value = value;
     render();
-    s.onChange?.(value);
+    if (changed) s.onChange?.(value);
   }
 
   function render(): void {
@@ -204,11 +298,21 @@ export function createDateTimeField(
       ensureStyles(host, 'field', FIELD_CSS);
       stylesPending = false;
     }
-    text.textContent = display() || s.placeholder || s.messages.chooseDateTime;
+    mountTrigger();
+    const written = display();
+    if (s.editable) {
+      if (!typing) typed.value = written;
+      typed.placeholder = s.placeholder ?? pattern() ?? s.messages.chooseDateTime;
+      typed.disabled = s.disabled;
+      iconButton.disabled = s.disabled;
+      iconButton.setAttribute('aria-label', label());
+    } else {
+      text.textContent = written || s.placeholder || s.messages.chooseDateTime;
+      button.disabled = s.disabled;
+    }
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', label());
-    trigger.disabled = s.disabled;
     if (s.disabled) panel.close({ restoreFocus: false });
     paintPanel();
   }
@@ -298,7 +402,10 @@ export function createDateTimeField(
       const timeLabel = el('span', 'tz-datetime__label');
       timeLabel.textContent = s.messages.timeLabel;
       const timeHost = doc.createElement('div');
-      timeRow.append(timeLabel, timeHost);
+      // The compact field speaks for itself under a calendar; a list of times
+      // needs saying what it is.
+      if (s.timeLayout === 'list') timeRow.append(timeLabel);
+      timeRow.append(timeHost);
       note = el('p', 'tz-datetime__note');
       note.setAttribute('role', 'status');
       choice = el('div', 'tz-datetime__readings');
@@ -314,6 +421,7 @@ export function createDateTimeField(
       if (s.timeLayout === 'input') {
         timeInput = createTimeInput(timeHost, {
           injectStyles: false,
+          variant: 'bare',
           onChange: (time) => {
             draft = { date: draft.date, time };
             settle();
@@ -343,9 +451,50 @@ export function createDateTimeField(
   };
 
   const listening = new AbortController();
-  trigger.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), {
-    signal: listening.signal,
-  });
+  const on = { signal: listening.signal };
+  button.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
+  iconButton.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
+  // Typing opens the panel, so the calendar follows along as the text changes.
+  typed.addEventListener('focus', () => openPanel(), on);
+  typed.addEventListener(
+    'input',
+    () => {
+      typing = true;
+      typed.classList.remove('tz-field__trigger--invalid');
+      typed.removeAttribute('aria-invalid');
+      readTyped(false);
+    },
+    on,
+  );
+  typed.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      if (readTyped(true)) {
+        typing = false;
+        render();
+        panel.close();
+      } else {
+        typed.classList.add('tz-field__trigger--invalid');
+        typed.setAttribute('aria-invalid', 'true');
+      }
+    },
+    on,
+  );
+  // Leaving the field settles it: what cannot be read goes back to the last
+  // moment the field held, rather than sitting there looking chosen.
+  typed.addEventListener(
+    'blur',
+    () => {
+      readTyped(true);
+      typing = false;
+      typed.classList.remove('tz-field__trigger--invalid');
+      typed.removeAttribute('aria-invalid');
+      render();
+    },
+    on,
+  );
 
   render();
 

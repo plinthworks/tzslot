@@ -340,6 +340,15 @@ export const RANGE_CSS = `
 /** The interval: the answer on top, then the two legs side by side when there is room. */
 export const DTR_CSS = `
 .tz-dtr { display: block; }
+.tz-dtr__allday {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: var(--tz-dtr-gap, 1rem);
+  font-size: 0.9em;
+  cursor: pointer;
+}
+.tz-dtr__allday-box { accent-color: var(--tz-accent, currentColor); }
 .tz-dtr__legs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--tz-dtr-leg-min, 16rem), 1fr));

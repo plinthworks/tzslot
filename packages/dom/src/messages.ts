@@ -51,6 +51,8 @@ export interface TzslotMessages {
 
   readonly from: string;
   readonly to: string;
+  /** The switch that turns an interval into whole days. */
+  readonly allDay: string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -117,6 +119,7 @@ export const EN: TzslotMessages = {
   noTimes: 'No times available.',
   from: 'From',
   to: 'To',
+  allDay: 'All day',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -166,6 +169,7 @@ export const FR: TzslotMessages = {
   noTimes: 'Aucun horaire disponible.',
   from: 'Du',
   to: 'Au',
+  allDay: 'Toute la journée',
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

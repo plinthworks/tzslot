@@ -16,6 +16,7 @@
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
+| `showTime` | `boolean` | `true` | Whether a time is asked for at all. False leaves a field that chooses a day and holds the moment it starts — what a whole-day range needs, with everything else about the field unchanged. |
 | `timeLayout` | `TimeLayout` | `'input'` | How the time is chosen: a compact field, two menus, or the day's times. |
 | `stepMinutes` | `number` | `30` | Minutes between the times offered. |
 | `minuteStep` | `number` | `1` | With 'select': minutes between the options. Every minute by default. |

@@ -33,6 +33,12 @@ export interface DateTimeFieldSettings {
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
+  /**
+   * Whether a time is asked for at all. False leaves a field that chooses a
+   * day and holds the moment it starts — what a whole-day range needs, with
+   * everything else about the field unchanged.
+   */
+  showTime: boolean;
   /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
@@ -134,6 +140,7 @@ export function createDateTimeField(
     min: null,
     max: null,
     isDateDisabled: undefined,
+    showTime: true,
     timeLayout: 'input',
     stepMinutes: 30,
     minuteStep: 1,
@@ -239,7 +246,8 @@ export function createDateTimeField(
   const label = () => s.ariaLabel ?? s.messages.chooseDateTime;
 
   /** The pattern the field writes and reads, when it is written by pattern at all. */
-  const pattern = () => s.format ?? (s.editable ? patternFor(s.locale, { time: true }) : null);
+  const pattern = () =>
+    s.format ?? (s.editable ? patternFor(s.locale, { time: s.showTime }) : null);
 
   /**
    * The two names for a moment whose clock face happens twice that day, and
@@ -274,14 +282,14 @@ export function createDateTimeField(
         )
       : new Intl.DateTimeFormat(s.locale, {
           dateStyle: s.dateStyle,
-          timeStyle: s.timeStyle,
+          ...(s.showTime ? { timeStyle: s.timeStyle } : {}),
           timeZone: s.timeZone,
         }).format(new Date(s.value.epochMilliseconds));
 
     // "02:00" is two different moments on the morning the clocks go back, and
     // a field that shows one of them without saying which has told the reader
     // nothing. The name is only added when it is needed.
-    const reading = readingOf(s.value);
+    const reading = s.showTime ? readingOf(s.value) : null;
     return reading ? `${written} (${reading.names[reading.index]})` : written;
   };
 
@@ -569,6 +577,7 @@ export function createDateTimeField(
       ensureStyles(node, s.timeLayout === 'list' ? 'slots' : 'time', s.timeLayout === 'list' ? SLOTS_CSS : TIME_CSS);
       const calendarHost = doc.createElement('div');
       const timeRow = el('div', 'tz-datetime__time');
+      timeRow.hidden = !s.showTime;
       const timeLabel = el('span', 'tz-datetime__label');
       timeLabel.textContent = s.messages.timeLabel;
       const timeHost = doc.createElement('div');
@@ -590,7 +599,9 @@ export function createDateTimeField(
           settle();
         },
       });
-      if (s.timeLayout === 'select') {
+      if (!s.showTime) {
+        // Nothing to choose: the day carries the moment it starts at.
+      } else if (s.timeLayout === 'select') {
         timeRow.classList.add('tz-datetime__time--select');
         ensureStyles(node, 'timeselect', TIMESELECT_CSS);
         timeMenus = createTimeSelect(timeHost, {

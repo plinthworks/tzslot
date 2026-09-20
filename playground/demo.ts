@@ -120,6 +120,10 @@ function parisAt(iso: string): Instant {
                   (click)="intervalLayout.set(l)">{{ l }}</button>
         }
       </div>
+      <p class="note">
+        « Toute la journée » passe l'intervalle en journées entières : la fin devient le minuit
+        suivant le dernier jour, ce qu'attend une recherche « du … à … ».
+      </p>
       <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
                          [minuteStep]="15" [locale]="locale" [timeLayout]="intervalLayout()"
                          [buttons]="['today', 'clear']" />

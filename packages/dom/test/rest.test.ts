@@ -26,7 +26,7 @@ afterEach(() => {
 
 const slots = () => Array.from(host.querySelectorAll<HTMLButtonElement>('.tz-slots__slot'));
 const label = (b: HTMLElement) => b.querySelector('.tz-slots__time')!.textContent;
-const paris = (iso: string) =>
+const paris_ = (iso: string) =>
   Temporal.PlainDateTime.from(iso).toZonedDateTime('Europe/Paris', { disambiguation: 'earlier' }).toInstant();
 
 describe('createTimeSlots', () => {
@@ -55,7 +55,7 @@ describe('createTimeSlots', () => {
     widget = createTimeSlots(host, { date: '2026-06-15', timeZone: 'Europe/Paris', stepMinutes: 60 });
     const nine = slots()[9]!;
     nine.focus();
-    widget.update({ value: paris('2026-06-15T10:00') });
+    widget.update({ value: paris_('2026-06-15T10:00') });
     expect(slots()[9]).toBe(nine);
     expect(document.activeElement).toBe(nine);
   });
@@ -106,7 +106,7 @@ describe('createDateTimeRange', () => {
     widget = createDateTimeRange(host, {
       timeZone: 'Europe/Paris',
       locale: 'en-GB',
-      value: { start: paris('2026-10-24T23:00'), end: paris('2026-10-25T05:00') },
+      value: { start: paris_('2026-10-24T23:00'), end: paris_('2026-10-25T05:00') },
     });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('7h');
     expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7h');
@@ -119,7 +119,7 @@ describe('createDateTimeRange', () => {
   it('refuses an end before its start', () => {
     widget = createDateTimeRange(host, {
       timeZone: 'Europe/Paris',
-      value: { start: paris('2026-06-15T17:00'), end: paris('2026-06-15T09:00') },
+      value: { start: paris_('2026-06-15T17:00'), end: paris_('2026-06-15T09:00') },
     });
     expect(host.querySelector('.tz-dtr__error')!.textContent).toContain('before the start');
     expect(host.querySelector('.tz-dtr__summary')).toBeNull();
@@ -130,7 +130,7 @@ describe('createDateTimeRange', () => {
     widget = createDateTimeRange(host, {
       timeZone: 'Europe/Paris',
       locale: 'en-GB',
-      value: { start: paris('2026-06-15T09:00'), end: null },
+      value: { start: paris_('2026-06-15T09:00'), end: null },
       onChange,
     });
     const end = box(1);
@@ -148,10 +148,93 @@ describe('createDateTimeRange', () => {
       locale: 'en-GB',
       timeLayout: 'list',
       stepMinutes: 60,
-      value: { start: paris('2026-06-15T09:00'), end: null },
+      value: { start: paris_('2026-06-15T09:00'), end: null },
     });
     host.querySelectorAll<HTMLButtonElement>('.tz-field__icon-button')[0]!.click();
     const panel = document.querySelector('.tz-field__panel')!;
     expect(panel.querySelectorAll('.tz-slots__slot').length).toBeGreaterThan(0);
+  });
+});
+
+describe('whole days rather than moments', () => {
+  const paris = 'Europe/Paris';
+  const box = () => host.querySelector<HTMLInputElement>('.tz-dtr__allday-box')!;
+  const fields = () => host.querySelectorAll('input.tz-field__trigger');
+  const shownAt = (leg: 0 | 1) => (fields()[leg] as HTMLInputElement).value;
+
+  it('offers the switch, and hides the times when it is on', () => {
+    const onChange = vi.fn();
+    widget = createDateTimeRange(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      value: { start: paris_('2026-10-24T23:00'), end: paris_('2026-10-26T05:00') },
+      onChange,
+    });
+    expect(shownAt(0)).toBe('24/10/2026 23:00');
+
+    box().checked = true;
+    box().dispatchEvent(new Event('change', { bubbles: true }));
+
+    // The days are kept; the times are gone, from the text and from the value.
+    expect(shownAt(0)).toBe('24/10/2026');
+    expect(shownAt(1)).toBe('26/10/2026');
+    const value = onChange.mock.calls.at(-1)![0];
+    expect(value.allDay).toBe(true);
+    expect(value.start.toString()).toBe('2026-10-23T22:00:00Z'); // the 24th at 00:00 in Paris
+    // The end is the midnight *after* the last day, so a search asks for "before".
+    expect(value.end.toString()).toBe('2026-10-26T23:00:00Z'); // the 27th at 00:00
+  });
+
+  it('choosing a last day moves the end to the midnight after it', () => {
+    const onChange = vi.fn();
+    widget = createDateTimeRange(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      allDay: true,
+      today: Temporal.PlainDate.from('2026-06-15'),
+      onChange,
+    });
+    const triggers = host.querySelectorAll<HTMLButtonElement>('.tz-field__trigger');
+    triggers[1]!.click();
+    document.querySelector<HTMLButtonElement>('.tz-field__panel [data-date="2026-06-18"]')!.click();
+
+    const value = onChange.mock.calls.at(-1)![0];
+    expect(value.end.toZonedDateTimeISO(paris).toString()).toContain('2026-06-19T00:00:00');
+    expect(shownAt(1)).toBe('18/06/2026');
+  });
+
+  it('turning it off again gives the days back, at midnight', () => {
+    widget = createDateTimeRange(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      value: {
+        start: paris_('2026-10-24T00:00'),
+        end: paris_('2026-10-27T00:00'),
+        allDay: true,
+      },
+    });
+    expect(shownAt(1)).toBe('26/10/2026');
+
+    box().checked = false;
+    box().dispatchEvent(new Event('change', { bubbles: true }));
+    expect(shownAt(0)).toBe('24/10/2026 00:00');
+    expect(shownAt(1)).toBe('26/10/2026 00:00');
+    expect(widget.value.allDay).toBe(false);
+  });
+
+  it('can be left out of the widget altogether', () => {
+    widget = createDateTimeRange(host, { timeZone: paris, allDaySwitch: false });
+    expect(host.querySelector('.tz-dtr__allday')).toBeNull();
+  });
+
+  it('counts the days across a change of offset', () => {
+    widget = createDateTimeRange(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      value: { start: paris_('2026-10-24T00:00'), end: paris_('2026-10-27T00:00'), allDay: true },
+    });
+    // Three days that week are 73 hours, because one of them is 25 hours long.
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('3d 1h');
+    expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('back');
   });
 });

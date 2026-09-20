@@ -9,7 +9,19 @@ import { DTR_CSS, ensureStyles } from './styles.js';
 
 export interface DateTimeRangeValue {
   readonly start: Instant | null;
+  /**
+   * The end. Whole days end at the midnight *after* the last of them — the
+   * 24th to the 26th ends at the 27th at 00:00 — so a search reads
+   * `start >= from AND start < to` with nothing falling through a gap at
+   * 23:59:59.
+   */
   readonly end: Instant | null;
+  /**
+   * True when the two ends are whole days rather than moments. Optional to
+   * pass in — a value without it is an ordinary interval — and always there
+   * on the way out.
+   */
+  readonly allDay?: boolean;
 }
 
 export interface DateTimeRangeSettings {
@@ -17,6 +29,13 @@ export interface DateTimeRangeSettings {
   value: DateTimeRangeValue;
   /** An IANA identifier. Both ends are read on this zone's clocks. */
   timeZone: string;
+  /**
+   * Whole days rather than moments: midnight to midnight, no times shown.
+   * Two-way — the switch inside the widget sets it, and so can you.
+   */
+  allDay: boolean;
+  /** Whether that switch is offered at all. */
+  allDaySwitch: boolean;
   /** How each end asks for its time: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
@@ -38,6 +57,8 @@ export interface DateTimeRangeSettings {
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
+  /** Which day is today, in both panels. Settable so a test does not drift. */
+  today: PlainDate;
   renderCell: RenderCell | undefined;
   buttons: readonly CalendarButton[];
   /** A column of ISO week numbers down the left of each panel's calendar. */
@@ -71,10 +92,11 @@ interface Leg {
   readonly key: LegKey;
   readonly section: HTMLElement;
   readonly legend: HTMLElement;
-  readonly field: DateTimeFieldInstance;
+  readonly host: HTMLElement;
+  field: DateTimeFieldInstance | null;
 }
 
-const EMPTY: DateTimeRangeValue = { start: null, end: null };
+const EMPTY: DateTimeRangeValue = { start: null, end: null, allDay: false };
 
 /**
  * An interval with a time at both ends, which may cross midnight — or a change
@@ -98,6 +120,8 @@ export function createDateTimeRange(
   const s: DateTimeRangeSettings = {
     value: EMPTY,
     timeZone: 'UTC',
+    allDay: false,
+    allDaySwitch: true,
     timeLayout: 'input',
     stepMinutes: 30,
     minuteStep: 1,
@@ -112,6 +136,7 @@ export function createDateTimeRange(
     min: null,
     max: null,
     isDateDisabled: undefined,
+    today: Temporal.Now.plainDateISO(),
     renderCell: undefined,
     buttons: [],
     weekNumbers: false,
@@ -157,23 +182,63 @@ export function createDateTimeRange(
     const section = el('div', 'tz-dtr__leg');
     section.setAttribute('role', 'group');
     const legend = el('h3', 'tz-dtr__legend');
-    const fieldHost = doc.createElement('tz-datetime-field');
-    section.append(legend, fieldHost);
+    const host_ = doc.createElement('tz-datetime-field');
+    section.append(legend, host_);
     legsBox.append(section);
-    return {
-      key,
-      section,
-      legend,
-      field: createDateTimeField(fieldHost, {
-        injectStyles,
-        onChange: (value) => commit({ ...s.value, [key]: value }),
-      }),
-    };
+    return { key, section, legend, host: host_, field: null };
   };
   const legs = [makeLeg('start'), makeLeg('end')];
 
+  /** The switch, above both ends. */
+  const allDayRow = el('label', 'tz-dtr__allday');
+  const allDayBox = doc.createElement('input');
+  allDayBox.type = 'checkbox';
+  allDayBox.className = 'tz-dtr__allday-box';
+  const allDayText = el('span', 'tz-dtr__allday-text');
+  allDayRow.append(allDayBox, allDayText);
+  allDayBox.addEventListener('change', () => setAllDay(allDayBox.checked));
+
+  const wholeDays = () => s.value.allDay === true;
+  const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
+  const midnight = (day: PlainDate) => day.toZonedDateTime({ timeZone: s.timeZone }).toInstant();
+
+  /** The last day of a whole-day range, which ends at the midnight after it. */
+  function lastDay(end: Instant | null): PlainDate | null {
+    if (!end) return null;
+    const at = zoned(end);
+    return at.toPlainTime().equals(Temporal.PlainTime.from('00:00'))
+      ? at.toPlainDate().subtract({ days: 1 })
+      : at.toPlainDate();
+  }
+
+  /**
+   * Turning whole days on and off keeps the days and drops or restores the
+   * times: what was 24 Oct 23:00 to 25 Oct 05:00 becomes the 24th to the
+   * 25th, midnight to the midnight after.
+   */
+  function converted(value: DateTimeRangeValue, on: boolean): DateTimeRangeValue {
+    const { start, end } = value;
+    if (on) {
+      const first = start ? zoned(start).toPlainDate() : null;
+      const last = end ? zoned(end).toPlainDate() : null;
+      return {
+        start: first ? midnight(first) : null,
+        end: last ? midnight(last.add({ days: 1 })) : null,
+        allDay: true,
+      };
+    }
+    const last = lastDay(end);
+    return { start, end: last ? midnight(last) : null, allDay: false };
+  }
+
+  function setAllDay(on: boolean): void {
+    if (on === wholeDays()) return;
+    commit(converted(s.value, on));
+  }
+
   function commit(next: DateTimeRangeValue): void {
     s.value = next;
+    s.allDay = next.allDay === true;
     render();
     s.onChange?.(next);
   }
@@ -229,12 +294,37 @@ export function createDateTimeRange(
       if (!problem.isConnected) host.insertBefore(problem, legsBox);
     } else problem.remove();
 
+    allDayText.textContent = s.messages.allDay;
+    allDayBox.checked = wholeDays();
+    allDayBox.disabled = s.disabled;
+    if (s.allDaySwitch) {
+      if (!allDayRow.isConnected) host.insertBefore(allDayRow, legsBox);
+    } else allDayRow.remove();
+
     for (const leg of legs) {
       const name = leg.key === 'start' ? (s.startLabel ?? s.messages.from) : (s.endLabel ?? s.messages.to);
       leg.legend.textContent = name;
       leg.section.setAttribute('aria-label', name);
+
+      if (!leg.field) {
+        leg.field = createDateTimeField(leg.host, {
+          injectStyles,
+          onChange: (value) => {
+            // A whole-day end is the midnight *after* the last day, so that a
+            // search can ask for "before" rather than "before or exactly at".
+            const kept =
+              wholeDays() && value && leg.key === 'end'
+                ? midnight(zoned(value).toPlainDate().add({ days: 1 }))
+                : value;
+            commit({ ...s.value, [leg.key]: kept });
+          },
+        });
+      }
+      // The end field shows the last day itself, not the midnight after it.
+      const last = leg.key === 'end' ? lastDay(s.value.end) : null;
       leg.field.update({
-        value: s.value[leg.key],
+        showTime: !wholeDays(),
+        value: wholeDays() && leg.key === 'end' ? (last ? midnight(last) : null) : s.value[leg.key],
         timeZone: s.timeZone,
         timeLayout: s.timeLayout,
         stepMinutes: s.stepMinutes,
@@ -250,6 +340,7 @@ export function createDateTimeRange(
         min: s.min,
         max: s.max,
         isDateDisabled: s.isDateDisabled,
+        today: s.today,
         renderCell: s.renderCell,
         buttons: s.buttons,
         weekNumbers: s.weekNumbers,
@@ -261,6 +352,13 @@ export function createDateTimeRange(
     }
   }
 
+  /** One end of a whole-day range: a date, with no time to be chosen. */
+  // Said once is enough: `allDay: true` alongside an ordinary interval turns
+  // it into whole days, and a value that already says so needs no option.
+  const asked = initial.allDay;
+  s.allDay = asked ?? wholeDays();
+  if (asked !== undefined && asked !== wholeDays()) s.value = converted(s.value, asked);
+
   render();
 
   return {
@@ -268,14 +366,18 @@ export function createDateTimeRange(
       return s.value;
     },
     update(settings) {
+      const wanted = 'allDay' in settings ? settings.allDay! : null;
       Object.assign(s, settings);
-      render();
+      // allDay set from outside works like the switch: the days are kept.
+      if (wanted !== null && wanted !== wholeDays()) setAllDay(wanted);
+      else render();
     },
     clear() {
       commit(EMPTY);
     },
     destroy() {
-      for (const leg of legs) leg.field.destroy();
+      for (const leg of legs) leg.field?.destroy();
+      allDayRow.remove();
       result.remove();
       problem.remove();
       legsBox.remove();

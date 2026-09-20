@@ -107,6 +107,33 @@ createDateTimeRange(element, { timeZone: 'Europe/Paris', locale: 'en-GB' });
 Try 24/10/2026 23:00 to 25/10/2026 05:00: six hours on the clock, seven in
 fact, and it says so rather than leaving you to notice.
 
+## A whole day, or an interval
+
+```js
+createDateTimeRange(element, { timeZone: 'Europe/Paris', locale: 'en-GB' });
+```
+
+<Live widget="DateTimeRange" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', allDay: true }" />
+
+A search over "the 24th to the 26th" and one over "23:00 to 05:00" are the
+same widget with the switch in two positions. Whole days run midnight to
+midnight, and the value says which it is:
+
+```js
+{
+  start: Instant,  // the 24th at 00:00 in the zone
+  end:   Instant,  // the 27th at 00:00 — the midnight after the last day
+  allDay: true,
+}
+```
+
+The end is **exclusive** on purpose, so a query reads `start >= from AND
+start < to` and nothing falls through a gap at 23:59:59. Turn the switch off
+and the ends become moments again, at the midnights they were.
+
+`[allDaySwitch]="false"` hides the switch, for a screen that only ever deals
+in whole days — or only in intervals.
+
 ## The same hours every day
 
 ```js

@@ -8,6 +8,8 @@
 |---|---|---|---|
 | `value` | `DateTimeRangeValue` | `EMPTY` | The two moments. Either may be unset while the interval is being built. |
 | `timeZone` | `string` | `'UTC'` | An IANA identifier. Both ends are read on this zone's clocks. |
+| `allDay` | `boolean` | `false` | Whole days rather than moments: midnight to midnight, no times shown. Two-way — the switch inside the widget sets it, and so can you. |
+| `allDaySwitch` | `boolean` | `true` | Whether that switch is offered at all. |
 | `timeLayout` | `TimeLayout` | `'input'` | How each end asks for its time: a compact field, two menus, or the day's times. |
 | `stepMinutes` | `number` | `30` | Minutes between the times offered. |
 | `minuteStep` | `number` | `1` | With 'select': minutes between the options. Every minute by default. |
@@ -22,6 +24,7 @@
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
+| `today` | `PlainDate` | `Temporal.Now.plainDateISO()` | Which day is today, in both panels. Settable so a test does not drift. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid: 'today', 'clear'. None by default. |
 | `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left of each panel's calendar. |

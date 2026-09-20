@@ -15,6 +15,7 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
+import { Temporal } from '@tzslot/core';
 import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
 import {
   createDateTimeRange,
@@ -49,6 +50,15 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly value = model<DateTimeRangeValue>(EMPTY);
 
   readonly timeZone = input.required<string>();
+  /**
+   * Whole days rather than moments. Two-way: the switch inside the widget
+   * sets it, and so can you.
+   */
+  readonly allDay = model(false);
+
+  /** Whether that switch is shown at all. */
+  readonly allDaySwitch = input(true);
+
   /** How each end asks for its time: 'input', 'select' or 'list'. */
   readonly timeLayout = input<TimeLayout>('input');
   readonly stepMinutes = input(30);
@@ -62,6 +72,8 @@ export class DateTimeRange implements ControlValueAccessor {
   /** A pattern for both ends — `yyyy-MM-dd HH:mm`. */
   readonly format = input<string | undefined>(undefined);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
+  /** Which day is today, in both panels. */
+  readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly renderCell = input<RenderCell | undefined>(undefined);
   /** A column of ISO week numbers down the left. */
   readonly weekNumbers = input(false);
@@ -85,6 +97,8 @@ export class DateTimeRange implements ControlValueAccessor {
   private readonly settings = computed<Partial<DateTimeRangeSettings>>(() => ({
     value: this.value(),
     timeZone: this.timeZone(),
+    allDay: this.allDay(),
+    allDaySwitch: this.allDaySwitch(),
     timeLayout: this.timeLayout(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
@@ -93,6 +107,7 @@ export class DateTimeRange implements ControlValueAccessor {
     editable: this.editable(),
     format: this.format(),
     isDateDisabled: this.isDateDisabled(),
+    today: this.today(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
     weekNumbers: this.weekNumbers(),
@@ -113,6 +128,7 @@ export class DateTimeRange implements ControlValueAccessor {
   private readonly range: DateTimeRangeInstance = createDateTimeRange(inject(ElementRef).nativeElement, {
     messages: this.messages,
     onChange: (next) => {
+      this.allDay.set(next.allDay === true);
       this.value.set(next);
       this.onChange(next);
       this.onTouched();

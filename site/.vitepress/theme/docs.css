@@ -30,3 +30,20 @@
   white-space: pre;
 }
 .live div[class*='language-'] { margin: 0; border-radius: 0; }
+
+.live__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 1.25rem 1.25rem;
+  background: var(--vp-c-bg-soft);
+}
+.live__controls button {
+  border: 1px solid var(--vp-c-divider);
+  border-radius: 8px;
+  padding: 0.3rem 0.8rem;
+  font-size: 0.8125rem;
+  background: var(--vp-c-bg);
+  cursor: pointer;
+}
+.live__controls button:hover { border-color: var(--vp-c-brand-1); }

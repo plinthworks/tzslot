@@ -189,14 +189,21 @@ export function createDateTimeRange(
   };
   const legs = [makeLeg('start'), makeLeg('end')];
 
-  /** The switch, above both ends. */
-  const allDayRow = el('label', 'tz-dtr__allday');
-  const allDayBox = doc.createElement('input');
-  allDayBox.type = 'checkbox';
+  /**
+   * The switch, above both ends. Drawn rather than a bare checkbox: a native
+   * one is thirteen grey pixels that nobody finds on a dark background.
+   */
+  const allDayRow = el('div', 'tz-dtr__allday');
+  const allDayBox = doc.createElement('button');
+  allDayBox.type = 'button';
   allDayBox.className = 'tz-dtr__allday-box';
+  allDayBox.setAttribute('role', 'switch');
+  const allDayKnob = el('span', 'tz-dtr__allday-knob');
+  allDayBox.append(allDayKnob);
   const allDayText = el('span', 'tz-dtr__allday-text');
   allDayRow.append(allDayBox, allDayText);
-  allDayBox.addEventListener('change', () => setAllDay(allDayBox.checked));
+  allDayBox.addEventListener('click', () => setAllDay(!wholeDays()));
+  allDayText.addEventListener('click', () => !s.disabled && setAllDay(!wholeDays()));
 
   const wholeDays = () => s.value.allDay === true;
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
@@ -295,7 +302,9 @@ export function createDateTimeRange(
     } else problem.remove();
 
     allDayText.textContent = s.messages.allDay;
-    allDayBox.checked = wholeDays();
+    allDayBox.setAttribute('aria-checked', String(wholeDays()));
+    allDayBox.setAttribute('aria-label', s.messages.allDay);
+    allDayBox.classList.toggle('tz-dtr__allday-box--on', wholeDays());
     allDayBox.disabled = s.disabled;
     if (s.allDaySwitch) {
       if (!allDayRow.isConnected) host.insertBefore(allDayRow, legsBox);

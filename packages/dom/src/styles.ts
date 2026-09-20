@@ -343,12 +343,47 @@ export const DTR_CSS = `
 .tz-dtr__allday {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   margin-bottom: var(--tz-dtr-gap, 1rem);
   font-size: 0.9em;
-  cursor: pointer;
 }
-.tz-dtr__allday-box { accent-color: var(--tz-accent, currentColor); }
+.tz-dtr__allday-text { cursor: pointer; }
+.tz-dtr__allday-box {
+  position: relative;
+  width: 2.25rem;
+  height: 1.25rem;
+  flex: none;
+  padding: 0;
+  border: 1px solid var(--tz-border, currentColor);
+  border-radius: 999px;
+  background: var(--tz-bg-raised, transparent);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+.tz-dtr__allday-box:focus-visible {
+  outline: var(--tz-focus-ring, 2px solid var(--tz-accent));
+  outline-offset: 2px;
+}
+.tz-dtr__allday-knob {
+  position: absolute;
+  top: 50%;
+  left: 0.175rem;
+  width: 0.875rem;
+  height: 0.875rem;
+  border-radius: 50%;
+  background: var(--tz-fg-muted, currentColor);
+  transform: translateY(-50%);
+  transition: left 120ms ease, background-color 120ms ease;
+}
+.tz-dtr__allday-box--on {
+  border-color: var(--tz-accent, currentColor);
+  background: var(--tz-accent, currentColor);
+}
+.tz-dtr__allday-box--on .tz-dtr__allday-knob {
+  left: calc(100% - 1.05rem);
+  background: var(--tz-accent-fg, canvas);
+}
+.tz-dtr__allday-box:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-dtr__legs {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(var(--tz-dtr-leg-min, 16rem), 1fr));

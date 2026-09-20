@@ -15,8 +15,10 @@ const props = withDefaults(
     options?: Record<string, unknown>;
     /** How to write the value under it. Left out, it is stringified. */
     show?: (value: unknown) => string;
+    /** Buttons beside it, each given the widget to drive. */
+    controls?: { label: string; run: (widget: any) => void }[];
   }>(),
-  { options: () => ({}), show: undefined },
+  { options: () => ({}), show: undefined, controls: () => [] },
 );
 
 const stage = ref<HTMLElement>();
@@ -59,7 +61,15 @@ function describe(value: unknown): string {
 
 <template>
   <div class="live">
-    <div class="live__stage" ref="stage" />
+    <!-- The widget claims the element it is given — display, class and all —
+         so it gets one of its own rather than the panel's own box. -->
+    <div class="live__stage"><div ref="stage" /></div>
+    <div v-if="controls.length" class="live__controls">
+      <button v-for="control of controls" :key="control.label" type="button"
+              @click="instance && control.run(instance)">
+        {{ control.label }}
+      </button>
+    </div>
     <div class="live__value">{{ held }}</div>
     <slot />
   </div>

@@ -28,6 +28,7 @@ export default defineConfig({
           { text: 'Angular', link: '/guide/angular' },
           { text: 'Without a framework', link: '/guide/vanilla' },
           { text: 'Choosing a time', link: '/guide/time' },
+          { text: 'Driving it from outside', link: '/guide/external' },
           { text: 'Formatting and typing', link: '/guide/formatting' },
           { text: 'Localization', link: '/guide/localization' },
           { text: 'Theming', link: '/guide/theming' },

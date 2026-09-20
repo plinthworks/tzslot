@@ -158,7 +158,7 @@ describe('createDateTimeRange', () => {
 
 describe('whole days rather than moments', () => {
   const paris = 'Europe/Paris';
-  const box = () => host.querySelector<HTMLInputElement>('.tz-dtr__allday-box')!;
+  const box = () => host.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!;
   const fields = () => host.querySelectorAll('input.tz-field__trigger');
   const shownAt = (leg: 0 | 1) => (fields()[leg] as HTMLInputElement).value;
 
@@ -172,8 +172,7 @@ describe('whole days rather than moments', () => {
     });
     expect(shownAt(0)).toBe('24/10/2026 23:00');
 
-    box().checked = true;
-    box().dispatchEvent(new Event('change', { bubbles: true }));
+    box().click();
 
     // The days are kept; the times are gone, from the text and from the value.
     expect(shownAt(0)).toBe('24/10/2026');
@@ -215,8 +214,7 @@ describe('whole days rather than moments', () => {
     });
     expect(shownAt(1)).toBe('26/10/2026');
 
-    box().checked = false;
-    box().dispatchEvent(new Event('change', { bubbles: true }));
+    box().click();
     expect(shownAt(0)).toBe('24/10/2026 00:00');
     expect(shownAt(1)).toBe('26/10/2026 00:00');
     expect(widget.value.allDay).toBe(false);
@@ -236,5 +234,26 @@ describe('whole days rather than moments', () => {
     // Three days that week are 73 hours, because one of them is 25 hours long.
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('3d 1h');
     expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('back');
+  });
+});
+
+describe('the all-day switch itself', () => {
+  it('is a switch, not a checkbox, and says so', () => {
+    // Thirteen grey pixels on a dark background is a control nobody finds.
+    widget = createDateTimeRange(host, { timeZone: 'Europe/Paris', locale: 'en-GB' });
+    const box = host.querySelector('.tz-dtr__allday-box')!;
+    expect(box.tagName).toBe('BUTTON');
+    expect(box.getAttribute('role')).toBe('switch');
+    expect(box.getAttribute('aria-checked')).toBe('false');
+
+    (box as HTMLButtonElement).click();
+    expect(box.getAttribute('aria-checked')).toBe('true');
+    expect(widget.value.allDay).toBe(true);
+  });
+
+  it('the words beside it work too', () => {
+    widget = createDateTimeRange(host, { timeZone: 'Europe/Paris' });
+    host.querySelector<HTMLElement>('.tz-dtr__allday-text')!.click();
+    expect(widget.value.allDay).toBe(true);
   });
 });

@@ -46,8 +46,10 @@ with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
 zone really has it: the hour the clocks skip is not offered, and the hour they
 repeat appears twice, by the name the zone gives each reading — "02 — Summer"
 and "02 — Standard", in the reader's own language — so there is nothing left
-to ask afterwards. The compact field does ask, with the same names, and then
-says which of the two it holds: 02:30 looks identical either way.
+to ask afterwards. The compact field does ask, with the same names, and the
+text itself says which of the two it holds — `25/10/2026 02:30 (Standard)` —
+because 02:30 looks identical either way. Typed back in, that name is read
+too, so the text always means exactly one moment.
 
 ## The text in a field
 

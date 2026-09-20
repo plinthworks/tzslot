@@ -10,7 +10,15 @@ import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
 import { distinguish, zoneName } from './zone-names.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DATETIME_CSS, FIELD_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
+import {
+  CALENDAR_CSS,
+  DATETIME_CSS,
+  FIELD_CSS,
+  SLOTS_CSS,
+  TIMESELECT_CSS,
+  TIME_CSS,
+  ensureStyles,
+} from './styles.js';
 
 export interface DateTimeFieldSettings {
   /** A moment, because a date and a wall time alone are not one. */
@@ -230,19 +238,46 @@ export function createDateTimeField(
   /** The pattern the field writes and reads, when it is written by pattern at all. */
   const pattern = () => s.format ?? (s.editable ? patternFor(s.locale, { time: true }) : null);
 
+  /**
+   * The two names for a moment whose clock face happens twice that day, and
+   * which of them this moment is. Null when the hour is an ordinary one.
+   */
+  function readingOf(value: Instant): { names: [string, string]; index: number } | null {
+    const zoned = value.toZonedDateTimeISO(s.timeZone);
+    const found = resolveWallTime(zoned.toPlainDate(), zoned.toPlainTime(), s.timeZone);
+    if (!found.ambiguous) return null;
+    const names = distinguish(
+      zoneName(found.instants[0]!, s.timeZone, s.locale),
+      zoneName(found.instants[1]!, s.timeZone, s.locale),
+    );
+    const index = found.offsets.indexOf(zoned.offset);
+    return { names, index: index < 0 ? 0 : index };
+  }
+
   const display = (): string => {
     if (!s.value) return '';
     if (s.displayWith) return s.displayWith(s.value, s.timeZone);
     const shape = pattern();
-    if (shape) {
-      const zoned = s.value.toZonedDateTimeISO(s.timeZone);
-      return formatWith(shape, { date: zoned.toPlainDate(), time: zoned.toPlainTime() }, s.locale);
-    }
-    return new Intl.DateTimeFormat(s.locale, {
-      dateStyle: s.dateStyle,
-      timeStyle: s.timeStyle,
-      timeZone: s.timeZone,
-    }).format(new Date(s.value.epochMilliseconds));
+    const written = shape
+      ? formatWith(
+          shape,
+          {
+            date: s.value.toZonedDateTimeISO(s.timeZone).toPlainDate(),
+            time: s.value.toZonedDateTimeISO(s.timeZone).toPlainTime(),
+          },
+          s.locale,
+        )
+      : new Intl.DateTimeFormat(s.locale, {
+          dateStyle: s.dateStyle,
+          timeStyle: s.timeStyle,
+          timeZone: s.timeZone,
+        }).format(new Date(s.value.epochMilliseconds));
+
+    // "02:00" is two different moments on the morning the clocks go back, and
+    // a field that shows one of them without saying which has told the reader
+    // nothing. The name is only added when it is needed.
+    const reading = readingOf(s.value);
+    return reading ? `${written} (${reading.names[reading.index]})` : written;
   };
 
   /**
@@ -250,7 +285,12 @@ export function createDateTimeField(
    * guessed at — and refused quietly, until the field is left.
    */
   function readTyped(commitEmpty: boolean): boolean {
-    const text = typed.value.trim();
+    const whole = typed.value.trim();
+    // The name of a reading rides along in brackets; it is read back, so
+    // "02:00 (Standard)" keeps meaning the second of the two.
+    const aside = /\s*\(([^)]*)\)\s*$/.exec(whole);
+    const hint = aside?.[1]?.trim().toLowerCase() ?? null;
+    const text = aside ? whole.slice(0, aside.index).trim() : whole;
     if (text === '') {
       if (commitEmpty && s.value !== null) {
         draft = { date: null, time: null };
@@ -263,7 +303,7 @@ export function createDateTimeField(
     if (!read?.date) return false;
     if (blocked(read.date)) return false;
     draft = { date: read.date, time: read.time ?? draft.time ?? startingTime() };
-    settle();
+    settleTyped(hint);
     return true;
   }
 
@@ -308,6 +348,28 @@ export function createDateTimeField(
       return;
     }
     commit(chosen);
+  }
+
+  /** What was typed, with any reading named in brackets taken into account. */
+  function settleTyped(hint: string | null): void {
+    const { date, time } = draft;
+    if (hint && date && time) {
+      const found = resolveWallTime(date, time, s.timeZone);
+      if (found.ambiguous) {
+        const names = distinguish(
+          zoneName(found.instants[0]!, s.timeZone, s.locale),
+          zoneName(found.instants[1]!, s.timeZone, s.locale),
+        );
+        const which = names.findIndex((name) => name.toLowerCase() === hint);
+        const byOffset = found.offsets.findIndex((offset) => `utc${offset}`.toLowerCase() === hint);
+        const index = which >= 0 ? which : byOffset;
+        if (index >= 0) {
+          settleWithOffset(time, found.offsets[index]!);
+          return;
+        }
+      }
+    }
+    settle();
   }
 
   function settle(): void {
@@ -497,7 +559,12 @@ export function createDateTimeField(
       s.editable ? null : node.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]'),
     content: (node) => {
       node.classList.add('tz-datetime__panel');
+      // Everything inside is told not to inject its own, so the panel brings
+      // all of it. Without this the calendar came up unstyled on any page
+      // that happened to have no other calendar on it.
       ensureStyles(node, 'datetime', DATETIME_CSS);
+      ensureStyles(node, 'calendar', CALENDAR_CSS);
+      ensureStyles(node, s.timeLayout === 'list' ? 'slots' : 'time', s.timeLayout === 'list' ? SLOTS_CSS : TIME_CSS);
       const calendarHost = doc.createElement('div');
       const timeRow = el('div', 'tz-datetime__time');
       const timeLabel = el('span', 'tz-datetime__label');
@@ -587,10 +654,12 @@ export function createDateTimeField(
       const shape = pattern();
       const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
       const atEnd = typed.selectionStart === typed.value.length;
+      // Not while a reading is named in brackets: the mask would eat it.
+      const named = typed.value.includes('(');
       // Helping only where it cannot get in the way: at the end of the text,
       // and never while someone is deleting — putting a separator back that
       // was just removed makes a field impossible to correct.
-      if (s.mask && shape && !deleting && atEnd) {
+      if (s.mask && shape && !deleting && atEnd && !named) {
         const helped = maskWith(shape, typed.value);
         if (helped !== typed.value) {
           typed.value = helped;

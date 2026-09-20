@@ -338,3 +338,66 @@ describe('typing in the field', () => {
     expect(shown()).toContain('17 Jun 2026');
   });
 });
+
+describe('the panel brings its own styles', () => {
+  it('even on a page with no other calendar on it', () => {
+    // Everything in the panel is created with injectStyles: false, so the
+    // panel itself has to carry them. It did not, and the interval tab —
+    // whose only calendars live inside panels — came up unstyled.
+    document.head.querySelectorAll('style[data-tzslot]').forEach((style) => style.remove());
+    mount({});
+    field.open();
+
+    const sheets = Array.from(document.head.querySelectorAll('style[data-tzslot]')).map(
+      (style) => (style as HTMLElement).dataset['tzslot'],
+    );
+    expect(sheets).toContain('calendar');
+    expect(sheets).toContain('field');
+    expect(sheets).toContain('datetime');
+    expect(sheets).toContain('time');
+  });
+});
+
+describe('a moment whose clock face happens twice', () => {
+  const ambiguous = Temporal.Instant.from('2026-10-25T01:30:00Z'); // 02:30 +01:00 in Paris
+
+  it('says which of the two the field holds', () => {
+    mount({ value: ambiguous });
+    expect(shown()).toBe('25/10/2026 02:30 (Standard)');
+
+    field.update({ value: Temporal.Instant.from('2026-10-25T00:30:00Z') });
+    expect(shown()).toBe('25/10/2026 02:30 (Summer)');
+  });
+
+  it('says nothing of the sort on an ordinary day', () => {
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
+    expect(shown()).toBe('17/06/2026 14:30');
+  });
+
+  it('reads the name back, so the text means what it says', () => {
+    const onChange = vi.fn();
+    mount({ onChange, today: Temporal.PlainDate.from('2026-10-25') });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '25/10/2026 02:30 (Standard)';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toString()).toBe('2026-10-25T01:30:00Z');
+
+    box.value = '25/10/2026 02:30 (Summer)';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toString()).toBe('2026-10-25T00:30:00Z');
+  });
+
+  it('takes the offset in brackets too, and ignores anything else', () => {
+    mount({ today: Temporal.PlainDate.from('2026-10-25') });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '25/10/2026 02:30 (UTC+01:00)';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toString()).toBe('2026-10-25T01:30:00Z');
+
+    box.value = '25/10/2026 02:30 (whatever)';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(field.value!.toString()).toBe('2026-10-25T00:30:00Z'); // the first, as before
+  });
+});

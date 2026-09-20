@@ -1,3 +1,5 @@
+import type { PresetName } from '@tzslot/core';
+
 /**
  * Every word the components say.
  *
@@ -53,6 +55,12 @@ export interface TzslotMessages {
   readonly to: string;
   /** The switch that turns an interval into whole days. */
   readonly allDay: string;
+  /** The range field: what it says when empty, and its two footer buttons. */
+  readonly chooseRange: string;
+  readonly apply: string;
+  readonly cancel: string;
+  /** The named ranges offered beside the calendar. */
+  readonly presets: Record<PresetName, string>;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -120,6 +128,21 @@ export const EN: TzslotMessages = {
   from: 'From',
   to: 'To',
   allDay: 'All day',
+  chooseRange: 'Choose a range',
+  apply: 'Apply',
+  cancel: 'Cancel',
+  presets: {
+    today: 'Today',
+    yesterday: 'Yesterday',
+    last7Days: 'Last 7 days',
+    last14Days: 'Last 14 days',
+    last30Days: 'Last 30 days',
+    thisWeek: 'This week',
+    lastWeek: 'Last week',
+    thisMonth: 'This month',
+    lastMonth: 'Last month',
+    thisYear: 'This year',
+  },
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -170,6 +193,21 @@ export const FR: TzslotMessages = {
   from: 'Du',
   to: 'Au',
   allDay: 'Toute la journée',
+  chooseRange: 'Choisir une période',
+  apply: 'Valider',
+  cancel: 'Annuler',
+  presets: {
+    today: "Aujourd'hui",
+    yesterday: 'Hier',
+    last7Days: '7 derniers jours',
+    last14Days: '14 derniers jours',
+    last30Days: '30 derniers jours',
+    thisWeek: 'Cette semaine',
+    lastWeek: 'La semaine dernière',
+    thisMonth: 'Ce mois-ci',
+    lastMonth: 'Le mois dernier',
+    thisYear: 'Cette année',
+  },
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

@@ -42,6 +42,7 @@ export default defineConfig({
           { text: 'createMultiDate', link: '/api/multi-date' },
           { text: 'createDateField', link: '/api/date-field' },
           { text: 'createDateTimeField', link: '/api/datetime-field' },
+          { text: 'createRangeField', link: '/api/range-field' },
           { text: 'createDateRange', link: '/api/date-range' },
           { text: 'createTimeSlots', link: '/api/time-slots' },
           { text: 'createDateTimeRange', link: '/api/datetime-range' },

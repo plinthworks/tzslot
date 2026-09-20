@@ -37,6 +37,11 @@ export interface DateRangeSettings {
   renderCell: RenderCell | undefined;
   /** A column of ISO week numbers down the left. */
   weekNumbers: boolean;
+  /**
+   * How many months to show side by side. Two is what a range wants: most of
+   * them cross a month boundary, and one month means navigating mid-choice.
+   */
+  months: number;
   onChange: ((value: DateRangeValue) => void) | undefined;
 }
 
@@ -83,6 +88,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     messages: EN,
     renderCell: undefined,
     weekNumbers: false,
+    months: 1,
     onChange: undefined,
     ...initial,
   };
@@ -121,36 +127,63 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
   const grid = el('div', 'tz-range__grid');
   grid.setAttribute('role', 'grid');
-  const weekdays = el('div', 'tz-range__weekdays');
-  weekdays.setAttribute('role', 'row');
-  const weekHeading = el('span', 'tz-range__weeknumber tz-range__weeknumber--heading');
-  weekHeading.setAttribute('role', 'columnheader');
-  const weekNumberCells = Array.from({ length: 6 }, () => {
-    const cell = el('span', 'tz-range__weeknumber');
-    cell.setAttribute('role', 'rowheader');
-    return cell;
-  });
-  const weekdayCells = Array.from({ length: 7 }, () => {
-    const cell = el('span', 'tz-range__weekday');
-    cell.setAttribute('role', 'columnheader');
-    return cell;
-  });
-  weekdays.append(...weekdayCells);
-  grid.append(weekdays);
+  /** Everything one month needs, kept so a repaint never rebuilds it. */
+  interface MonthBlock {
+    readonly block: HTMLElement;
+    readonly title: HTMLElement;
+    readonly weekdays: HTMLElement;
+    readonly weekHeading: HTMLElement;
+    readonly weekdayCells: HTMLElement[];
+    readonly weekNumberCells: HTMLElement[];
+    readonly weekRows: HTMLElement[];
+    readonly dayCells: HTMLButtonElement[];
+  }
 
-  const dayCells: HTMLButtonElement[] = [];
-  const weekRows: HTMLElement[] = [];
-  for (let w = 0; w < 6; w++) {
-    const row = el('div', 'tz-range__week');
-    row.setAttribute('role', 'row');
-    weekRows.push(row);
-    for (let d = 0; d < 7; d++) {
-      const cell = button('tz-range__day');
-      cell.setAttribute('role', 'gridcell');
-      dayCells.push(cell);
-      row.append(cell);
+  const blocks: MonthBlock[] = [];
+
+  function buildMonth(): MonthBlock {
+    const block = el('div', 'tz-range__month');
+    const title = el('div', 'tz-range__month-title');
+    const weekdays = el('div', 'tz-range__weekdays');
+    weekdays.setAttribute('role', 'row');
+    const weekHeading = el('span', 'tz-range__weeknumber tz-range__weeknumber--heading');
+    weekHeading.setAttribute('role', 'columnheader');
+    const weekNumberCells = Array.from({ length: 6 }, () => {
+      const cell = el('span', 'tz-range__weeknumber');
+      cell.setAttribute('role', 'rowheader');
+      return cell;
+    });
+    const weekdayCells = Array.from({ length: 7 }, () => {
+      const cell = el('span', 'tz-range__weekday');
+      cell.setAttribute('role', 'columnheader');
+      return cell;
+    });
+    weekdays.append(...weekdayCells);
+
+    const dayCells: HTMLButtonElement[] = [];
+    const weekRows: HTMLElement[] = [];
+    block.append(title, weekdays);
+    for (let w = 0; w < 6; w++) {
+      const row = el('div', 'tz-range__week');
+      row.setAttribute('role', 'row');
+      weekRows.push(row);
+      for (let d = 0; d < 7; d++) {
+        const cell = button('tz-range__day');
+        cell.setAttribute('role', 'gridcell');
+        dayCells.push(cell);
+        row.append(cell);
+      }
+      block.append(row);
     }
-    grid.append(row);
+    grid.append(block);
+    return { block, title, weekdays, weekHeading, weekdayCells, weekNumberCells, weekRows, dayCells };
+  }
+
+  /** As many blocks as months asked for, no more. */
+  function fitMonths(): void {
+    const wanted = Math.max(1, Math.floor(s.months));
+    while (blocks.length < wanted) blocks.push(buildMonth());
+    while (blocks.length > wanted) blocks.pop()!.block.remove();
   }
 
   const alert = el('p', 'tz-range__error');
@@ -183,16 +216,21 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     prev.setAttribute('aria-label', s.messages.previousMonth);
     next.setAttribute('aria-label', s.messages.nextMonth);
 
-    const text = new Intl.DateTimeFormat(s.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
-      new Date(Date.UTC(at.year, at.month - 1, 1)),
-    );
-    title.textContent = text;
-    grid.setAttribute('aria-label', text);
+    fitMonths();
+    host.classList.toggle('tz-range--months', blocks.length > 1);
+    host.classList.toggle('tz-range--weeks', s.weekNumbers);
 
+    const monthName = (year: number, month: number) =>
+      new Intl.DateTimeFormat(s.locale, { month: 'long', year: 'numeric', timeZone: 'UTC' }).format(
+        new Date(Date.UTC(year, month - 1, 1)),
+      );
     const short = new Intl.DateTimeFormat(s.locale, { weekday: 'short', timeZone: 'UTC' });
-    getWeekdayOrder(s.firstDayOfWeek).forEach((weekday, i) => {
-      weekdayCells[i]!.textContent = short.format(new Date(Date.UTC(1970, 0, 4 + weekday)));
+    const first = monthName(at.year, at.month);
+    const last = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 }).add({
+      months: blocks.length - 1,
     });
+    title.textContent = blocks.length > 1 ? '' : first;
+    grid.setAttribute('aria-label', blocks.length > 1 ? `${first} – ${monthName(last.year, last.month)}` : first);
 
     // The end as it would be if the pointer stopped here, so the run under the
     // cursor is the run that will be chosen.
@@ -202,32 +240,36 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
     renderedOut = new Set();
     let notes = false;
-    const month = getMonthGrid(at.year, at.month, s.firstDayOfWeek);
 
-    host.classList.toggle('tz-range--weeks', s.weekNumbers);
-    weekHeading.textContent = s.weekNumbers ? s.messages.weekShort : '';
-    weekHeading.setAttribute('aria-label', s.messages.weekLabel);
-    if (s.weekNumbers) {
-      if (!weekHeading.isConnected) weekdays.prepend(weekHeading);
-      month.forEach((week, index) => {
-        const cell = weekNumberCells[index]!;
-        cell.textContent = String(week[0]!.weekOfYear ?? '');
-        cell.setAttribute('aria-label', `${s.messages.weekLabel} ${cell.textContent}`);
-        if (!cell.isConnected) weekRows[index]!.prepend(cell);
+    blocks.forEach((block, index) => {
+      const on = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 }).add({ months: index });
+      block.title.textContent = blocks.length > 1 ? monthName(on.year, on.month) : '';
+      getWeekdayOrder(s.firstDayOfWeek).forEach((weekday, i) => {
+        block.weekdayCells[i]!.textContent = short.format(new Date(Date.UTC(1970, 0, 4 + weekday)));
       });
-    } else {
-      weekHeading.remove();
-      for (const cell of weekNumberCells) cell.remove();
-    }
 
-    month
-      .flat()
-      .forEach((date, i) => {
-        const cell = dayCells[i]!;
+      const month = getMonthGrid(on.year, on.month, s.firstDayOfWeek);
+      block.weekHeading.textContent = s.weekNumbers ? s.messages.weekShort : '';
+      block.weekHeading.setAttribute('aria-label', s.messages.weekLabel);
+      if (s.weekNumbers) {
+        if (!block.weekHeading.isConnected) block.weekdays.prepend(block.weekHeading);
+        month.forEach((week, row) => {
+          const cell = block.weekNumberCells[row]!;
+          cell.textContent = String(week[0]!.weekOfYear ?? '');
+          cell.setAttribute('aria-label', `${s.messages.weekLabel} ${cell.textContent}`);
+          if (!cell.isConnected) block.weekRows[row]!.prepend(cell);
+        });
+      } else {
+        block.weekHeading.remove();
+        for (const cell of block.weekNumberCells) cell.remove();
+      }
+
+      month.flat().forEach((date, i) => {
+        const cell = block.dayCells[i]!;
         const isStart = from !== null && date.equals(from);
         const isEnd = to !== null && date.equals(to);
         const within = from !== null && to !== null && !before(date, from) && !before(to, date);
-        const outside = date.month !== at.month || date.year !== at.year;
+        const outside = date.month !== on.month || date.year !== on.year;
         const render = s.renderCell?.({
           date,
           outside,
@@ -246,6 +288,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         cell.setAttribute('aria-selected', String(isStart || isEnd));
         cell.disabled = off || blocked(date);
       });
+    });
     host.classList.toggle('tz-range--notes', notes);
 
     if (error) {

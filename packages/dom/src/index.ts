@@ -57,6 +57,14 @@ export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
 export type { MultiDateInstance, MultiDateOptions, MultiDateSettings } from './multi-date.js';
+export { createRangeField } from './range-field.js';
+export type {
+  RangeFieldInstance,
+  RangeFieldOptions,
+  RangeFieldSettings,
+  RangeFieldValue,
+  RangePreset,
+} from './range-field.js';
 export { createDateTimeField } from './datetime-field.js';
 export type {
   DateTimeFieldInstance,
@@ -82,5 +90,6 @@ export {
   DAILY_CSS,
   TIME_CSS,
   TIMESELECT_CSS,
+  RANGEFIELD_CSS,
   DATETIME_CSS,
 } from './styles.js';

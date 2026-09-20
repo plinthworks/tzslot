@@ -107,6 +107,32 @@ createDateTimeRange(element, { timeZone: 'Europe/Paris', locale: 'en-GB' });
 Try 24/10/2026 23:00 to 25/10/2026 05:00: six hours on the clock, seven in
 fact, and it says so rather than leaving you to notice.
 
+## A period, in one field
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  locale: 'en-GB',
+  presets: ['today', 'yesterday', 'last7Days', 'last30Days', 'thisMonth', 'lastMonth'],
+  months: 2,
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, weekNumbers: true, showTime: true }" />
+
+One field, and most of the time one click: the named ranges are what people
+actually ask for. Two months side by side, so a range across a month boundary
+is two clicks rather than a navigation in the middle of choosing.
+
+The named ranges are counted in the zone, which is the part other pickers get
+wrong: ask for the last 7 days on 27 October in Paris and the answer is 169
+hours, not 168, because one of those days had twenty-five.
+
+`showTime` adds the two times and the switch back to whole days;
+`confirm: true` holds everything until **Apply** is pressed, for a search that
+costs something. `presets: []` removes the column, and your own are
+`{ name, label, range: (today) => ({ start, end }) }`.
+
 ## A whole day, or an interval
 
 ```js

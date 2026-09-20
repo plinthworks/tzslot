@@ -257,3 +257,47 @@ describe('the all-day switch itself', () => {
     expect(widget.value.allDay).toBe(true);
   });
 });
+
+describe('several months side by side', () => {
+  const today = Temporal.PlainDate.from('2026-09-20');
+  const titles = () =>
+    Array.from(host.querySelectorAll('.tz-range__month-title')).map((t) => t.textContent);
+  const day = (iso: string) => host.querySelectorAll<HTMLButtonElement>(`[data-date="${iso}"]`);
+
+  it('shows one grid per month, each named', () => {
+    widget = createDateRange(host, { today, locale: 'en-GB', months: 2 });
+    expect(host.querySelectorAll('.tz-range__month')).toHaveLength(2);
+    expect(titles()).toEqual(['September 2026', 'October 2026']);
+    expect(host.querySelectorAll('.tz-range__day')).toHaveLength(84);
+  });
+
+  it('a range across the boundary is chosen without navigating', () => {
+    widget = createDateRange(host, { today, locale: 'en-GB', months: 2 });
+    // The 28th of September is in the first grid, the 3rd of October in the second.
+    host.querySelector<HTMLButtonElement>('.tz-range__month:first-child [data-date="2026-09-28"]')!.click();
+    host.querySelector<HTMLButtonElement>('.tz-range__month:last-child [data-date="2026-10-03"]')!.click();
+    const value = (widget as DateRangeInstance).value;
+    expect(`${value.start}/${value.end}`).toBe('2026-09-28/2026-10-03');
+  });
+
+  it('the arrows move both months together', () => {
+    widget = createDateRange(host, { today, locale: 'en-GB', months: 2 });
+    host.querySelectorAll<HTMLButtonElement>('.tz-range__nav')[1]!.click();
+    expect(titles()).toEqual(['October 2026', 'November 2026']);
+  });
+
+  it('a day shown in two grids at once is painted in both', () => {
+    widget = createDateRange(host, { today, locale: 'en-GB', months: 2 });
+    // The 1st of October trails September's grid and opens October's.
+    expect(day('2026-10-01')).toHaveLength(2);
+    host.querySelector<HTMLButtonElement>('[data-date="2026-10-01"]')!.click();
+    expect(Array.from(day('2026-10-01')).every((c) => c.classList.contains('tz-range__day--start'))).toBe(true);
+  });
+
+  it('goes back to one grid when told to', () => {
+    widget = createDateRange(host, { today, locale: 'en-GB', months: 2 });
+    (widget as DateRangeInstance).update({ months: 1 });
+    expect(host.querySelectorAll('.tz-range__month')).toHaveLength(1);
+    expect(host.querySelectorAll('.tz-range__day')).toHaveLength(42);
+  });
+});

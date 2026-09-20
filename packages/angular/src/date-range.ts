@@ -61,6 +61,9 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
   /** A column of ISO week numbers down the left. */
   readonly weekNumbers = input(false);
 
+  /** How many months to show side by side. Two is what most ranges want. */
+  readonly months = input(1);
+
   /** Adds to each day: a price per night, places left, a class of your own. */
   readonly renderCell = input<RenderCell | undefined>(undefined);
 
@@ -86,6 +89,7 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
     rangeSpansBlockedMessage: this.rangeSpansBlockedMessage(),
     renderCell: this.renderCell(),
     weekNumbers: this.weekNumbers(),
+    months: this.months(),
     messages: this.messages,
   }));
 

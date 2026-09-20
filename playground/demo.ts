@@ -7,9 +7,11 @@ import {
   DateTimeRange,
   DailyRange,
   MultiDate,
+  RangeField,
   TimeSlotPicker,
   type TimeLayout,
   type DailyRangeValue,
+  type RangeFieldValue,
   type DateRangeValue,
   type DateTimeRangeValue,
 } from '@tzslot/angular';
@@ -44,7 +46,7 @@ function parisAt(iso: string): Instant {
 @Component({
   selector: 'demo-root',
   standalone: true,
-  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange, MultiDate, DateTimeField],
+  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange, MultiDate, DateTimeField, RangeField],
   template: `
     <header>
       <div class="titlebar">
@@ -259,6 +261,17 @@ function parisAt(iso: string): Instant {
                      [buttons]="['today', 'clear']" />
         <p class="note">The same buttons in a field's panel:</p>
         <tz-date-field [(value)]="pricedDate" [locale]="locale" [buttons]="['today', 'clear']" />
+      </section>
+
+      <section class="block">
+        <h2>A period, in one field</h2>
+        <p class="note">
+          Les raccourcis à droite font le travail en un clic ; sinon, deux clics dans deux mois
+          affichés côte à côte.
+        </p>
+        <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
+                        [showTime]="true" [weekNumbers]="true" />
+        <p class="note">{{ periodText() }}</p>
       </section>
 
       <section class="block">
@@ -484,6 +497,14 @@ export class Demo {
   protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
 
   protected readonly pricedDate = signal<PlainDate | null>(null);
+
+  protected readonly period = signal<RangeFieldValue>({ start: null, end: null, allDay: true });
+  protected periodText(): string {
+    const { start, end, allDay } = this.period();
+    if (!start || !end) return 'rien choisi';
+    const hours = start.until(end).total({ unit: 'hour' });
+    return `${start.toString()} → ${end.toString()} · ${hours} h · ${allDay ? 'journées entières' : 'avec heures'}`;
+  }
 
   protected readonly fieldLayout = signal<TimeLayout>('input');
   protected readonly formats = [

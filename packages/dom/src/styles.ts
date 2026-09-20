@@ -268,6 +268,18 @@ export const RANGE_CSS = `
   padding: var(--tz-cal-header-padding, 0.25rem 0);
 }
 .tz-range__title { font-weight: var(--tz-cal-title-weight, 600); }
+/* Side by side, and wrapping to one column when there is no room. */
+.tz-range--months .tz-range__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--tz-range-month-gap, 1.25rem);
+}
+.tz-range__month-title {
+  font-weight: var(--tz-cal-title-weight, 600);
+  text-align: center;
+  padding: var(--tz-cal-header-padding, 0.25rem 0);
+}
+.tz-range__month-title:empty { display: none; }
 .tz-range__nav,
 .tz-range__day {
   border: 0;
@@ -641,6 +653,76 @@ export const TIMESELECT_CSS = `
 }
 .tz-timeselect__menu:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-timeselect__separator { opacity: 0.6; }
+`;
+
+/** The range field's panel: the calendar, the named ranges beside it, a footer. */
+export const RANGEFIELD_CSS = `
+.tz-rangefield__panel { display: grid; gap: 0.75rem; }
+.tz-rangefield__body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+.tz-rangefield__presets {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 9rem;
+  max-height: var(--tz-rangefield-presets-height, 17rem);
+  overflow-y: auto;
+  order: var(--tz-rangefield-presets-order, 1);
+}
+.tz-rangefield__preset {
+  border: 0;
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-size: 0.875em;
+  text-align: left;
+  cursor: pointer;
+}
+.tz-rangefield__preset--on {
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+}
+.tz-rangefield__times {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+}
+.tz-rangefield__pair { display: flex; gap: 1rem; }
+.tz-rangefield__time { display: flex; align-items: center; gap: 0.4rem; }
+.tz-rangefield__time-label { font-size: 0.8125em; opacity: 0.7; }
+.tz-rangefield__footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+}
+.tz-rangefield__cancel,
+.tz-rangefield__apply {
+  border: 1px solid var(--tz-border, currentColor);
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.35rem 0.9rem;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-size: 0.875em;
+  cursor: pointer;
+}
+.tz-rangefield__apply {
+  border-color: var(--tz-accent, currentColor);
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+  font-weight: 600;
+}
 `;
 
 /**

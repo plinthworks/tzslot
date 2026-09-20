@@ -37,6 +37,7 @@ export const WIDGETS = [
   },
   { name: 'createDateField', file: 'date-field.ts', settings: 'DateFieldSettings', angular: 'tz-date-field' },
   { name: 'createDateTimeField', file: 'datetime-field.ts', settings: 'DateTimeFieldSettings', angular: 'tz-datetime-field' },
+  { name: 'createRangeField', file: 'range-field.ts', settings: 'RangeFieldSettings', angular: 'tz-range-field' },
   { name: 'createDateRange', file: 'date-range.ts', settings: 'DateRangeSettings', angular: 'tz-date-range' },
   { name: 'createTimeSlots', file: 'time-slots.ts', settings: 'TimeSlotsSettings', angular: 'tz-time-slots' },
   { name: 'createDateTimeRange', file: 'datetime-range.ts', settings: 'DateTimeRangeSettings', angular: 'tz-datetime-range' },

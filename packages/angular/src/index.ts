@@ -18,6 +18,8 @@ export type {
 } from '@tzslot/dom';
 export { DateField } from './date-field.js';
 export { DateTimeField } from './datetime-field.js';
+export { RangeField } from './range-field.js';
+export type { RangeFieldValue, RangePreset } from './range-field.js';
 export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';
 export { DailyRange } from './daily-range.js';

@@ -19,6 +19,7 @@
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a price per night, places left, a class of your own. |
 | `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left. |
+| `months` | `number` | `1` | How many months to show side by side. Two is what a range wants: most of them cross a month boundary, and one month means navigating mid-choice. |
 
 ### Callbacks
 

@@ -35,6 +35,7 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 | `<tz-datetime-field>` | `createDateTimeField` | a moment: the same panel with a time under the calendar — flatpickr's `enableTime`, except that it says when the time cannot happen and offers both readings when it happens twice |
 | — | `createTimeInput` | an hour and a minute on their own: arrows, wheel, up/down keys, 12- or 24-hour |
 | `<tz-date-range>` | `createDateRange` | two days, refusing a range across a closed one |
+| `<tz-range-field>` | `createRangeField` | a period in one field: named ranges, months side by side, whole days or moments |
 | `<tz-time-slots>` | `createTimeSlots` | a moment on one day: the skipped hour struck through, the repeated one offered twice |
 | `<tz-datetime-range>` | `createDateTimeRange` | an interval: two date-and-time fields, and the hour it hides |
 | `<tz-daily-range>` | `createDailyRange` | a range of days with the same hours on each, overnight allowed |

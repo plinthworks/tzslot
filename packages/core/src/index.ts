@@ -20,6 +20,8 @@ export type { Slot, DaySlotsOptions, ResolvedTime } from './slots.js';
 export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade } from './grid.js';
 export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
 export { getDailyWindows } from './daily.js';
+export { presetRange, matchesPreset } from './presets.js';
+export type { PresetName, DayRange, PresetOptions } from './presets.js';
 export type { DailyWindow, DailyWindowsSummary } from './daily.js';
 export {
   toPlainDate,

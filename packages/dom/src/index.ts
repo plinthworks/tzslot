@@ -46,6 +46,12 @@ export type {
   DateTimeRangeValue,
 } from './datetime-range.js';
 export { formatWith, parseWith, patternFor } from './format.js';
+export { createTimeColumns } from './time-columns.js';
+export type {
+  TimeColumnsInstance,
+  TimeColumnsOptions,
+  TimeColumnsSettings,
+} from './time-columns.js';
 export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
@@ -66,4 +72,14 @@ export type {
 } from './daily-range.js';
 export { EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
-export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS, DAILY_CSS, TIME_CSS, DATETIME_CSS } from './styles.js';
+export {
+  CALENDAR_CSS,
+  FIELD_CSS,
+  SLOTS_CSS,
+  RANGE_CSS,
+  DTR_CSS,
+  DAILY_CSS,
+  TIME_CSS,
+  TIMECOLS_CSS,
+  DATETIME_CSS,
+} from './styles.js';

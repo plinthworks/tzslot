@@ -2,13 +2,14 @@ import { Temporal, resolveWallTime } from '@tzslot/core';
 import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
+import { createTimeColumns, type TimeColumnsInstance } from './time-columns.js';
 import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
 import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DATETIME_CSS, FIELD_CSS, ensureStyles } from './styles.js';
+import { DATETIME_CSS, FIELD_CSS, TIMECOLS_CSS, ensureStyles } from './styles.js';
 
 export interface DateTimeFieldSettings {
   /** A moment, because a date and a wall time alone are not one. */
@@ -23,9 +24,11 @@ export interface DateTimeFieldSettings {
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
-  /** How the time is chosen: two compact fields, or the day's times to click. */
+  /** How the time is chosen: a compact field, two columns, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
+  /** With 'columns': minutes between the options. Every minute by default. */
+  minuteStep: number;
   minTime: PlainTime | string | undefined;
   maxTime: PlainTime | string | undefined;
   /** Only with timeLayout 'list': rules out slots while still showing them. */
@@ -111,6 +114,7 @@ export function createDateTimeField(
     isDateDisabled: undefined,
     timeLayout: 'input',
     stepMinutes: 30,
+    minuteStep: 1,
     minTime: undefined,
     maxTime: undefined,
     isSlotDisabled: undefined,
@@ -198,6 +202,7 @@ export function createDateTimeField(
 
   let calendar: CalendarInstance | null = null;
   let timeInput: TimeInputInstance | null = null;
+  let timeColumns: TimeColumnsInstance | null = null;
   let slots: TimeSlotsInstance | null = null;
   let note: HTMLElement | null = null;
   let choice: HTMLElement | null = null;
@@ -331,6 +336,15 @@ export function createDateTimeField(
       renderCell: s.renderCell,
       buttons: s.buttons,
     });
+    timeColumns?.update({
+      value: draft.time,
+      minuteStep: s.minuteStep,
+      minTime: s.minTime,
+      maxTime: s.maxTime,
+      locale: s.locale,
+      disabled: s.disabled,
+      messages: s.messages,
+    });
     timeInput?.update({
       value: draft.time,
       stepMinutes: s.stepMinutes,
@@ -387,6 +401,7 @@ export function createDateTimeField(
     onClose: () => {
       calendar = null;
       timeInput = null;
+      timeColumns = null;
       slots = null;
       note = null;
       choice = null;
@@ -404,7 +419,7 @@ export function createDateTimeField(
       const timeHost = doc.createElement('div');
       // The compact field speaks for itself under a calendar; a list of times
       // needs saying what it is.
-      if (s.timeLayout === 'list') timeRow.append(timeLabel);
+      if (s.timeLayout !== 'input') timeRow.append(timeLabel);
       timeRow.append(timeHost);
       note = el('p', 'tz-datetime__note');
       note.setAttribute('role', 'status');
@@ -418,7 +433,17 @@ export function createDateTimeField(
           settle();
         },
       });
-      if (s.timeLayout === 'input') {
+      if (s.timeLayout === 'columns') {
+        timeRow.classList.add('tz-datetime__time--columns');
+        ensureStyles(node, 'timecols', TIMECOLS_CSS);
+        timeColumns = createTimeColumns(timeHost, {
+          injectStyles: false,
+          onChange: (time) => {
+            draft = { date: draft.date, time };
+            settle();
+          },
+        });
+      } else if (s.timeLayout === 'input') {
         timeInput = createTimeInput(timeHost, {
           injectStyles: false,
           variant: 'bare',
@@ -441,6 +466,7 @@ export function createDateTimeField(
       return () => {
         calendar?.destroy();
         timeInput?.destroy();
+        timeColumns?.destroy();
         slots?.destroy();
       };
     },

@@ -41,7 +41,8 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 
 `renderCell` puts a price, places left or your own class on any day.
 `timeLayout` chooses how a time is asked for: `'input'` for the compact field,
-`'list'` for the times on offer.
+`'columns'` for hours on one side and minutes on the other (`minuteStep`, every
+minute by default), `'list'` for the times on offer that day.
 
 ## The text in a field
 

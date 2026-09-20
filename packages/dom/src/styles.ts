@@ -470,14 +470,15 @@ export const TIME_CSS = `
   font-size: 1.05rem;
 }
 .tz-time--bare .tz-time__field {
-  flex: 1;
+  flex: none;
+  min-width: 3.25rem;
   border: 0;
   border-radius: var(--tz-radius, 0.375rem);
   background: transparent;
   justify-content: center;
 }
 .tz-time--bare .tz-time__input {
-  width: 100%;
+  width: 2.75rem;
   padding: 0.35rem 0.1rem;
   font-weight: 600;
 }
@@ -508,7 +509,10 @@ export const DATETIME_CSS = `
   padding-top: 0.5rem;
   border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
 }
-.tz-datetime__time--list { display: block; }
+.tz-datetime__time--list,
+.tz-datetime__time--columns { display: block; }
+.tz-datetime__time--columns .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
+.tz-datetime__time--columns .tz-timecols { max-width: 100%; }
 .tz-datetime__label { font-size: 0.8125em; opacity: 0.7; }
 .tz-datetime__time--list .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
 .tz-datetime__time--list .tz-slots {
@@ -539,6 +543,43 @@ export const DATETIME_CSS = `
   background: var(--tz-accent, currentColor);
   color: var(--tz-accent-fg, canvas);
 }
+`;
+
+/** Hours on one side, minutes on the other: two short lists, each scrolled to its own choice. */
+export const TIMECOLS_CSS = `
+.tz-timecols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.375rem;
+  font: var(--tz-font, inherit);
+}
+.tz-timecols__column {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  max-height: var(--tz-timecols-height, 11rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  padding-right: 0.125rem;
+}
+.tz-timecols__option {
+  flex: none;
+  border: 0;
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.3rem 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  cursor: pointer;
+}
+.tz-timecols__option--selected {
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+}
+.tz-timecols__option:disabled { opacity: 0.4; cursor: not-allowed; }
 `;
 
 /**

@@ -65,6 +65,8 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   /** 'input' (default) for a compact time field, 'list' for the day's times. */
   readonly timeLayout = input<TimeLayout>('input');
   readonly stepMinutes = input(30);
+  /** With timeLayout 'columns': minutes between the options. Every minute by default. */
+  readonly minuteStep = input(1);
   readonly minTime = input<PlainTime | string | undefined>(undefined);
   readonly maxTime = input<PlainTime | string | undefined>(undefined);
   /** Only with timeLayout 'list': rules out slots while still showing them. */
@@ -118,6 +120,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     isDateDisabled: this.isDateDisabled(),
     timeLayout: this.timeLayout(),
     stepMinutes: this.stepMinutes(),
+    minuteStep: this.minuteStep(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     isSlotDisabled: this.isSlotDisabled(),

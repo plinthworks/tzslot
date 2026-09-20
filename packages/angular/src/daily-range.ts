@@ -55,6 +55,9 @@ export class DailyRange implements ControlValueAccessor {
 
   /** 12-hour fields with an AM/PM button; the locale decides when unset. */
   readonly hour12 = input<boolean | undefined>(undefined);
+
+  /** With timeLayout 'columns': minutes between the options. Every minute by default. */
+  readonly minuteStep = input(1);
   /** The first and last times offered. */
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
@@ -79,6 +82,7 @@ export class DailyRange implements ControlValueAccessor {
     stepMinutes: this.stepMinutes(),
     timeLayout: this.timeLayout(),
     hour12: this.hour12(),
+    minuteStep: this.minuteStep(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     firstDayOfWeek: this.firstDayOfWeek(),

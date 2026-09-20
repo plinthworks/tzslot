@@ -91,11 +91,23 @@ function toTime(value: PlainTime | string | undefined): PlainTime | null {
  * later reading separates them — if the wall time survives the round trip, the
  * time exists twice; if it comes back shifted, it does not exist at all.
  */
+/** What a wall time maps to in a zone: see resolveWallTime. */
+export interface ResolvedTime {
+  /** False when the clocks skip this time on that day. */
+  readonly exists: boolean;
+  /** True when it happens twice. */
+  readonly ambiguous: boolean;
+  /** The UTC offsets it maps to: one normally, two when ambiguous, none when it cannot happen. */
+  readonly offsets: string[];
+  /** The moments it maps to, in order. */
+  readonly instants: Instant[];
+}
+
 export function resolve(
   date: PlainDate,
   time: PlainTime,
   timeZone: string,
-): { exists: boolean; ambiguous: boolean; offsets: string[]; instants: Instant[] } {
+): ResolvedTime {
   const wall = date.toPlainDateTime(time);
 
   try {

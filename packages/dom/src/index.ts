@@ -49,6 +49,12 @@ export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
 export type { MultiDateInstance, MultiDateOptions, MultiDateSettings } from './multi-date.js';
+export { createDateTimeField } from './datetime-field.js';
+export type {
+  DateTimeFieldInstance,
+  DateTimeFieldOptions,
+  DateTimeFieldSettings,
+} from './datetime-field.js';
 export { createDailyRange } from './daily-range.js';
 export type {
   TimeLayout,
@@ -59,4 +65,4 @@ export type {
 } from './daily-range.js';
 export { EN, FR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
-export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS, DAILY_CSS, TIME_CSS } from './styles.js';
+export { CALENDAR_CSS, FIELD_CSS, SLOTS_CSS, RANGE_CSS, DTR_CSS, DAILY_CSS, TIME_CSS, DATETIME_CSS } from './styles.js';

@@ -130,6 +130,32 @@ describe('the same hours every day', () => {
   });
 });
 
+describe('the date-and-time field', () => {
+  it('asks which reading of a repeated hour was meant', () => {
+    tab('Dates');
+    el().querySelector<HTMLButtonElement>('tz-datetime-field .tz-field__trigger')!.click();
+    fixture.detectChanges();
+
+    const panel = document.querySelector('.tz-field__panel')!;
+    // It opens on today; walk forward until the night the clocks go back shows.
+    for (let i = 0; i < 24 && !panel.querySelector('[data-date="2026-10-25"]'); i++) {
+      panel.querySelectorAll<HTMLButtonElement>('.tz-cal__nav')[1]!.click();
+    }
+    panel.querySelector<HTMLButtonElement>('[data-date="2026-10-25"]')!.click();
+    for (const [part, value] of [['minute', '30'], ['hour', '02']] as const) {
+      const box = panel.querySelector<HTMLInputElement>(`[data-part="${part}"]`)!;
+      box.focus();
+      box.value = value;
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+      box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    }
+    fixture.detectChanges();
+    expect(
+      Array.from(panel.querySelectorAll('.tz-datetime__reading')).map((b) => b.textContent),
+    ).toEqual(['UTC+02:00', 'UTC+01:00']);
+  });
+});
+
 describe('the hours, compact or listed', () => {
   it('starts compact and switches to a list on request', () => {
     expect(el().querySelectorAll('.tz-daily__input')).toHaveLength(2);

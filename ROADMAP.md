@@ -28,6 +28,8 @@ Usable from a `<script>` tag; each returns an instance with `update`,
 | | |
 |---|---|
 | `createCalendar` | month grid, month and year views, keyboard, `goTo`, `setIcons`; `renderCell` for a note, a class or a veto per day; optional Today / Clear buttons |
+| `createDateTimeField` | a moment: calendar and time in one panel; a skipped time is moved on and explained, a repeated one offered by both its offsets |
+| `createTimeInput` | an hour and a minute: arrows, wheel, keys, typing, 12/24-hour |
 | `createDateField` | a field whose panel opens anchored or centred, on the body, carrying the field's `data-theme`; `open` / `close`, `onOpen` / `onClose` |
 | `createTimeSlots` | times on one day; `getSlotChoices` gives the rows without drawing them |
 | `createDateRange` | two dates, previewing the span under the pointer, refusing a closed day; `renderCell` too |

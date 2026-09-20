@@ -3,12 +3,11 @@ import type { PlainDate, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { CALENDAR_CSS, FIELD_CSS, ensureStyles } from './styles.js';
+import { FIELD_CSS, ensureStyles } from './styles.js';
+import { createPanel, type FieldMode, type PanelController } from './panel.js';
 
-/** Anchored under the field, or centred over the page. */
-export type FieldMode = 'popup' | 'dialog';
+export type { FieldMode } from './panel.js';
 
-/** Everything that can change after the field exists. */
 export interface DateFieldSettings {
   value: PlainDate | null;
   mode: FieldMode;
@@ -60,52 +59,6 @@ export interface DateFieldInstance {
   destroy(): void;
 }
 
-/** What a panel must take with it from where its field sits. */
-const CARRIED = [
-  '--tz-color-scheme',
-  '--tz-bg',
-  '--tz-bg-raised',
-  '--tz-fg',
-  '--tz-fg-muted',
-  '--tz-border',
-  '--tz-accent',
-  '--tz-accent-fg',
-  '--tz-danger',
-  '--tz-warning',
-  '--tz-font',
-  '--tz-radius',
-];
-
-/**
- * The panel lives on the body, so it inherits nothing from the field: a dark
- * card on a light page would open a light calendar, and a card with its own
- * accent would open one in the page's. Carry the attributes the stylesheets
- * select on, and every palette variable that differs from the page's.
- */
-function carryTheme(field: HTMLElement, panel: HTMLElement): void {
-  for (const name of ['theme', 'contrast']) {
-    const source = field.closest<HTMLElement>(`[data-${name}]`);
-    if (source) panel.dataset[name] = source.dataset[name];
-  }
-  const win = field.ownerDocument.defaultView;
-  if (!win) return;
-  const here = win.getComputedStyle(field);
-  const page = win.getComputedStyle(field.ownerDocument.documentElement);
-  for (const name of CARRIED) {
-    const value = here.getPropertyValue(name).trim();
-    if (value && value !== page.getPropertyValue(name).trim()) panel.style.setProperty(name, value);
-  }
-  // By default the widgets use the font they sit in, and the panel sits in the
-  // body — which is often not where the application set its font. Take the
-  // field's, unless --tz-font names one explicitly.
-  const font = here.getPropertyValue('--tz-font').trim();
-  if (!font || font === 'inherit') {
-    panel.style.fontFamily = here.fontFamily;
-    panel.style.fontSize = here.fontSize;
-    panel.style.lineHeight = here.lineHeight;
-  }
-}
-
 /**
  * A field that opens a calendar, anchored or centred.
  *
@@ -124,7 +77,6 @@ function carryTheme(field: HTMLElement, panel: HTMLElement): void {
  */
 export function createDateField(host: HTMLElement, options: DateFieldOptions = {}): DateFieldInstance {
   const doc = host.ownerDocument;
-  const win = doc.defaultView!;
   const { icon, container, injectStyles = true, ...initial } = options;
 
   const s: DateFieldSettings = {
@@ -167,14 +119,8 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
   trigger.append(text, iconSlot);
   host.append(trigger);
 
-  /** Everything that exists only while the panel is open. */
-  let opened: {
-    panel: HTMLElement;
-    backdrop: HTMLElement | null;
-    calendar: CalendarInstance;
-    listening: AbortController;
-    overflow: string;
-  } | null = null;
+  /** The calendar inside the panel, while there is one. */
+  let calendar: CalendarInstance | null = null;
 
   const label = () => s.ariaLabel ?? s.messages.chooseDate;
 
@@ -194,157 +140,64 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     }
     text.textContent = display() || s.placeholder || s.messages.chooseDate;
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
-    trigger.setAttribute('aria-expanded', String(opened !== null));
+    trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', label());
     trigger.disabled = s.disabled;
-    if (s.disabled) close({ restoreFocus: false });
+    if (s.disabled) panel.close({ restoreFocus: false });
   }
 
-  /**
-   * Under the field, or above it when there is no room below — a panel that
-   * opens off the bottom of the screen is a panel nobody can use. Kept inside
-   * the viewport sideways too.
-   */
-  function place(panel: HTMLElement): void {
-    if (s.mode === 'dialog') return; // centred by the stylesheet
-    const gap = 4;
-    const edge = 8;
-    const field = trigger.getBoundingClientRect();
-    const height = panel.offsetHeight;
-    const below = win.innerHeight - field.bottom;
-    const flip = below < height + gap && field.top > below;
-    const top = flip ? field.top - height - gap : field.bottom + gap;
-    const left = Math.max(edge, Math.min(field.left, win.innerWidth - panel.offsetWidth - edge));
-    panel.style.top = `${top}px`;
-    panel.style.left = `${left}px`;
-  }
-
-  /** Tab stays inside a panel that is open; leaving it would strand the keyboard. */
-  function trapTab(panel: HTMLElement, event: KeyboardEvent): void {
-    if (event.key !== 'Tab') return;
-    const stops = Array.from(
-      panel.querySelectorAll<HTMLElement>('button:not(:disabled):not([tabindex="-1"])'),
-    );
-    const first = stops[0];
-    const last = stops[stops.length - 1];
-    if (!first || !last) return;
-    if (event.shiftKey && doc.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-    } else if (!event.shiftKey && doc.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  function open(): void {
-    if (opened || s.disabled) return;
-    const dialog = s.mode === 'dialog';
-    const target = container ?? doc.body;
-
-    const panel = doc.createElement('div');
-    panel.className = dialog ? 'tz-field__panel tz-field__panel--dialog' : 'tz-field__panel';
-    panel.setAttribute('role', 'dialog');
-    panel.setAttribute('aria-label', label());
-    if (dialog) panel.setAttribute('aria-modal', 'true');
-
-    carryTheme(host, panel);
-
-    const calendarHost = doc.createElement('div');
-    panel.append(calendarHost);
-
-    let backdrop: HTMLElement | null = null;
-    if (dialog) {
-      backdrop = doc.createElement('div');
-      backdrop.className = 'tz-field__backdrop';
-      target.append(backdrop);
-    }
-    target.append(panel);
-    ensureStyles(panel, 'calendar', CALENDAR_CSS);
-    ensureStyles(panel, 'field', FIELD_CSS);
-
-    const calendar = createCalendar(calendarHost, {
-      value: s.value,
-      locale: s.locale,
-      firstDayOfWeek: s.firstDayOfWeek,
-      min: s.min,
-      max: s.max,
-      isDateDisabled: s.isDateDisabled,
-      today: s.today,
-      messages: s.messages,
-      renderCell: s.renderCell,
-      buttons: s.buttons,
-      injectStyles: false,
-      onChange: pick,
-    });
-
-    const listening = new AbortController();
-    const on = { signal: listening.signal };
-
-    doc.addEventListener(
-      'keydown',
-      (event) => {
-        if (event.key === 'Escape') close({ restoreFocus: true });
-      },
-      on,
-    );
-    panel.addEventListener('keydown', (event) => trapTab(panel, event), on);
-    // A popup closes on a click anywhere else; the focus stays where that
-    // click put it. A dialog closes on its backdrop.
-    doc.addEventListener(
-      'pointerdown',
-      (event) => {
-        const where = event.target as Node;
-        if (!dialog && !panel.contains(where) && !trigger.contains(where)) {
-          close({ restoreFocus: false });
-        }
-      },
-      on,
-    );
-    backdrop?.addEventListener('click', () => close({ restoreFocus: true }), on);
-    if (!dialog) {
-      const follow = () => place(panel);
-      win.addEventListener('resize', follow, on);
-      // Capture, so scrolling any ancestor — not only the window — moves it.
-      win.addEventListener('scroll', follow, { ...on, capture: true, passive: true });
-    }
-
-    // A dialog holds the page still behind it; a popup follows it instead.
-    const overflow = doc.documentElement.style.overflow;
-    if (dialog) doc.documentElement.style.overflow = 'hidden';
-
-    opened = { panel, backdrop, calendar, listening, overflow };
-    place(panel);
-    render();
-
+  const panel = createPanel({
+    trigger,
+    source: host,
+    container,
+    mode: () => s.mode,
+    label,
+    onOpen: () => {
+      render();
+      s.onOpen?.();
+    },
+    onClose: () => {
+      calendar = null;
+      render();
+      s.onClose?.();
+    },
     // Into the panel, on the day that matters: the selection, else today.
-    calendarHost.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]')?.focus();
-    s.onOpen?.();
-  }
-
-  function close({ restoreFocus }: { restoreFocus: boolean } = { restoreFocus: true }): void {
-    if (!opened) return;
-    const { panel, backdrop, calendar, listening, overflow } = opened;
-    opened = null;
-    listening.abort();
-    calendar.destroy();
-    panel.remove();
-    backdrop?.remove();
-    doc.documentElement.style.overflow = overflow;
-    render();
-    // Back to the field, or the keyboard user lands at the top of the document.
-    if (restoreFocus) trigger.focus();
-    s.onClose?.();
-  }
+    initialFocus: (node) => node.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]'),
+    content: (node) => {
+      const calendarHost = doc.createElement('div');
+      node.append(calendarHost);
+      calendar = createCalendar(calendarHost, {
+        value: s.value,
+        locale: s.locale,
+        firstDayOfWeek: s.firstDayOfWeek,
+        min: s.min,
+        max: s.max,
+        isDateDisabled: s.isDateDisabled,
+        today: s.today,
+        messages: s.messages,
+        renderCell: s.renderCell,
+        buttons: s.buttons,
+        injectStyles: false,
+        onChange: pick,
+      });
+      return () => calendar?.destroy();
+    },
+  });
 
   function pick(date: PlainDate | null): void {
     s.value = date;
-    close({ restoreFocus: true });
+    panel.close({ restoreFocus: true });
     s.onChange?.(date);
   }
 
+  const openPanel = () => {
+    if (!s.disabled) panel.open();
+  };
+
   const listening = new AbortController();
-  trigger.addEventListener('click', () => (opened ? close() : open()), { signal: listening.signal });
+  trigger.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), {
+    signal: listening.signal,
+  });
 
   render();
 
@@ -353,11 +206,11 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
       return s.value;
     },
     get isOpen() {
-      return opened !== null;
+      return panel.isOpen;
     },
     update(settings) {
       Object.assign(s, settings);
-      opened?.calendar.update({
+      calendar?.update({
         value: s.value,
         locale: s.locale,
         firstDayOfWeek: s.firstDayOfWeek,
@@ -371,9 +224,9 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
       });
       render();
     },
-    open,
-    close: () => close(),
-    toggle: () => (opened ? close() : open()),
+    open: openPanel,
+    close: () => panel.close(),
+    toggle: () => (panel.isOpen ? panel.close() : openPanel()),
     clear() {
       s.value = null;
       render();
@@ -384,7 +237,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     },
     destroy() {
       // A panel left floating over the next page gets blamed on the router.
-      close({ restoreFocus: false });
+      panel.close({ restoreFocus: false });
       listening.abort();
       trigger.remove();
       if (addedHostClass) host.classList.remove('tz-field');

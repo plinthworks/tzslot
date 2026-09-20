@@ -2,6 +2,7 @@ import { Component, signal } from '@angular/core';
 import {
   Calendar,
   DateField,
+  DateTimeField,
   DateRange,
   DateTimeRange,
   DailyRange,
@@ -43,7 +44,7 @@ function parisAt(iso: string): Instant {
 @Component({
   selector: 'demo-root',
   standalone: true,
-  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange, MultiDate],
+  imports: [Calendar, TimeSlotPicker, DateField, DateRange, DateTimeRange, DailyRange, MultiDate, DateTimeField],
   template: `
     <header>
       <div class="titlebar">
@@ -248,6 +249,25 @@ function parisAt(iso: string): Instant {
       </section>
 
       <section class="block">
+        <h2>Date and time</h2>
+        <p class="note">
+          One field for both. Try 25 October 2026 at 02:30 in Paris: the hour happens twice,
+          and it asks which one instead of guessing.
+        </p>
+        <div class="row">
+          <span class="note">Time as</span>
+          @for (l of layouts; track l) {
+            <button type="button" class="chip" [class.on]="fieldLayout() === l"
+                    (click)="fieldLayout.set(l)">{{ l }}</button>
+          }
+        </div>
+        <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="'en-GB'"
+                           [timeLayout]="fieldLayout()" [stepMinutes]="30"
+                           [buttons]="['today', 'clear']" />
+        <p class="note">{{ momentText() }}</p>
+      </section>
+
+      <section class="block">
         <h2>Several days</h2>
         <p class="note">The sessions of a course: up to five, weekends closed.</p>
         <tz-multi-date [(value)]="sessions" [locale]="'en-GB'" [maxDates]="5"
@@ -440,6 +460,13 @@ export class Demo {
   protected readonly noWeekends = (date: PlainDate) => date.dayOfWeek > 5;
 
   protected readonly pricedDate = signal<PlainDate | null>(null);
+
+  protected readonly fieldLayout = signal<TimeLayout>('input');
+  protected readonly moment = signal<Instant | null>(null);
+  protected momentText(): string {
+    const at = this.moment();
+    return at ? `${at.toString()}  ·  ${this.read(at, 'Europe/Paris')}` : 'nothing chosen';
+  }
 
   protected readonly sessions = signal<readonly PlainDate[]>([]);
   protected sessionsText(): string {

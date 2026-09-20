@@ -18,38 +18,41 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
-import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
+import { Temporal, toInstant, fromInstant } from '@tzslot/core';
+import type { Instant, InstantLike, PlainDate, PlainTime, Slot, ValueShape, Weekday } from '@tzslot/core';
 import {
-  createDateField,
+  createDateTimeField,
   type CalendarButton,
-  type DateFieldInstance,
-  type DateFieldSettings,
-  type RenderCell,
+  type DateTimeFieldInstance,
+  type DateTimeFieldSettings,
   type FieldMode,
+  type RenderCell,
+  type TimeLayout,
 } from '@tzslot/dom';
 
-export type { FieldMode } from '@tzslot/dom';
-
 /**
- * `<tz-date-field>` — the field from @tzslot/dom, spoken in Angular.
+ * `<tz-datetime-field>` — a field that opens a calendar and a time, from
+ * @tzslot/dom, spoken in Angular.
  *
- * The trigger, the panel, its position, focus and theme are all drawn by
- * `createDateField`. This class maps inputs to `update()`, callbacks to
- * `valueChange`, `opened`, `closed` and form notifications, and a projected
- * `[tzIcon]` to the field's icon.
+ * Its value is an Instant, so it says which moment was meant even when the
+ * clock face does not: a time the zone skips is moved on and explained, and
+ * one that happens twice is offered by its two offsets rather than guessed.
  */
 @Component({
-  selector: 'tz-date-field',
+  selector: 'tz-datetime-field',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [
-    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateField), multi: true },
+    { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => DateTimeField), multi: true },
   ],
   template: `<span #icon hidden><ng-content select="[tzIcon]" /></span>`,
 })
-export class DateField implements ControlValueAccessor, AfterViewInit {
-  readonly value = model<PlainDate | null>(null);
+export class DateTimeField implements ControlValueAccessor, AfterViewInit {
+  readonly value = model<Instant | null>(null);
+
+  /** An IANA identifier. The date and the time are read on this zone's clocks. */
+  readonly timeZone = input.required<string>();
+
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
@@ -58,30 +61,24 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
+
+  /** 'input' (default) for a compact time field, 'list' for the day's times. */
+  readonly timeLayout = input<TimeLayout>('input');
+  readonly stepMinutes = input(30);
+  readonly minTime = input<PlainTime | string | undefined>(undefined);
+  readonly maxTime = input<PlainTime | string | undefined>(undefined);
+  /** Only with timeLayout 'list': rules out slots while still showing them. */
+  readonly isSlotDisabled = input<((slot: Omit<Slot, 'disabled'>) => boolean) | undefined>(undefined);
+  readonly hour12 = input<boolean | undefined>(undefined);
+
   readonly disabled = input(false);
-
-  /**
-   * What the form control holds. 'temporal' by default; 'date' lets an
-   * existing FormControl<Date> keep working untouched, which is the whole of a
-   * flatpickr migration on most screens.
-   */
-  readonly valueAs = input<ValueShape>('temporal');
-
-  /**
-   * The zone used to turn a Date into a calendar day and back. Only consulted
-   * when valueAs is 'date': which day an instant falls on depends on where you
-   * are standing, so it is explicit rather than guessed.
-   */
-  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
-
-  /** How the chosen date is written in the field. Defaults to the locale's medium form. */
-  readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);
-
-  /** Passed to the calendar in the panel. */
+  readonly displayWith = input<((value: Instant, timeZone: string) => string) | undefined>(undefined);
+  readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly renderCell = input<RenderCell | undefined>(undefined);
-
-  /** Under the panel's grid: `['today', 'clear']`. Choosing either closes it. */
   readonly buttons = input<readonly CalendarButton[]>([]);
+
+  /** What the form control holds: a Temporal Instant, a Date, or an ISO string. */
+  readonly valueAs = input<ValueShape>('temporal');
 
   readonly opened = output<void>();
   readonly closed = output<void>();
@@ -96,8 +93,9 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   private readonly messages = inject(TZSLOT_MESSAGES);
   private readonly iconSlot = viewChild.required<ElementRef<HTMLElement>>('icon');
 
-  private readonly settings = computed<Partial<DateFieldSettings>>(() => ({
+  private readonly settings = computed<Partial<DateTimeFieldSettings>>(() => ({
     value: this.value(),
+    timeZone: this.timeZone(),
     mode: this.mode(),
     placeholder: this.placeholder(),
     ariaLabel: this.ariaLabel(),
@@ -106,18 +104,26 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     min: this.min(),
     max: this.max(),
     isDateDisabled: this.isDateDisabled(),
+    timeLayout: this.timeLayout(),
+    stepMinutes: this.stepMinutes(),
+    minTime: this.minTime(),
+    maxTime: this.maxTime(),
+    isSlotDisabled: this.isSlotDisabled(),
+    hour12: this.hour12(),
     disabled: this.disabled() || this.formDisabled(),
     displayWith: this.displayWith(),
+    today: this.today(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
     messages: this.messages,
   }));
 
-  private readonly field: DateFieldInstance = createDateField(this.host, {
-    ...untracked(this.settings),
-    onChange: (date) => {
-      this.value.set(date);
-      this.onChange(date);
+  /** Created before the required timeZone is bound; the first change detection fills it in. */
+  private readonly field: DateTimeFieldInstance = createDateTimeField(this.host, {
+    messages: this.messages,
+    onChange: (value) => {
+      this.value.set(value);
+      this.onChange(value);
     },
     onOpen: () => {
       this.isOpen.set(true);
@@ -133,10 +139,6 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   });
 
   constructor() {
-    // The settings are read here, so the effect follows them; the call into the
-    // widget runs untracked. A widget may answer by calling back — closing a
-    // panel, say — and a callback that writes a signal inside an effect is an
-    // error on Angular 18 (NG0600), and a hidden dependency on any version.
     effect(() => {
       const settings = this.settings();
       untracked(() => this.field.update(settings));
@@ -156,23 +158,16 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     }
   }
 
-  /**
-   * Opening and closing are public so a ViewChild can drive the field — a
-   * button elsewhere on the page, a wizard step, a keyboard shortcut.
-   */
   toggle(): void {
     this.field.toggle();
   }
-
   /** No-op when already open. */
   open(): void {
     this.field.open();
   }
-
   close(): void {
     this.field.close();
   }
-
   /** Clears the selection and tells any form control about it. */
   clear(): void {
     this.field.clear();
@@ -180,14 +175,14 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
 
   // ── ControlValueAccessor ────────────────────────────────────
 
-  private onChange: (value: PlainDate | null) => void = () => {};
+  private onChange: (value: Instant | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: DateLike | null): void {
-    this.value.set(value === null || value === undefined ? null : toPlainDate(value, this.valueTimeZone()));
+  writeValue(value: InstantLike | null): void {
+    this.value.set(value === null || value === undefined ? null : toInstant(value));
   }
   registerOnChange(fn: (value: unknown) => void): void {
-    this.onChange = (date) => fn(fromPlainDate(date, this.valueAs(), this.valueTimeZone()));
+    this.onChange = (value) => fn(fromInstant(value, this.valueAs()));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;
@@ -196,7 +191,3 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     this.formDisabled.set(isDisabled);
   }
 }
-
-/** Kept here so the type is reachable without importing Temporal separately. */
-export type { PlainDate as DateFieldValue };
-export { Temporal };

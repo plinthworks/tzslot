@@ -439,6 +439,50 @@ export const TIME_CSS = `
 }
 `;
 
+/** The date-and-time panel: the calendar, then the time under it. */
+export const DATETIME_CSS = `
+.tz-datetime__panel { display: grid; gap: 0.5rem; }
+.tz-datetime__time {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+}
+.tz-datetime__time--list { display: block; }
+.tz-datetime__label { font-size: 0.8125em; opacity: 0.7; }
+.tz-datetime__time--list .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
+.tz-datetime__time--list .tz-slots {
+  max-height: var(--tz-datetime-slots-height, 11rem);
+  overflow-y: auto;
+  align-content: start;
+}
+.tz-datetime__note {
+  margin: 0;
+  font-size: 0.8125em;
+  color: var(--tz-warning, currentColor);
+  max-width: 18rem;
+}
+.tz-datetime__readings { display: flex; gap: 0.375rem; }
+.tz-datetime__reading {
+  border: 1px solid var(--tz-border, currentColor);
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.25rem 0.5rem;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-size: 0.8125em;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+.tz-datetime__reading--on {
+  border-color: var(--tz-accent, currentColor);
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+}
+`;
+
 /**
  * Puts a stylesheet where the host will see it, once.
  *

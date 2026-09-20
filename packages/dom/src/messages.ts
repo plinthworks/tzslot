@@ -13,6 +13,12 @@
 export interface TzslotMessages {
   /** The field's placeholder and its accessible name. */
   readonly chooseDate: string;
+  /** The same, for a field that takes a time as well. */
+  readonly chooseDateTime: string;
+  /** Above the time inside a date-and-time panel. */
+  readonly timeLabel: string;
+  /** The two readings of a repeated hour, offered side by side. */
+  readonly whichReading: string;
 
   readonly previousMonth: string;
   readonly nextMonth: string;
@@ -79,6 +85,9 @@ export interface TzslotMessages {
 
 export const EN: TzslotMessages = {
   chooseDate: 'Choose a date',
+  chooseDateTime: 'Choose a date and a time',
+  timeLabel: 'Time',
+  whichReading: 'This hour happens twice. Which one?',
   previousMonth: 'Previous month',
   nextMonth: 'Next month',
   chooseMonth: 'Choose a month',
@@ -120,6 +129,9 @@ export const EN: TzslotMessages = {
 /** French, shipped because the first consumer needs it and it proves the shape. */
 export const FR: TzslotMessages = {
   chooseDate: 'Choisir une date',
+  chooseDateTime: 'Choisir une date et une heure',
+  timeLabel: 'Heure',
+  whichReading: 'Cette heure a lieu deux fois. Laquelle ?',
   previousMonth: 'Mois précédent',
   nextMonth: 'Mois suivant',
   chooseMonth: 'Choisir un mois',

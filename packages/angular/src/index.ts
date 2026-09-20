@@ -22,7 +22,7 @@ export { DateRange } from './date-range.js';
 export { DateTimeRange } from './datetime-range.js';
 export { DailyRange } from './daily-range.js';
 export { MultiDate } from './multi-date.js';
-export type { TimeLayout } from '../../dom/src/index.js';
+export type { TimeLayout } from '@tzslot/dom';
 export type { DailyRangeValue } from './daily-range.js';
 export type { DateTimeRangeValue } from './datetime-range.js';
 export type { DateRangeValue } from './date-range.js';

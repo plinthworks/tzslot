@@ -5,6 +5,7 @@ import { summerFirst } from './zone-names.js';
 import { TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 export interface TimeSelectSettings {
+  /** The time shown, as a clock face rather than a moment. */
   value: PlainTime | null;
   /**
    * Which of the two readings of a repeated hour the value stands for, as a

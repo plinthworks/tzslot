@@ -43,7 +43,9 @@ export interface TimeSlotsSettings {
   /** The selection, as a moment — never a wall time. */
   value: Instant | null;
   ariaLabel: string | undefined;
+  /** The word under a time the clocks skip. Short: it sits inside a button. */
   missingLabel: string | undefined;
+  /** What is said when the day offers nothing at all. */
   emptyLabel: string | undefined;
   messages: TzslotMessages;
   onChange: ((value: Instant | null) => void) | undefined;

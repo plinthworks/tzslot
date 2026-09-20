@@ -4,6 +4,7 @@ import { EN, type TzslotMessages } from './messages.js';
 import { TIME_CSS, ensureStyles } from './styles.js';
 
 export interface TimeInputSettings {
+  /** The time shown, as a clock face rather than a moment. */
   value: PlainTime | null;
   /** What the arrows, the wheel and the keyboard move the minutes by. */
   stepMinutes: number;

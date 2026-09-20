@@ -45,6 +45,38 @@ export const WIDGETS = [
   { name: 'createTimeSelect', file: 'time-select.ts', settings: 'TimeSelectSettings', angular: null },
 ];
 
+/**
+ * What the options that recur mean. Writing the same sentence into ten
+ * interfaces would only guarantee that they drift apart; a field's own
+ * comment always wins over what is here.
+ */
+export const COMMON = {
+  locale: "A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out.",
+  timeZone: "An IANA identifier — 'Europe/Paris', never an offset. Offsets change twice a year.",
+  min: 'The earliest day that can be chosen.',
+  max: 'The latest day that can be chosen.',
+  minTime: 'The earliest time offered.',
+  maxTime: 'The latest time offered.',
+  today: 'Which day is today. Settable so a test does not depend on the day it runs.',
+  firstDayOfWeek: 'Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday.',
+  isDateDisabled: 'Rules out individual days inside the range: closures, weekends, days already full.',
+  renderCell: 'Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out.',
+  buttons: "Buttons under the grid: 'today', 'clear'. None by default.",
+  stepMinutes: 'Minutes between the times offered.',
+  hour12: 'Twelve-hour with an AM/PM control. The locale decides when left out.',
+  mode: "'popup' hangs the panel under the field; 'dialog' centres it over the page.",
+  placeholder: 'What the field shows while it holds nothing.',
+  ariaLabel: 'The accessible name, for a screen reader.',
+  dateStyle: "Intl's own form for the date, when the field is not typed into.",
+  timeStyle: "Intl's own form for the time, when the field is not typed into.",
+  disabled: 'Nothing can be chosen while this is set.',
+  messages: 'The words the widget says. One bundle, English and French included.',
+  onChange: 'Called when the user chooses, changes or clears the value.',
+  onOpen: 'Called when the panel opens.',
+  onClose: 'Called when the panel closes.',
+  onViewChange: 'Called when the grid moves between days, months and years.',
+};
+
 const sourceOf = (file) =>
   ts.createSourceFile(file, readFileSync(join(root, 'packages/dom/src', file), 'utf8'), ts.ScriptTarget.ES2022, true);
 
@@ -80,11 +112,15 @@ export function fieldsOf(file, interfaceName) {
 
   return found.members
     .filter(ts.isPropertySignature)
-    .map((member) => ({
-      name: member.name.getText(source),
-      type: oneLine(member.type?.getText(source) ?? 'unknown'),
-      note: commentOf(member, text),
-    }));
+    .map((member) => {
+      const name = member.name.getText(source);
+      return {
+        name,
+        type: oneLine(member.type?.getText(source) ?? 'unknown'),
+        // A field's own comment first; the shared sentence otherwise.
+        note: commentOf(member, text) || COMMON[name] || '',
+      };
+    });
 }
 
 /** The defaults, read from the object every widget starts from. */

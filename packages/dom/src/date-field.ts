@@ -9,6 +9,7 @@ import { createPanel, type FieldMode, type PanelController } from './panel.js';
 export type { FieldMode } from './panel.js';
 
 export interface DateFieldSettings {
+  /** The chosen day. */
   value: PlainDate | null;
   mode: FieldMode;
   placeholder: string | undefined;

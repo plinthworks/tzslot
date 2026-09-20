@@ -3,3 +3,5 @@ dist/
 .DS_Store
 .vite/
 packed/
+site/.vitepress/dist/
+site/.vitepress/cache/

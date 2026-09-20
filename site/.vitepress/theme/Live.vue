@@ -42,6 +42,11 @@ onBeforeUnmount(() => instance.value?.destroy());
 function describe(value: unknown): string {
   if (value === null || value === undefined) return 'nothing chosen';
   if (Array.isArray(value)) return value.length ? value.map(describe).join(', ') : 'nothing chosen';
+  // A Temporal value is an object that knows how to write itself; only a plain
+  // one gets taken apart, or a date would read as "{ }".
+  if (typeof value === 'object' && value.toString !== Object.prototype.toString) {
+    return String(value);
+  }
   if (typeof value === 'object') {
     const parts = Object.entries(value as Record<string, unknown>)
       .map(([key, each]) => `${key}: ${describe(each)}`)

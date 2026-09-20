@@ -13,6 +13,7 @@ export interface DateTimeRangeValue {
 }
 
 export interface DateTimeRangeSettings {
+  /** The two moments. Either may be unset while the interval is being built. */
   value: DateTimeRangeValue;
   /** An IANA identifier. Both ends are read on this zone's clocks. */
   timeZone: string;
@@ -41,8 +42,11 @@ export interface DateTimeRangeSettings {
   buttons: readonly CalendarButton[];
   locale: string | undefined;
   disabled: boolean;
+  /** The heading over the first end. */
   startLabel: string | undefined;
+  /** The heading over the second end. */
   endLabel: string | undefined;
+  /** Said when the second moment comes before the first. */
   endBeforeStartMessage: string | undefined;
   messages: TzslotMessages;
   onChange: ((value: DateTimeRangeValue) => void) | undefined;

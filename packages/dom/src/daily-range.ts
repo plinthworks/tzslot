@@ -28,6 +28,7 @@ export interface DailyRangeValue {
 export type TimeLayout = 'input' | 'select' | 'list';
 
 export interface DailyRangeSettings {
+  /** Two dates and two clock times: the days, and the hours on each of them. */
   value: DailyRangeValue;
   /**
    * How the two hours are chosen. 'input' by default: two lists of forty-eight

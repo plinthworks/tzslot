@@ -12,6 +12,7 @@ export interface DateRangeValue {
 }
 
 export interface DateRangeSettings {
+  /** The two ends. Either may be unset while a range is being chosen. */
   value: DateRangeValue;
   firstDayOfWeek: Weekday;
   locale: string | undefined;

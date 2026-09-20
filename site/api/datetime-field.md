@@ -8,39 +8,39 @@
 |---|---|---|---|
 | `value` | `Instant \| null` | `null` | A moment, because a date and a wall time alone are not one. |
 | `timeZone` | `string` | `Temporal.Now.timeZoneId()` | An IANA identifier. The date and the time are read on this zone's clocks. |
-| `mode` | `FieldMode` | `'popup'` |  |
-| `placeholder` | `string \| undefined` | — |  |
-| `ariaLabel` | `string \| undefined` | — |  |
-| `locale` | `string \| undefined` | — |  |
-| `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7` | `1` |  |
-| `min` | `PlainDate \| null` | `null` |  |
-| `max` | `PlainDate \| null` | `null` |  |
-| `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — |  |
+| `mode` | `FieldMode` | `'popup'` | 'popup' hangs the panel under the field; 'dialog' centres it over the page. |
+| `placeholder` | `string \| undefined` | — | What the field shows while it holds nothing. |
+| `ariaLabel` | `string \| undefined` | — | The accessible name, for a screen reader. |
+| `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out. |
+| `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7` | `1` | Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday. |
+| `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
+| `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
+| `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `timeLayout` | `TimeLayout` | `'input'` | How the time is chosen: a compact field, two menus, or the day's times. |
-| `stepMinutes` | `number` | `30` |  |
+| `stepMinutes` | `number` | `30` | Minutes between the times offered. |
 | `minuteStep` | `number` | `1` | With 'select': minutes between the options. Every minute by default. |
-| `minTime` | `PlainTime \| string \| undefined` | — |  |
-| `maxTime` | `PlainTime \| string \| undefined` | — |  |
+| `minTime` | `PlainTime \| string \| undefined` | — | The earliest time offered. |
+| `maxTime` | `PlainTime \| string \| undefined` | — | The latest time offered. |
 | `isSlotDisabled` | `((slot: Omit<Slot, 'disabled'>) => boolean) \| undefined` | — | Only with timeLayout 'list': rules out slots while still showing them. |
-| `hour12` | `boolean \| undefined` | — |  |
+| `hour12` | `boolean \| undefined` | — | Twelve-hour with an AM/PM control. The locale decides when left out. |
 | `defaultTime` | `PlainTime \| string` | `'00:00'` | The time a day starts out with, so that choosing a date is already a moment. Midnight by default, moved up to minTime when there is one. |
-| `disabled` | `boolean` | `false` |  |
+| `disabled` | `boolean` | `false` | Nothing can be chosen while this is set. |
 | `editable` | `boolean` | `true` | The text can be typed as well as chosen. What is typed is read with the same pattern the field writes, so the two always agree; anything that is not a date goes back to the last one when the field is left. |
 | `mask` | `boolean` | `true` | The separators appear as the figures are typed, the way a card number gets its spaces. Only for patterns that leave no doubt — `dd/MM/yyyy` does, `d/M/yyyy` does not. |
 | `format` | `string \| undefined` | — | A pattern — `yyyy-MM-dd HH:mm` — when the shape matters more than the reader. Unset, the field follows the locale: its numeric order when it can be typed into, dateStyle and timeStyle when it cannot. |
-| `dateStyle` | `'full' \| 'long' \| 'medium' \| 'short'` | `'medium'` |  |
-| `timeStyle` | `'full' \| 'long' \| 'medium' \| 'short'` | `'short'` |  |
+| `dateStyle` | `'full' \| 'long' \| 'medium' \| 'short'` | `'medium'` | Intl's own form for the date, when the field is not typed into. |
+| `timeStyle` | `'full' \| 'long' \| 'medium' \| 'short'` | `'short'` | Intl's own form for the time, when the field is not typed into. |
 | `displayWith` | `((value: Instant, timeZone: string) => string) \| undefined` | — | The last word on the text. Given both, this one wins. |
-| `today` | `PlainDate` | `Temporal.Now.plainDateISO()` |  |
-| `renderCell` | `RenderCell \| undefined` | — |  |
-| `buttons` | `readonly CalendarButton[]` | `[]` |  |
-| `messages` | `TzslotMessages` | `EN` |  |
+| `today` | `PlainDate` | `Temporal.Now.plainDateISO()` | Which day is today. Settable so a test does not depend on the day it runs. |
+| `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
+| `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid: 'today', 'clear'. None by default. |
+| `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 
 ### Callbacks
 
 | | Type | |
 |---|---|---|
-| `onChange` | `((value: Instant \| null) => void) \| undefined` |  |
-| `onOpen` | `(() => void) \| undefined` |  |
-| `onClose` | `(() => void) \| undefined` |  |
+| `onChange` | `((value: Instant \| null) => void) \| undefined` | Called when the user chooses, changes or clears the value. |
+| `onOpen` | `(() => void) \| undefined` | Called when the panel opens. |
+| `onClose` | `(() => void) \| undefined` | Called when the panel closes. |
 

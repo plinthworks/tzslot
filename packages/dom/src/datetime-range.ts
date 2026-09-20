@@ -40,6 +40,8 @@ export interface DateTimeRangeSettings {
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
   renderCell: RenderCell | undefined;
   buttons: readonly CalendarButton[];
+  /** A column of ISO week numbers down the left of each panel's calendar. */
+  weekNumbers: boolean;
   locale: string | undefined;
   disabled: boolean;
   /** The heading over the first end. */
@@ -112,6 +114,7 @@ export function createDateTimeRange(
     isDateDisabled: undefined,
     renderCell: undefined,
     buttons: [],
+    weekNumbers: false,
     locale: undefined,
     disabled: false,
     startLabel: undefined,
@@ -249,6 +252,7 @@ export function createDateTimeRange(
         isDateDisabled: s.isDateDisabled,
         renderCell: s.renderCell,
         buttons: s.buttons,
+        weekNumbers: s.weekNumbers,
         ariaLabel: name,
         locale: s.locale,
         disabled: s.disabled,

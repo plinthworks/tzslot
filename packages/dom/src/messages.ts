@@ -29,6 +29,10 @@ export interface TzslotMessages {
   /** Which of the two is in force, once one has been chosen. */
   readingChosen(parts: { name: string; offset: string }): string;
 
+  /** The column of week numbers: its heading, and what it is called in full. */
+  readonly weekShort: string;
+  readonly weekLabel: string;
+
   readonly previousMonth: string;
   readonly nextMonth: string;
 
@@ -100,6 +104,8 @@ export const EN: TzslotMessages = {
   summerTime: 'summer',
   winterTime: 'winter',
   readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
+  weekShort: 'Wk',
+  weekLabel: 'Week',
   previousMonth: 'Previous month',
   nextMonth: 'Next month',
   chooseMonth: 'Choose a month',
@@ -147,6 +153,8 @@ export const FR: TzslotMessages = {
   summerTime: 'été',
   winterTime: 'hiver',
   readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
+  weekShort: 'Sem.',
+  weekLabel: 'Semaine',
   previousMonth: 'Mois précédent',
   nextMonth: 'Mois suivant',
   chooseMonth: 'Choisir un mois',

@@ -19,6 +19,7 @@
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a price, places left, a class of your own, or a reason to rule it out. See RenderCell. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid, in the order given. None by default. |
+| `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left. Ordinary in Europe, where a fortnight is often "weeks 38 and 39" rather than a pair of dates. |
 
 ### Callbacks
 

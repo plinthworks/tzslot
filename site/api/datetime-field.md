@@ -34,6 +34,7 @@
 | `today` | `PlainDate` | `Temporal.Now.plainDateISO()` | Which day is today. Settable so a test does not depend on the day it runs. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid: 'today', 'clear'. None by default. |
+| `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left of the panel's calendar. |
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 
 ### Callbacks

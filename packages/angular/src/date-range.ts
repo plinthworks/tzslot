@@ -58,6 +58,9 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
   /** Refuse a range that steps over a day isDateDisabled rules out. On by default. */
   readonly blockAcrossDisabled = input(true);
 
+  /** A column of ISO week numbers down the left. */
+  readonly weekNumbers = input(false);
+
   /** Adds to each day: a price per night, places left, a class of your own. */
   readonly renderCell = input<RenderCell | undefined>(undefined);
 
@@ -82,6 +85,7 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
     blockAcrossDisabled: this.blockAcrossDisabled(),
     rangeSpansBlockedMessage: this.rangeSpansBlockedMessage(),
     renderCell: this.renderCell(),
+    weekNumbers: this.weekNumbers(),
     messages: this.messages,
   }));
 

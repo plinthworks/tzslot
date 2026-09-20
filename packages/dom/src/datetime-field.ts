@@ -74,6 +74,8 @@ export interface DateTimeFieldSettings {
   today: PlainDate;
   renderCell: RenderCell | undefined;
   buttons: readonly CalendarButton[];
+  /** A column of ISO week numbers down the left of the panel's calendar. */
+  weekNumbers: boolean;
   messages: TzslotMessages;
   onChange: ((value: Instant | null) => void) | undefined;
   onOpen: (() => void) | undefined;
@@ -150,6 +152,7 @@ export function createDateTimeField(
     today: Temporal.Now.plainDateISO(),
     renderCell: undefined,
     buttons: [],
+    weekNumbers: false,
     messages: EN,
     onChange: undefined,
     onOpen: undefined,
@@ -457,6 +460,7 @@ export function createDateTimeField(
       messages: s.messages,
       renderCell: s.renderCell,
       buttons: s.buttons,
+      weekNumbers: s.weekNumbers,
     });
     timeMenus?.update({
       value: draft.time,

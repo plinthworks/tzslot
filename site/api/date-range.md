@@ -18,6 +18,7 @@
 | `rangeSpansBlockedMessage` | `string \| undefined` | — | Overrides messages.rangeCrossesUnavailable for this one instance. |
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a price per night, places left, a class of your own. |
+| `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left. |
 
 ### Callbacks
 

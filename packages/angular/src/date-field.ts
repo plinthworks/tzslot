@@ -80,6 +80,9 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   /** Passed to the calendar in the panel. */
   readonly renderCell = input<RenderCell | undefined>(undefined);
 
+  /** A column of ISO week numbers down the left. */
+  readonly weekNumbers = input(false);
+
   /** Under the panel's grid: `['today', 'clear']`. Choosing either closes it. */
   readonly buttons = input<readonly CalendarButton[]>([]);
 
@@ -110,6 +113,7 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     displayWith: this.displayWith(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
+    weekNumbers: this.weekNumbers(),
     messages: this.messages,
   }));
 

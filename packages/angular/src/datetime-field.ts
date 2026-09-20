@@ -95,6 +95,9 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly displayWith = input<((value: Instant, timeZone: string) => string) | undefined>(undefined);
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly renderCell = input<RenderCell | undefined>(undefined);
+  /** A column of ISO week numbers down the left. */
+  readonly weekNumbers = input(false);
+
   readonly buttons = input<readonly CalendarButton[]>([]);
 
   /** What the form control holds: a Temporal Instant, a Date, or an ISO string. */
@@ -142,6 +145,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     today: this.today(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
+    weekNumbers: this.weekNumbers(),
     messages: this.messages,
   }));
 

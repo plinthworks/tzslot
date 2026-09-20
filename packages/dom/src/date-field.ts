@@ -29,6 +29,8 @@ export interface DateFieldSettings {
   renderCell: RenderCell | undefined;
   /** Under the panel's grid: 'today', 'clear'. Choosing either closes it. */
   buttons: readonly CalendarButton[];
+  /** A column of ISO week numbers down the left of the panel's calendar. */
+  weekNumbers: boolean;
   onChange: ((value: PlainDate | null) => void) | undefined;
   onOpen: (() => void) | undefined;
   onClose: (() => void) | undefined;
@@ -96,6 +98,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     messages: EN,
     renderCell: undefined,
     buttons: [],
+    weekNumbers: false,
     onChange: undefined,
     onOpen: undefined,
     onClose: undefined,
@@ -178,6 +181,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
         messages: s.messages,
         renderCell: s.renderCell,
         buttons: s.buttons,
+        weekNumbers: s.weekNumbers,
         injectStyles: false,
         onChange: pick,
       });
@@ -222,6 +226,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
         messages: s.messages,
         renderCell: s.renderCell,
         buttons: s.buttons,
+        weekNumbers: s.weekNumbers,
       });
       render();
     },

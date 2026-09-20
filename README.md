@@ -39,7 +39,8 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 | `<tz-datetime-range>` | `createDateTimeRange` | an interval: two date-and-time fields, and the hour it hides |
 | `<tz-daily-range>` | `createDailyRange` | a range of days with the same hours on each, overnight allowed |
 
-`renderCell` puts a price, places left or your own class on any day.
+`renderCell` puts a price, places left or your own class on any day, and
+`weekNumbers` adds a column of ISO week numbers down the left.
 `timeLayout` chooses how a time is asked for: `'input'` for the compact field
 with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
 `'list'` for the times on offer that day. The menus show the chosen day as the

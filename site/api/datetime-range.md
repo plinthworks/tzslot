@@ -24,6 +24,7 @@
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid: 'today', 'clear'. None by default. |
+| `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left of each panel's calendar. |
 | `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out. |
 | `disabled` | `boolean` | `false` | Nothing can be chosen while this is set. |
 | `startLabel` | `string \| undefined` | — | The heading over the first end. |

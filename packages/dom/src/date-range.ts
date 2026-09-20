@@ -35,6 +35,8 @@ export interface DateRangeSettings {
   messages: TzslotMessages;
   /** Adds to each day: a price per night, places left, a class of your own. */
   renderCell: RenderCell | undefined;
+  /** A column of ISO week numbers down the left. */
+  weekNumbers: boolean;
   onChange: ((value: DateRangeValue) => void) | undefined;
 }
 
@@ -80,6 +82,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     rangeSpansBlockedMessage: undefined,
     messages: EN,
     renderCell: undefined,
+    weekNumbers: false,
     onChange: undefined,
     ...initial,
   };
@@ -120,6 +123,13 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   grid.setAttribute('role', 'grid');
   const weekdays = el('div', 'tz-range__weekdays');
   weekdays.setAttribute('role', 'row');
+  const weekHeading = el('span', 'tz-range__weeknumber tz-range__weeknumber--heading');
+  weekHeading.setAttribute('role', 'columnheader');
+  const weekNumberCells = Array.from({ length: 6 }, () => {
+    const cell = el('span', 'tz-range__weeknumber');
+    cell.setAttribute('role', 'rowheader');
+    return cell;
+  });
   const weekdayCells = Array.from({ length: 7 }, () => {
     const cell = el('span', 'tz-range__weekday');
     cell.setAttribute('role', 'columnheader');
@@ -129,9 +139,11 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   grid.append(weekdays);
 
   const dayCells: HTMLButtonElement[] = [];
+  const weekRows: HTMLElement[] = [];
   for (let w = 0; w < 6; w++) {
     const row = el('div', 'tz-range__week');
     row.setAttribute('role', 'row');
+    weekRows.push(row);
     for (let d = 0; d < 7; d++) {
       const cell = button('tz-range__day');
       cell.setAttribute('role', 'gridcell');
@@ -190,7 +202,25 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
     renderedOut = new Set();
     let notes = false;
-    getMonthGrid(at.year, at.month, s.firstDayOfWeek)
+    const month = getMonthGrid(at.year, at.month, s.firstDayOfWeek);
+
+    host.classList.toggle('tz-range--weeks', s.weekNumbers);
+    weekHeading.textContent = s.weekNumbers ? s.messages.weekShort : '';
+    weekHeading.setAttribute('aria-label', s.messages.weekLabel);
+    if (s.weekNumbers) {
+      if (!weekHeading.isConnected) weekdays.prepend(weekHeading);
+      month.forEach((week, index) => {
+        const cell = weekNumberCells[index]!;
+        cell.textContent = String(week[0]!.weekOfYear ?? '');
+        cell.setAttribute('aria-label', `${s.messages.weekLabel} ${cell.textContent}`);
+        if (!cell.isConnected) weekRows[index]!.prepend(cell);
+      });
+    } else {
+      weekHeading.remove();
+      for (const cell of weekNumberCells) cell.remove();
+    }
+
+    month
       .flat()
       .forEach((date, i) => {
         const cell = dayCells[i]!;

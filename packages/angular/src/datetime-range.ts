@@ -63,6 +63,9 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly format = input<string | undefined>(undefined);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
   readonly renderCell = input<RenderCell | undefined>(undefined);
+  /** A column of ISO week numbers down the left. */
+  readonly weekNumbers = input(false);
+
   readonly buttons = input<readonly CalendarButton[]>([]);
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
@@ -92,6 +95,7 @@ export class DateTimeRange implements ControlValueAccessor {
     isDateDisabled: this.isDateDisabled(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
+    weekNumbers: this.weekNumbers(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     isSlotDisabled: this.isSlotDisabled(),

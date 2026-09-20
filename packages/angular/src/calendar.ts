@@ -98,6 +98,9 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
   /** Adds to each day: a price, places left, a class, a reason to rule it out. */
   readonly renderCell = input<RenderCell | undefined>(undefined);
 
+  /** A column of ISO week numbers down the left. */
+  readonly weekNumbers = input(false);
+
   /** Buttons under the grid: `['today', 'clear']`. None by default. */
   readonly buttons = input<readonly CalendarButton[]>([]);
 
@@ -120,6 +123,7 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
     today: this.today(),
     renderCell: this.renderCell(),
     buttons: this.buttons(),
+    weekNumbers: this.weekNumbers(),
     messages: this.messages,
   }));
 

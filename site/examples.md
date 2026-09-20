@@ -14,6 +14,18 @@ Six weeks always, so the page does not jump between months. Arrow keys move a
 day, PageUp and PageDown a month, Home and End across the week, and the title
 zooms out to months and then years — four clicks to a date three hundred away.
 
+## Week numbers
+
+```js
+createCalendar(element, { locale: 'en-GB', weekNumbers: true });
+```
+
+<Live widget="Calendar" :options="{ locale: 'en-GB', weekNumbers: true }" />
+
+ISO week numbers, taken from the first day of each row, so they follow
+`firstDayOfWeek`. Every widget with a calendar takes the option, panels
+included.
+
 ## A field
 
 ```js

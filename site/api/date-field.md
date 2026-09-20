@@ -21,6 +21,7 @@
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
 | `renderCell` | `RenderCell \| undefined` | — | Passed to the calendar in the panel. |
 | `buttons` | `readonly CalendarButton[]` | `[]` | Under the panel's grid: 'today', 'clear'. Choosing either closes it. |
+| `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left of the panel's calendar. |
 
 ### Callbacks
 

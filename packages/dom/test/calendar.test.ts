@@ -199,3 +199,40 @@ describe('the keyboard', () => {
     expect(document.activeElement && host.contains(document.activeElement)).toBe(true);
   });
 });
+
+describe('week numbers', () => {
+  const weeks = () =>
+    Array.from(host.querySelectorAll('.tz-cal__week .tz-cal__weeknumber')).map((c) => c.textContent);
+
+  it('are not there unless asked for', () => {
+    mount();
+    expect(host.querySelector('.tz-cal__weeknumber')).toBeNull();
+  });
+
+  it('number each row by its first day, ISO-style', () => {
+    mount({ weekNumbers: true });
+    // September 2026 starts mid-week 36 and the grid runs to week 41.
+    expect(weeks()).toEqual(['36', '37', '38', '39', '40', '41']);
+    expect(host.querySelector('.tz-cal__weekdays .tz-cal__weeknumber')!.textContent).toBe('Wk');
+  });
+
+  it('follow the day the week starts on', () => {
+    mount({ weekNumbers: true, firstDayOfWeek: 7 });
+    // Starting on Sunday shifts every row back a day, and the first row with it.
+    expect(weeks()[0]).toBe('35');
+  });
+
+  it('say what they are, for a screen reader', () => {
+    mount({ weekNumbers: true, messages: FR, locale: 'fr-FR' });
+    const first = host.querySelector('.tz-cal__week .tz-cal__weeknumber')!;
+    expect(first.getAttribute('aria-label')).toBe('Semaine 36');
+    expect(host.querySelector('.tz-cal__weekdays .tz-cal__weeknumber')!.textContent).toBe('Sem.');
+  });
+
+  it('can be turned off again without leaving a column behind', () => {
+    mount({ weekNumbers: true });
+    cal.update({ weekNumbers: false });
+    expect(host.querySelector('.tz-cal__weeknumber')).toBeNull();
+    expect(host.classList.contains('tz-cal--weeks')).toBe(false);
+  });
+});

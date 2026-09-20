@@ -51,6 +51,21 @@ export const CALENDAR_CSS = `
   grid-template-columns: repeat(7, var(--tz-cal-cell-size, 2rem));
   gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
 }
+/* One column more, for the week numbers, when they are asked for. */
+.tz-cal--weeks .tz-cal__weekdays,
+.tz-cal--weeks .tz-cal__week {
+  grid-template-columns: var(--tz-cal-week-size, 1.75rem) repeat(7, var(--tz-cal-cell-size, 2rem));
+}
+.tz-cal__weeknumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tz-cal-weekday-size, 0.75em);
+  opacity: 0.55;
+  border-right: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+  margin-right: 0.15rem;
+}
+.tz-cal__weeknumber--heading { border-right-color: transparent; }
 .tz-cal__weekday {
   text-align: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);
@@ -267,6 +282,20 @@ export const RANGE_CSS = `
   display: grid;
   grid-template-columns: repeat(7, var(--tz-cal-cell-size, 2rem));
 }
+.tz-range--weeks .tz-range__weekdays,
+.tz-range--weeks .tz-range__week {
+  grid-template-columns: var(--tz-cal-week-size, 1.75rem) repeat(7, var(--tz-cal-cell-size, 2rem));
+}
+.tz-range__weeknumber {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--tz-cal-weekday-size, 0.75em);
+  opacity: 0.55;
+  border-right: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+  margin-right: 0.15rem;
+}
+.tz-range__weeknumber--heading { border-right-color: transparent; }
 .tz-range__weekday {
   text-align: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);

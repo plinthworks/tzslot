@@ -56,6 +56,11 @@ export interface CalendarSettings {
   renderCell: RenderCell | undefined;
   /** Buttons under the grid, in the order given. None by default. */
   buttons: readonly CalendarButton[];
+  /**
+   * A column of ISO week numbers down the left. Ordinary in Europe, where a
+   * fortnight is often "weeks 38 and 39" rather than a pair of dates.
+   */
+  weekNumbers: boolean;
   /** A day was chosen, or the selection cleared — by the user or by `clear()`. */
   onChange: ((value: PlainDate | null) => void) | undefined;
   onViewChange: ((view: CalendarView) => void) | undefined;
@@ -182,6 +187,7 @@ export function mountGrid<V>(
     messages: EN,
     renderCell: undefined,
     buttons: [],
+    weekNumbers: false,
     onChange: undefined,
     onViewChange: undefined,
     ...initial,
@@ -231,6 +237,14 @@ export function mountGrid<V>(
 
   const weekdays = el('div', 'tz-cal__weekdays');
   weekdays.setAttribute('role', 'row');
+  /** The heading over the week numbers, and one cell per row. */
+  const weekHeading = el('span', 'tz-cal__weeknumber tz-cal__weeknumber--heading');
+  weekHeading.setAttribute('role', 'columnheader');
+  const weekNumberCells = Array.from({ length: 6 }, () => {
+    const cell = el('span', 'tz-cal__weeknumber');
+    cell.setAttribute('role', 'rowheader');
+    return cell;
+  });
   const weekdayCells = Array.from({ length: 7 }, () => {
     const cell = el('span', 'tz-cal__weekday');
     cell.setAttribute('role', 'columnheader');
@@ -239,9 +253,10 @@ export function mountGrid<V>(
   weekdays.append(...weekdayCells);
 
   const dayCells: HTMLButtonElement[] = [];
-  const weekRows = Array.from({ length: 6 }, () => {
+  const weekRows = Array.from({ length: 6 }, (_, week) => {
     const row = el('div', 'tz-cal__week');
     row.setAttribute('role', 'row');
+    row.append(weekNumberCells[week]!);
     for (let i = 0; i < 7; i++) {
       const cell = button('tz-cal__day');
       cell.setAttribute('role', 'gridcell');
@@ -373,7 +388,25 @@ export function mountGrid<V>(
       cell.setAttribute('aria-label', long.format(reference));
     });
 
-    const dates = getMonthGrid(at.year, at.month, s.firstDayOfWeek).flat();
+    const grid = getMonthGrid(at.year, at.month, s.firstDayOfWeek);
+    const dates = grid.flat();
+
+    // The week number of each row, taken from its first day.
+    flag(host, 'tz-cal--weeks', s.weekNumbers);
+    weekHeading.textContent = s.weekNumbers ? s.messages.weekShort : '';
+    weekHeading.setAttribute('aria-label', s.messages.weekLabel);
+    if (s.weekNumbers) {
+      if (!weekHeading.isConnected) weekdays.prepend(weekHeading);
+      grid.forEach((week, index) => {
+        const cell = weekNumberCells[index]!;
+        cell.textContent = String(week[0]!.weekOfYear ?? '');
+        cell.setAttribute('aria-label', `${s.messages.weekLabel} ${cell.textContent}`);
+        if (!cell.isConnected) weekRows[index]!.prepend(cell);
+      });
+    } else {
+      weekHeading.remove();
+      for (const cell of weekNumberCells) cell.remove();
+    }
 
     // renderCell runs first, so what it rules out is known before choosing
     // which cell Tab lands on.

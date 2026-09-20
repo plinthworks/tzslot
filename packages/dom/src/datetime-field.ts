@@ -7,7 +7,7 @@ import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
 import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
-import { formatWith, parseWith, patternFor } from './format.js';
+import { formatWith, maskWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATETIME_CSS, FIELD_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
 
@@ -46,6 +46,12 @@ export interface DateTimeFieldSettings {
    * not a date goes back to the last one when the field is left.
    */
   editable: boolean;
+  /**
+   * The separators appear as the figures are typed, the way a card number
+   * gets its spaces. Only for patterns that leave no doubt — `dd/MM/yyyy`
+   * does, `d/M/yyyy` does not.
+   */
+  mask: boolean;
   /**
    * A pattern — `yyyy-MM-dd HH:mm` — when the shape matters more than the
    * reader. Unset, the field follows the locale: its numeric order when it can
@@ -127,6 +133,7 @@ export function createDateTimeField(
     defaultTime: '00:00',
     disabled: false,
     editable: true,
+    mask: true,
     format: undefined,
     dateStyle: 'medium',
     timeStyle: 'short',
@@ -325,7 +332,9 @@ export function createDateTimeField(
     const written = display();
     if (s.editable) {
       if (!beingTyped()) typed.value = written;
-      typed.placeholder = s.placeholder ?? pattern() ?? s.messages.chooseDateTime;
+      // Never the pattern: a field that says dd/MM/yyyy before anything is
+      // typed is a field explaining itself instead of inviting an answer.
+      typed.placeholder = s.placeholder ?? s.messages.chooseDateTime;
       typed.disabled = s.disabled;
       iconButton.disabled = s.disabled;
       iconButton.setAttribute('aria-label', label());
@@ -426,7 +435,10 @@ export function createDateTimeField(
       render();
       s.onClose?.();
     },
-    initialFocus: (node) => node.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]'),
+    // A field being typed into keeps the focus; one that is only clicked hands
+    // it to the day the panel opens on.
+    initialFocus: (node) =>
+      s.editable ? null : node.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]'),
     content: (node) => {
       node.classList.add('tz-datetime__panel');
       ensureStyles(node, 'datetime', DATETIME_CSS);
@@ -504,9 +516,22 @@ export function createDateTimeField(
   typed.addEventListener('focus', () => openPanel(), on);
   typed.addEventListener(
     'input',
-    () => {
+    (event) => {
       typed.classList.remove('tz-field__trigger--invalid');
       typed.removeAttribute('aria-invalid');
+      const shape = pattern();
+      const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
+      const atEnd = typed.selectionStart === typed.value.length;
+      // Helping only where it cannot get in the way: at the end of the text,
+      // and never while someone is deleting — putting a separator back that
+      // was just removed makes a field impossible to correct.
+      if (s.mask && shape && !deleting && atEnd) {
+        const helped = maskWith(shape, typed.value);
+        if (helped !== typed.value) {
+          typed.value = helped;
+          typed.setSelectionRange(helped.length, helped.length);
+        }
+      }
       readTyped(false);
     },
     on,
@@ -518,6 +543,8 @@ export function createDateTimeField(
       event.preventDefault();
       if (readTyped(true)) {
         render();
+        // Settled: show the moment as the field writes it, not as it was typed.
+        typed.value = display();
         panel.close();
       } else {
         typed.classList.add('tz-field__trigger--invalid');
@@ -535,6 +562,10 @@ export function createDateTimeField(
       typed.classList.remove('tz-field__trigger--invalid');
       typed.removeAttribute('aria-invalid');
       render();
+      // Whatever was left half-typed or unreadable goes back to the moment
+      // the field holds. Not left to render(), which leaves a focused field
+      // alone — and the focus has not always moved when this fires.
+      typed.value = display();
     },
     on,
   );

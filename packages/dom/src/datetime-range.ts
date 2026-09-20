@@ -30,6 +30,8 @@ export interface DateTimeRangeSettings {
   defaultTime: PlainTime | string;
   /** Each end can be typed into as well as chosen from. */
   editable: boolean;
+  /** Separators appear as the figures are typed. */
+  mask: boolean;
   /** A pattern for both ends — `yyyy-MM-dd HH:mm`. */
   format: string | undefined;
   min: PlainDate | null;
@@ -99,6 +101,7 @@ export function createDateTimeRange(
     hour12: undefined,
     defaultTime: '00:00',
     editable: true,
+    mask: true,
     format: undefined,
     min: null,
     max: null,
@@ -235,6 +238,7 @@ export function createDateTimeRange(
         hour12: s.hour12,
         defaultTime: s.defaultTime,
         editable: s.editable,
+        mask: s.mask,
         format: s.format,
         min: s.min,
         max: s.max,

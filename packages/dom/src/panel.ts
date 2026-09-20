@@ -14,7 +14,11 @@ export interface PanelOptions {
   label: () => string;
   /** Fills a freshly opened panel, and returns how to take it apart. */
   content: (panel: HTMLElement) => () => void;
-  /** What the keyboard lands on. The first tab stop when it returns nothing. */
+  /**
+   * What the keyboard lands on. Left out, it is the panel's first tab stop;
+   * returning null leaves the focus where it was, which is what a field being
+   * typed into needs.
+   */
   initialFocus?: ((panel: HTMLElement) => HTMLElement | null | undefined) | undefined;
   onOpen?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
@@ -193,7 +197,10 @@ export function createPanel(options: PanelOptions): PanelController {
 
     opened = { panel, backdrop, dispose, listening, overflow };
     place();
-    (options.initialFocus?.(panel) ?? panel.querySelector<HTMLElement>('button:not(:disabled)'))?.focus();
+    const landing = options.initialFocus
+      ? options.initialFocus(panel)
+      : panel.querySelector<HTMLElement>('button:not(:disabled)');
+    landing?.focus();
     options.onOpen?.();
   }
 

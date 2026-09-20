@@ -234,12 +234,40 @@ describe('typing in the field', () => {
     expect(field.value!.toZonedDateTimeISO(paris).toPlainDateTime().toString()).toBe('2026-07-01T08:00:00');
   });
 
-  it('what cannot be read is refused, and the field goes back to the last moment', () => {
+  it('letters never make it into the text at all', () => {
+    // The mask keeps the field to what its pattern can hold, like a card field.
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    box.value = '17/06/2026 14:30x';
+    box.dispatchEvent(new Event('input', { bubbles: true }));
+    expect(box.value).toBe('17/06/2026 14:30');
+  });
+
+  it('the separators appear as the figures are typed', () => {
+    mount({});
+    const box = trigger() as HTMLInputElement;
+    box.focus();
+    for (const [typed, shown] of [
+      ['2', '2'],
+      ['20', '20/'],
+      ['2009', '20/09/'],
+      ['20092026', '20/09/2026 '],
+      ['200920260915', '20/09/2026 09:15'],
+    ] as const) {
+      box.value = typed;
+      box.dispatchEvent(new Event('input', { bubbles: true }));
+      expect(box.value).toBe(shown);
+    }
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainDateTime().toString()).toBe('2026-09-20T09:15:00');
+  });
+
+  it('a date that cannot exist is refused, and the field goes back to the last moment', () => {
     const onChange = vi.fn();
     mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z'), onChange });
     const box = trigger() as HTMLInputElement;
     box.focus();
-    box.value = 'demain matin';
+    box.value = '32/13/2026 99:99';
     box.dispatchEvent(new Event('input', { bubbles: true }));
     box.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     expect(box.getAttribute('aria-invalid')).toBe('true');
@@ -249,6 +277,13 @@ describe('typing in the field', () => {
     expect(shown()).toBe('17/06/2026 14:30');
     expect(box.hasAttribute('aria-invalid')).toBe(false);
     expect(onChange).not.toHaveBeenCalled();
+  });
+
+  it('the pattern is never the placeholder', () => {
+    mount({});
+    expect((trigger() as HTMLInputElement).placeholder).toBe('Choose a date and a time');
+    field.update({ placeholder: 'When?' });
+    expect((trigger() as HTMLInputElement).placeholder).toBe('When?');
   });
 
   it('a date outside the bounds is refused too', () => {

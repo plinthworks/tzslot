@@ -81,6 +81,9 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   /** The text can be typed as well as chosen. On by default. */
   readonly editable = input(true);
 
+  /** Separators appear as the figures are typed, like a card number. On by default. */
+  readonly mask = input(true);
+
   /** A pattern — `yyyy-MM-dd HH:mm` — when the shape matters more than the reader. */
   readonly format = input<string | undefined>(undefined);
 
@@ -131,6 +134,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     defaultTime: this.defaultTime(),
     disabled: this.disabled() || this.formDisabled(),
     editable: this.editable(),
+    mask: this.mask(),
     format: this.format(),
     dateStyle: this.dateStyle(),
     timeStyle: this.timeStyle(),

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { formatWith, parseWith, patternFor } from '../src/index.js';
+import { formatWith, parseWith, patternFor, maskWith } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
 
 const date = Temporal.PlainDate.from('2026-09-20');
@@ -73,5 +73,31 @@ describe('the pattern a locale writes', () => {
       expect(read.date!.toString(), locale).toBe('2026-09-20');
       expect(read.time!.toString(), locale).toBe('09:15:00');
     }
+  });
+});
+
+describe('typing help', () => {
+  it('brings the separators as the figures arrive, like a card number', () => {
+    const mask = (text: string) => maskWith('dd/MM/yyyy HH:mm', text);
+    expect(mask('2')).toBe('2');
+    expect(mask('20')).toBe('20/');
+    expect(mask('2009')).toBe('20/09/');
+    expect(mask('20092026')).toBe('20/09/2026 ');
+    expect(mask('200920260915')).toBe('20/09/2026 09:15');
+  });
+
+  it('takes what is already separated, however it was typed', () => {
+    expect(maskWith('dd/MM/yyyy', '20/09/2026')).toBe('20/09/2026');
+    expect(maskWith('yyyy-MM-dd', '2026 09 20')).toBe('2026-09-20');
+  });
+
+  it('writes the half of the day from its first letter', () => {
+    expect(maskWith('hh:mm a', '0915p')).toBe('09:15 PM');
+    expect(maskWith('hh:mm a', '0915a')).toBe('09:15 AM');
+  });
+
+  it('leaves alone a pattern it cannot be sure of', () => {
+    // Two figures could be the day, or the day and the start of the month.
+    expect(maskWith('d/M/yyyy', '209')).toBe('209');
   });
 });

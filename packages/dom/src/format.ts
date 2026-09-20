@@ -81,6 +81,73 @@ export function formatWith(
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** How wide each token is when it is written padded, or null when it varies. */
+const WIDTHS: Record<string, number> = { yyyy: 4, MM: 2, dd: 2, HH: 2, hh: 2, mm: 2, a: 2 };
+
+/** A pattern split into the parts that take input and the parts that separate them. */
+function pieces(pattern: string): { token?: string; literal?: string }[] {
+  const out: { token?: string; literal?: string }[] = [];
+  let rest = pattern;
+  while (rest.length > 0) {
+    const match = TOKENS.exec(rest);
+    TOKENS.lastIndex = 0;
+    if (!match) {
+      out.push({ literal: rest });
+      break;
+    }
+    if (match.index > 0) out.push({ literal: rest.slice(0, match.index) });
+    const token = match[0]!;
+    out.push(token.startsWith("'") ? { literal: token.slice(1, -1) } : { token });
+    rest = rest.slice(match.index + token.length);
+  }
+  return out;
+}
+
+/**
+ * Typing help, the way a card number gets its spaces: the separators appear
+ * as the figures are entered, so nobody has to wonder whether this field
+ * wants slashes or dashes.
+ *
+ * Only for patterns whose every part has a fixed width — `dd/MM/yyyy HH:mm`
+ * does, `d/M/yyyy` does not, because two figures could be a day or a day and
+ * the start of a month. Given one of those, the text is left alone.
+ */
+export function maskWith(pattern: string, text: string): string {
+  const parts = pieces(pattern);
+  if (parts.some((part) => part.token !== undefined && WIDTHS[part.token] === undefined)) return text;
+
+  const typed = [...text].filter((c) => /[0-9A-Za-z]/.test(c));
+  let at = 0;
+  let out = '';
+  /** The separator after a part that is full comes straight away: that is the help. */
+  let justFilled = false;
+  for (const part of parts) {
+    if (part.literal !== undefined) {
+      if (at >= typed.length && !justFilled) break;
+      out += part.literal;
+      justFilled = false;
+      continue;
+    }
+    if (at >= typed.length) break;
+    const width = WIDTHS[part.token!]!;
+    if (part.token === 'a') {
+      const half = typed[at]!.toLowerCase();
+      if (half !== 'a' && half !== 'p') break;
+      out += half === 'a' ? 'AM' : 'PM';
+      at += typed.slice(at, at + 2).join('').length;
+      justFilled = true;
+      continue;
+    }
+    const figures = typed.slice(at, at + width).filter((c) => /\d/.test(c));
+    if (figures.length === 0) break;
+    out += figures.join('');
+    at += figures.length;
+    if (figures.length < width) break; // still typing this part: no separator yet
+    justFilled = true;
+  }
+  return out;
+}
+
 /**
  * Reading back what a pattern wrote — the numeric parts of it.
  *
@@ -114,7 +181,16 @@ export function parseWith(
     if (token.startsWith('M') && token.length > 2) return null; // a month name
     if (token.startsWith('E')) return null; // a weekday name
     order.push(token);
-    source += token === 'a' ? '([AaPp][Mm])' : token === 'yyyy' ? '(\\d{4})' : '(\\d{1,2})';
+    // A padded token asks for its full width: half-typed, "09:1" is not one
+    // minute past nine, it is someone still typing.
+    source +=
+      token === 'a'
+        ? '([AaPp][Mm])'
+        : token === 'yyyy'
+          ? '(\\d{4})'
+          : token.length === 2
+            ? '(\\d{2})'
+            : '(\\d{1,2})';
   }
   source += '\\s*$';
 

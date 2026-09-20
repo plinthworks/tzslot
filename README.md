@@ -62,7 +62,11 @@ it reads back:
 ```
 
 Tokens: `yyyy yy MMMM MMM MM M dd d EEEE EEE HH H hh h mm a`, anything else
-kept as written, `'quoted'` to keep letters. Text that cannot be read is
+kept as written, `'quoted'` to keep letters. Typing gets the separators as the
+figures arrive, the way a card number gets its spaces — `2009` becomes
+`20/09/` — for patterns that leave no doubt about where each part ends; pass
+`[mask]="false"` to turn that off. The pattern is never used as the
+placeholder. Text that cannot be read is
 refused rather than guessed at, and the field goes back to the last moment it
 held when you leave it. A pattern that names its month is for display only:
 "sept.", "Sept" and "septembre" are one month in three spellings, and picking

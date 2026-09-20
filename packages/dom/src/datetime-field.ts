@@ -284,6 +284,31 @@ export function createDateTimeField(
    * A day and a wall time become a moment — or say why they cannot be one.
    * Nothing is guessed: an hour that happens twice waits for the user.
    */
+  /**
+   * A time chosen from the menus already says which reading it is, so there
+   * is nothing left to ask: the offset picks the instant.
+   */
+  function settleWithOffset(time: PlainTime, offset: string | null): void {
+    readings = [];
+    notice = null;
+    const date = draft.date;
+    draft = { date, time };
+    if (!date) {
+      render();
+      return;
+    }
+    const found = resolveWallTime(date, time, s.timeZone);
+    const chosen =
+      offset === null
+        ? found.instants[0]
+        : found.instants[found.offsets.indexOf(offset)] ?? found.instants[0];
+    if (!chosen) {
+      settle();
+      return;
+    }
+    commit(chosen);
+  }
+
   function settle(): void {
     readings = [];
     notice = null;
@@ -365,6 +390,10 @@ export function createDateTimeField(
     });
     timeMenus?.update({
       value: draft.time,
+      // The menus show the day they are choosing a time on, as the zone has it.
+      date: draft.date,
+      timeZone: s.timeZone,
+      offset: s.value && draft.date ? s.value.toZonedDateTimeISO(s.timeZone).offset : null,
       minuteStep: s.minuteStep,
       minTime: s.minTime,
       maxTime: s.maxTime,
@@ -470,9 +499,11 @@ export function createDateTimeField(
         ensureStyles(node, 'timeselect', TIMESELECT_CSS);
         timeMenus = createTimeSelect(timeHost, {
           injectStyles: false,
-          onChange: (time) => {
-            draft = { date: draft.date, time };
-            settle();
+          onChange: (time, offset) => {
+            if (time === null) {
+              draft = { date: draft.date, time: null };
+              settle();
+            } else settleWithOffset(time, offset);
           },
         });
       } else if (s.timeLayout === 'input') {
@@ -513,12 +544,19 @@ export function createDateTimeField(
   button.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
   iconButton.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
   // Typing opens the panel, so the calendar follows along as the text changes.
-  typed.addEventListener('focus', () => openPanel(), on);
+  /**
+   * The panel opens on a click, on the first keystroke, and on ArrowDown —
+   * not merely on focus. Escape hands the focus back to the field, and a
+   * field that opened on focus would open it straight back, so Escape would
+   * never close anything. Tabbing through a form does not open panels either.
+   */
+  typed.addEventListener('click', () => openPanel(), on);
   typed.addEventListener(
     'input',
     (event) => {
       typed.classList.remove('tz-field__trigger--invalid');
       typed.removeAttribute('aria-invalid');
+      openPanel();
       const shape = pattern();
       const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
       const atEnd = typed.selectionStart === typed.value.length;
@@ -539,6 +577,11 @@ export function createDateTimeField(
   typed.addEventListener(
     'keydown',
     (event) => {
+      if (event.key === 'ArrowDown' && !panel.isOpen) {
+        event.preventDefault();
+        openPanel();
+        return;
+      }
       if (event.key !== 'Enter') return;
       event.preventDefault();
       if (readTyped(true)) {

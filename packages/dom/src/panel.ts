@@ -213,9 +213,12 @@ export function createPanel(options: PanelOptions): PanelController {
     panel.remove();
     backdrop?.remove();
     doc.documentElement.style.overflow = overflow;
+    // Said before the focus moves: a field that opens on focus needs to know
+    // the panel has closed, or handing the focus back opens it straight again
+    // and Escape closes nothing.
+    options.onClose?.();
     // Back to the field, or the keyboard user lands at the top of the document.
     if (restoreFocus) trigger.focus();
-    options.onClose?.();
   }
 
   return {

@@ -42,7 +42,10 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 `renderCell` puts a price, places left or your own class on any day.
 `timeLayout` chooses how a time is asked for: `'input'` for the compact field
 with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
-`'list'` for the times on offer that day.
+`'list'` for the times on offer that day. The menus show the chosen day as the
+zone really has it: the hour the clocks skip is not offered, and the hour they
+repeat appears twice, by its two offsets — so there is nothing left to ask
+afterwards.
 
 ## The text in a field
 

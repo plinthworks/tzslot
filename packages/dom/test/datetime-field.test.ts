@@ -279,6 +279,23 @@ describe('typing in the field', () => {
     expect(onChange).not.toHaveBeenCalled();
   });
 
+  it('opens on a click, on ArrowDown, and again after Escape', () => {
+    // Not on focus: Escape hands the focus back, and a field that opened on
+    // focus would open straight back — Escape would close nothing.
+    mount({});
+    const box = trigger() as HTMLInputElement;
+    box.dispatchEvent(new FocusEvent('focus'));
+    expect(panel()).toBeNull();
+
+    box.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+    expect(panel()).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+    expect(panel()).toBeNull();
+
+    box.click();
+    expect(panel()).not.toBeNull();
+  });
+
   it('the pattern is never the placeholder', () => {
     mount({});
     expect((trigger() as HTMLInputElement).placeholder).toBe('Choose a date and a time');

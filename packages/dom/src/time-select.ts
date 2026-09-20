@@ -1,10 +1,23 @@
-import { Temporal } from '@tzslot/core';
-import type { PlainTime } from '@tzslot/core';
+import { Temporal, getDaySlots } from '@tzslot/core';
+import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
 import { TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 export interface TimeSelectSettings {
   value: PlainTime | null;
+  /**
+   * Which of the two readings of a repeated hour the value stands for, as a
+   * UTC offset. Only ever set on the day the clocks go back.
+   */
+  offset: string | null;
+  /**
+   * The day the time is on, and the zone it is read in. Given both, the menus
+   * show that day as it really is: the hour the clocks skip is not offered,
+   * and the hour they repeat is offered twice, by its two offsets. Left out,
+   * they offer every hour of an ordinary day.
+   */
+  date: PlainDate | string | null;
+  timeZone: string | undefined;
   /** Minutes between the options. Every minute by default. */
   minuteStep: number;
   /** Hours between them. */
@@ -16,7 +29,8 @@ export interface TimeSelectSettings {
   locale: string | undefined;
   disabled: boolean;
   messages: TzslotMessages;
-  onChange: ((value: PlainTime | null) => void) | undefined;
+  /** The time chosen, and which reading of it when the hour happens twice. */
+  onChange: ((value: PlainTime | null, offset: string | null) => void) | undefined;
 }
 
 export interface TimeSelectOptions extends Partial<TimeSelectSettings> {
@@ -53,6 +67,9 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
 
   const s: TimeSelectSettings = {
     value: null,
+    offset: null,
+    date: null,
+    timeZone: undefined,
     minuteStep: 1,
     hourStep: 1,
     minTime: undefined,
@@ -87,6 +104,47 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
   const uses12 = () => s.hour12 ?? localeUses12Hour(s.locale);
   const bounds = () => ({ min: asTime(s.minTime), max: asTime(s.maxTime) });
 
+  /**
+   * The day as the zone really has it, when there is a day and a zone to ask
+   * about: twenty-five hours in October, twenty-three in March.
+   */
+  function realSlots(): Slot[] | null {
+    if (s.date === null || s.timeZone === undefined) return null;
+    const { min, max } = bounds();
+    return getDaySlots(s.date, s.timeZone, {
+      stepMinutes: s.minuteStep,
+      skipNonExistent: true,
+      ...(min ? { minTime: min } : {}),
+      ...(max ? { maxTime: max } : {}),
+    });
+  }
+
+  /** One entry per choosable hour: twice over for the hour that happens twice. */
+  function realHours(slots: Slot[]): { hour: number; offset: string | null }[] {
+    const seen = new Map<string, { hour: number; offset: string | null }>();
+    for (const slot of slots) {
+      const hour = slot.time.hour;
+      if (hour % s.hourStep !== 0) continue;
+      if (slot.ambiguous) {
+        for (const offset of slot.offsets) seen.set(`${hour}|${offset}`, { hour, offset });
+      } else if (!seen.has(`${hour}|`)) {
+        seen.set(`${hour}|`, { hour, offset: null });
+      }
+    }
+    return [...seen.values()];
+  }
+
+  /** The minutes that exist inside the hour — and the reading — already chosen. */
+  function realMinutes(slots: Slot[], hour: number, offset: string | null): number[] {
+    const out: number[] = [];
+    for (const slot of slots) {
+      if (slot.time.hour !== hour) continue;
+      if (offset !== null && !slot.offsets.includes(offset)) continue;
+      out.push(slot.time.minute);
+    }
+    return out;
+  }
+
   function hourValues(): number[] {
     const { min, max } = bounds();
     const out: number[] = [];
@@ -109,6 +167,30 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       out.push(m);
     }
     return out;
+  }
+
+  /** Options that carry more than a figure: an hour and the reading it stands for. */
+  function fillKeyed(
+    select: HTMLSelectElement,
+    entries: { value: string; label: string }[],
+    chosen: string | null,
+  ): void {
+    const wanted = chosen === null ? [{ value: '', label: '--' }, ...entries] : entries;
+    const same =
+      select.options.length === wanted.length &&
+      wanted.every((entry, i) => select.options[i]!.value === entry.value);
+    if (!same) {
+      select.replaceChildren(
+        ...wanted.map((entry) => {
+          const option = doc.createElement('option');
+          option.value = entry.value;
+          option.textContent = entry.label;
+          return option;
+        }),
+      );
+    }
+    select.value = chosen ?? '';
+    select.disabled = s.disabled;
   }
 
   /** An empty option, while nothing has been chosen: a menu must not lie. */
@@ -143,8 +225,31 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
     minute.setAttribute('aria-label', s.messages.minuteLabel);
     meridiem.setAttribute('aria-label', s.messages.meridiemLabel);
 
-    fill(hour, hourValues(), time?.hour ?? null, (h) => (twelve ? String((h % 12) || 12) : pad(h)));
-    fill(minute, minuteValues(), time?.minute ?? null, pad);
+    const slots = realSlots();
+    const shownHour = (h: number) => (twelve ? String((h % 12) || 12) : pad(h));
+    if (slots) {
+      // The day as it is: no hour that cannot happen, and the one that happens
+      // twice told apart by its offset, so nothing is left to ask afterwards.
+      fillKeyed(
+        hour,
+        realHours(slots).map(({ hour: h, offset }) => ({
+          value: `${h}|${offset ?? ''}`,
+          label: offset === null ? shownHour(h) : `${shownHour(h)} (UTC${offset})`,
+        })),
+        time === null ? null : `${time.hour}|${s.offset ?? ''}`,
+      );
+      fillKeyed(
+        minute,
+        (time === null ? [] : realMinutes(slots, time.hour, s.offset)).map((m) => ({
+          value: String(m),
+          label: pad(m),
+        })),
+        time === null ? null : String(time.minute),
+      );
+    } else {
+      fill(hour, hourValues(), time?.hour ?? null, shownHour);
+      fill(minute, minuteValues(), time?.minute ?? null, pad);
+    }
 
     if (twelve) {
       meridiem.replaceChildren(
@@ -168,12 +273,23 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       const afternoon = raw === 'PM';
       if (!s.value || s.value.hour >= 12 === afternoon) return;
       s.value = from.add({ hours: afternoon ? 12 : -12 });
+    } else if (part === 'hour') {
+      // An hour carries its reading with it, on a day that has two of them.
+      const [figure, offset] = raw.split('|');
+      s.value = from.with({ hour: Number(figure) });
+      s.offset = offset ? offset : null;
+      const slots = realSlots();
+      const minutes = slots ? realMinutes(slots, s.value.hour, s.offset) : [];
+      // The minute stands only if that hour really has it — the half hour
+      // Lord Howe skips, say.
+      if (minutes.length > 0 && !minutes.includes(s.value.minute)) {
+        s.value = s.value.with({ minute: minutes[0]! });
+      }
     } else {
-      const value = Number(raw);
-      s.value = part === 'hour' ? from.with({ hour: value }) : from.with({ minute: value });
+      s.value = from.with({ minute: Number(raw) });
     }
     render();
-    s.onChange?.(s.value);
+    s.onChange?.(s.value, s.offset);
   }
 
   const listening = new AbortController();

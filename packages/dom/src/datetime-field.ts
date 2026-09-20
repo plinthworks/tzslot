@@ -2,14 +2,14 @@ import { Temporal, resolveWallTime } from '@tzslot/core';
 import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
-import { createTimeColumns, type TimeColumnsInstance } from './time-columns.js';
+import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
 import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
 import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DATETIME_CSS, FIELD_CSS, TIMECOLS_CSS, ensureStyles } from './styles.js';
+import { DATETIME_CSS, FIELD_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 export interface DateTimeFieldSettings {
   /** A moment, because a date and a wall time alone are not one. */
@@ -24,10 +24,10 @@ export interface DateTimeFieldSettings {
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
-  /** How the time is chosen: a compact field, two columns, or the day's times. */
+  /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
-  /** With 'columns': minutes between the options. Every minute by default. */
+  /** With 'select': minutes between the options. Every minute by default. */
   minuteStep: number;
   minTime: PlainTime | string | undefined;
   maxTime: PlainTime | string | undefined;
@@ -181,8 +181,12 @@ export function createDateTimeField(
 
   /** Which of the two is in the document, and what the panel hangs from. */
   let trigger: HTMLElement = button;
-  /** True while someone is typing: their text is not to be rewritten under them. */
-  let typing = false;
+  /**
+   * Whether the text may be rewritten. Only the field's own focus says no:
+   * a flag raised while typing stayed raised when the panel took over, and
+   * the text then disagreed with the value underneath it.
+   */
+  const beingTyped = () => doc.activeElement === typed;
 
   function mountTrigger(): void {
     const wanted = s.editable ? typed : button;
@@ -202,7 +206,7 @@ export function createDateTimeField(
 
   let calendar: CalendarInstance | null = null;
   let timeInput: TimeInputInstance | null = null;
-  let timeColumns: TimeColumnsInstance | null = null;
+  let timeMenus: TimeSelectInstance | null = null;
   let slots: TimeSlotsInstance | null = null;
   let note: HTMLElement | null = null;
   let choice: HTMLElement | null = null;
@@ -306,7 +310,7 @@ export function createDateTimeField(
     mountTrigger();
     const written = display();
     if (s.editable) {
-      if (!typing) typed.value = written;
+      if (!beingTyped()) typed.value = written;
       typed.placeholder = s.placeholder ?? pattern() ?? s.messages.chooseDateTime;
       typed.disabled = s.disabled;
       iconButton.disabled = s.disabled;
@@ -336,7 +340,7 @@ export function createDateTimeField(
       renderCell: s.renderCell,
       buttons: s.buttons,
     });
-    timeColumns?.update({
+    timeMenus?.update({
       value: draft.time,
       minuteStep: s.minuteStep,
       minTime: s.minTime,
@@ -401,7 +405,7 @@ export function createDateTimeField(
     onClose: () => {
       calendar = null;
       timeInput = null;
-      timeColumns = null;
+      timeMenus = null;
       slots = null;
       note = null;
       choice = null;
@@ -433,10 +437,10 @@ export function createDateTimeField(
           settle();
         },
       });
-      if (s.timeLayout === 'columns') {
-        timeRow.classList.add('tz-datetime__time--columns');
-        ensureStyles(node, 'timecols', TIMECOLS_CSS);
-        timeColumns = createTimeColumns(timeHost, {
+      if (s.timeLayout === 'select') {
+        timeRow.classList.add('tz-datetime__time--select');
+        ensureStyles(node, 'timeselect', TIMESELECT_CSS);
+        timeMenus = createTimeSelect(timeHost, {
           injectStyles: false,
           onChange: (time) => {
             draft = { date: draft.date, time };
@@ -466,7 +470,7 @@ export function createDateTimeField(
       return () => {
         calendar?.destroy();
         timeInput?.destroy();
-        timeColumns?.destroy();
+        timeMenus?.destroy();
         slots?.destroy();
       };
     },
@@ -485,7 +489,6 @@ export function createDateTimeField(
   typed.addEventListener(
     'input',
     () => {
-      typing = true;
       typed.classList.remove('tz-field__trigger--invalid');
       typed.removeAttribute('aria-invalid');
       readTyped(false);
@@ -498,7 +501,6 @@ export function createDateTimeField(
       if (event.key !== 'Enter') return;
       event.preventDefault();
       if (readTyped(true)) {
-        typing = false;
         render();
         panel.close();
       } else {
@@ -514,7 +516,6 @@ export function createDateTimeField(
     'blur',
     () => {
       readTyped(true);
-      typing = false;
       typed.classList.remove('tz-field__trigger--invalid');
       typed.removeAttribute('aria-invalid');
       render();

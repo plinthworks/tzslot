@@ -510,9 +510,8 @@ export const DATETIME_CSS = `
   border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
 }
 .tz-datetime__time--list,
-.tz-datetime__time--columns { display: block; }
-.tz-datetime__time--columns .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
-.tz-datetime__time--columns .tz-timecols { max-width: 100%; }
+.tz-datetime__time--select { display: block; }
+.tz-datetime__time--select .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
 .tz-datetime__label { font-size: 0.8125em; opacity: 0.7; }
 .tz-datetime__time--list .tz-datetime__label { display: block; margin-bottom: 0.375rem; }
 .tz-datetime__time--list .tz-slots {
@@ -545,41 +544,30 @@ export const DATETIME_CSS = `
 }
 `;
 
-/** Hours on one side, minutes on the other: two short lists, each scrolled to its own choice. */
-export const TIMECOLS_CSS = `
-.tz-timecols {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+/** Two menus: the browser's own, dressed to match. */
+export const TIMESELECT_CSS = `
+.tz-timeselect {
+  display: inline-flex;
+  align-items: center;
   gap: 0.375rem;
   font: var(--tz-font, inherit);
 }
-.tz-timecols__column {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  gap: 0.125rem;
-  max-height: var(--tz-timecols-height, 11rem);
-  overflow-y: auto;
-  scrollbar-width: thin;
-  padding-right: 0.125rem;
-}
-.tz-timecols__option {
-  flex: none;
-  border: 0;
-  border-radius: var(--tz-radius, 0.375rem);
-  padding: 0.3rem 0.5rem;
-  background: transparent;
-  color: inherit;
+.tz-timeselect__menu {
+  border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
+  padding: 0.35rem 0.4rem;
+  background: var(--tz-time-bg, var(--tz-bg, transparent));
+  color: var(--tz-time-fg, var(--tz-fg));
   font: inherit;
   font-variant-numeric: tabular-nums;
-  text-align: center;
   cursor: pointer;
 }
-.tz-timecols__option--selected {
-  background: var(--tz-accent, currentColor);
-  color: var(--tz-accent-fg, canvas);
+.tz-timeselect__menu:focus-visible {
+  outline: var(--tz-focus-ring, 2px solid var(--tz-accent));
+  outline-offset: 1px;
 }
-.tz-timecols__option:disabled { opacity: 0.4; cursor: not-allowed; }
+.tz-timeselect__menu:disabled { opacity: 0.5; cursor: not-allowed; }
+.tz-timeselect__separator { opacity: 0.6; }
 `;
 
 /**

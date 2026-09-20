@@ -441,7 +441,7 @@ export class Demo {
     { label: 'An office week', start: '2026-06-15', end: '2026-06-19', from: '09:00', to: '17:00' },
   ];
   protected readonly dailyLabel = signal('Night shifts, clocks going back');
-  protected readonly layouts: TimeLayout[] = ['input', 'columns', 'list'];
+  protected readonly layouts: TimeLayout[] = ['input', 'select', 'list'];
   protected readonly timeLayout = signal<TimeLayout>('input');
   protected readonly rotaToday = Temporal.PlainDate.from('2026-10-20');
   protected readonly rota = signal<DailyRangeValue>({

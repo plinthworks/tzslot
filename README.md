@@ -40,9 +40,9 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 | `<tz-daily-range>` | `createDailyRange` | a range of days with the same hours on each, overnight allowed |
 
 `renderCell` puts a price, places left or your own class on any day.
-`timeLayout` chooses how a time is asked for: `'input'` for the compact field,
-`'columns'` for hours on one side and minutes on the other (`minuteStep`, every
-minute by default), `'list'` for the times on offer that day.
+`timeLayout` chooses how a time is asked for: `'input'` for the compact field
+with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
+`'list'` for the times on offer that day.
 
 ## The text in a field
 

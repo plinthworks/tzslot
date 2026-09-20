@@ -46,12 +46,12 @@ export type {
   DateTimeRangeValue,
 } from './datetime-range.js';
 export { formatWith, parseWith, patternFor } from './format.js';
-export { createTimeColumns } from './time-columns.js';
+export { createTimeSelect } from './time-select.js';
 export type {
-  TimeColumnsInstance,
-  TimeColumnsOptions,
-  TimeColumnsSettings,
-} from './time-columns.js';
+  TimeSelectInstance,
+  TimeSelectOptions,
+  TimeSelectSettings,
+} from './time-select.js';
 export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
@@ -80,6 +80,6 @@ export {
   DTR_CSS,
   DAILY_CSS,
   TIME_CSS,
-  TIMECOLS_CSS,
+  TIMESELECT_CSS,
   DATETIME_CSS,
 } from './styles.js';

@@ -2,10 +2,10 @@ import { Temporal, getDailyWindows, formatDuration } from '@tzslot/core';
 import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
-import { createTimeColumns, type TimeColumnsInstance } from './time-columns.js';
+import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DAILY_CSS, SLOTS_CSS, TIME_CSS, TIMECOLS_CSS, ensureStyles } from './styles.js';
+import { DAILY_CSS, SLOTS_CSS, TIME_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 /**
  * Two dates and two clock times: "the 3rd to the 7th, 09:00 to 17:00 each day".
@@ -22,10 +22,10 @@ export interface DailyRangeValue {
 }
 
 /**
- * How a time is asked for: a compact field, two columns of hours and minutes,
- * or the times on offer that day.
+ * How a time is asked for: a compact field with arrows, two menus, or the
+ * times on offer that day.
  */
-export type TimeLayout = 'input' | 'columns' | 'list';
+export type TimeLayout = 'input' | 'select' | 'list';
 
 export interface DailyRangeSettings {
   value: DailyRangeValue;
@@ -37,7 +37,7 @@ export interface DailyRangeSettings {
   timeLayout: TimeLayout;
   /** 12-hour fields with an AM/PM button; the locale decides when unset. */
   hour12: boolean | undefined;
-  /** With 'columns': minutes between the options. Every minute by default. */
+  /** With 'select': minutes between the options. Every minute by default. */
   minuteStep: number;
   /** An IANA identifier. The hours are read on the clocks of this zone. */
   timeZone: string;
@@ -150,8 +150,8 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     const inputHost = el('div', 'tz-daily__input');
     inputHost.dataset['edge'] = edge;
     const note = el('span', 'tz-daily__note');
-    const columnsHost = el('div', 'tz-daily__columns');
-    columnsHost.dataset['edge'] = edge;
+    const menusHost = el('div', 'tz-daily__menus');
+    menusHost.dataset['edge'] = edge;
     column.append(label);
     columns.append(column);
     return {
@@ -160,10 +160,10 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       label,
       list,
       inputHost,
-      columnsHost,
+      menusHost,
       note,
       input: null as TimeInputInstance | null,
-      columns: null as TimeColumnsInstance | null,
+      menus: null as TimeSelectInstance | null,
     };
   };
   const fromColumn = makeColumn('from');
@@ -192,17 +192,17 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     return out;
   };
 
-  /** Hours on one side, minutes on the other, for each end. */
-  function paintColumns(column: (typeof both)[number], label: string): void {
+  /** Two menus for each end. */
+  function paintMenus(column: (typeof both)[number], label: string): void {
     column.list.remove();
     column.inputHost.remove();
-    if (!column.columns) {
-      column.columns = createTimeColumns(column.columnsHost, {
+    if (!column.menus) {
+      column.menus = createTimeSelect(column.menusHost, {
         injectStyles,
         onChange: (time) => commit({ ...s.value, [column.edge]: time }),
       });
     }
-    column.columns.update({
+    column.menus.update({
       value: s.value[column.edge],
       minuteStep: s.minuteStep,
       minTime: s.minTime,
@@ -211,8 +211,8 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       disabled: s.disabled,
       messages: s.messages,
     });
-    column.columnsHost.setAttribute('aria-label', label);
-    if (!column.columnsHost.isConnected) column.column.append(column.columnsHost);
+    column.menusHost.setAttribute('aria-label', label);
+    if (!column.menusHost.isConnected) column.column.append(column.menusHost);
     paintNextDay(column);
   }
 
@@ -229,7 +229,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
   /** The compact form: one field per end, and a word under an end that is tomorrow's. */
   function paintInput(column: (typeof both)[number], label: string): void {
     column.list.remove();
-    column.columnsHost.remove();
+    column.menusHost.remove();
     if (!column.input) {
       column.input = createTimeInput(column.inputHost, {
         injectStyles,
@@ -322,7 +322,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     if (stylesPending && host.isConnected) {
       ensureStyles(host, 'slots', SLOTS_CSS);
       ensureStyles(host, 'time', TIME_CSS);
-      ensureStyles(host, 'timecols', TIMECOLS_CSS);
+      ensureStyles(host, 'timeselect', TIMESELECT_CSS);
       ensureStyles(host, 'daily', DAILY_CSS);
       stylesPending = false;
     }
@@ -348,14 +348,14 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     for (const column of both) {
       const label = column.edge === 'from' ? s.messages.timeFrom : s.messages.timeTo;
       if (s.timeLayout === 'input') paintInput(column, label);
-      else if (s.timeLayout === 'columns') paintColumns(column, label);
+      else if (s.timeLayout === 'select') paintMenus(column, label);
       else {
         column.input?.destroy();
         column.input = null;
-        column.columns?.destroy();
-        column.columns = null;
+        column.menus?.destroy();
+        column.menus = null;
         column.inputHost.remove();
-        column.columnsHost.remove();
+        column.menusHost.remove();
         column.note.remove();
         if (!column.list.isConnected) column.column.append(column.list);
         paintList(column.list, column.edge, label);
@@ -403,7 +403,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       listening.abort();
       for (const column of both) {
         column.input?.destroy();
-        column.columns?.destroy();
+        column.menus?.destroy();
       }
       range.destroy();
       result.remove();

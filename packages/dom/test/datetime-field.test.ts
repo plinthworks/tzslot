@@ -74,6 +74,38 @@ describe('choosing a moment', () => {
   });
 });
 
+describe('a day chosen with no time yet', () => {
+  it('starts at midnight, so a date is already a moment', () => {
+    const onChange = vi.fn();
+    mount({ onChange, today: Temporal.PlainDate.from('2026-06-15') });
+    field.open();
+    day('2026-06-17').click();
+
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('00:00:00');
+    expect(onChange.mock.calls.at(-1)![0].toString()).toBe('2026-06-16T22:00:00Z');
+    expect(shown()).toBe('17/06/2026 00:00');
+  });
+
+  it('starts at the time it is told to, or at minTime when that is later', () => {
+    mount({ defaultTime: '09:00', today: Temporal.PlainDate.from('2026-06-15') });
+    field.open();
+    day('2026-06-17').click();
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('09:00:00');
+
+    field.update({ value: null, minTime: '14:00' });
+    field.open();
+    day('2026-06-18').click();
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('14:00:00');
+  });
+
+  it('leaves a time already chosen alone', () => {
+    mount({ value: Temporal.Instant.from('2026-06-17T12:30:00Z') });
+    field.open();
+    day('2026-06-19').click();
+    expect(field.value!.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('14:30:00');
+  });
+});
+
 describe('the hour the clocks skip', () => {
   it('moves to the first moment that exists, and says why', () => {
     // 02:30 does not exist in Paris on 29 March 2026.

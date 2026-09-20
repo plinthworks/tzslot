@@ -73,6 +73,9 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly isSlotDisabled = input<((slot: Omit<Slot, 'disabled'>) => boolean) | undefined>(undefined);
   readonly hour12 = input<boolean | undefined>(undefined);
 
+  /** The time a newly chosen day starts at. Midnight by default. */
+  readonly defaultTime = input<PlainTime | string>('00:00');
+
   readonly disabled = input(false);
 
   /** The text can be typed as well as chosen. On by default. */
@@ -125,6 +128,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     maxTime: this.maxTime(),
     isSlotDisabled: this.isSlotDisabled(),
     hour12: this.hour12(),
+    defaultTime: this.defaultTime(),
     disabled: this.disabled() || this.formDisabled(),
     editable: this.editable(),
     format: this.format(),

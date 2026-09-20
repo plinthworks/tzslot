@@ -34,6 +34,11 @@ export interface DateTimeFieldSettings {
   /** Only with timeLayout 'list': rules out slots while still showing them. */
   isSlotDisabled: ((slot: Omit<Slot, 'disabled'>) => boolean) | undefined;
   hour12: boolean | undefined;
+  /**
+   * The time a day starts out with, so that choosing a date is already a
+   * moment. Midnight by default, moved up to minTime when there is one.
+   */
+  defaultTime: PlainTime | string;
   disabled: boolean;
   /**
    * The text can be typed as well as chosen. What is typed is read with the
@@ -119,6 +124,7 @@ export function createDateTimeField(
     maxTime: undefined,
     isSlotDisabled: undefined,
     hour12: undefined,
+    defaultTime: '00:00',
     disabled: false,
     editable: true,
     format: undefined,
@@ -247,13 +253,21 @@ export function createDateTimeField(
     const shape = pattern();
     const read = shape ? parseWith(shape, text) : null;
     if (!read?.date) return false;
-    if (read.date && (blocked(read.date) || false)) return false;
-    draft = { date: read.date, time: read.time ?? draft.time };
+    if (blocked(read.date)) return false;
+    draft = { date: read.date, time: read.time ?? draft.time ?? startingTime() };
     settle();
     return true;
   }
 
   /** The bounds and the rules the calendar applies, applied to typed text too. */
+  /** The time a newly chosen day starts at. */
+  function startingTime(): PlainTime {
+    const wanted =
+      typeof s.defaultTime === 'string' ? Temporal.PlainTime.from(s.defaultTime) : s.defaultTime;
+    const min = typeof s.minTime === 'string' ? Temporal.PlainTime.from(s.minTime) : s.minTime;
+    return min && Temporal.PlainTime.compare(wanted, min) < 0 ? min : wanted;
+  }
+
   const blocked = (date: PlainDate) =>
     (s.min !== null && Temporal.PlainDate.compare(date, s.min) < 0) ||
     (s.max !== null && Temporal.PlainDate.compare(date, s.max) > 0) ||
@@ -433,7 +447,9 @@ export function createDateTimeField(
       calendar = createCalendar(calendarHost, {
         injectStyles: false,
         onChange: (date) => {
-          draft = { date, time: draft.time };
+          // A day with no time is not a moment; start it at defaultTime so
+          // choosing a date already means something.
+          draft = { date, time: date === null ? null : (draft.time ?? startingTime()) };
           settle();
         },
       });

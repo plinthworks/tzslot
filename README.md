@@ -36,7 +36,7 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 | — | `createTimeInput` | an hour and a minute on their own: arrows, wheel, up/down keys, 12- or 24-hour |
 | `<tz-date-range>` | `createDateRange` | two days, refusing a range across a closed one |
 | `<tz-time-slots>` | `createTimeSlots` | a moment on one day: the skipped hour struck through, the repeated one offered twice |
-| `<tz-datetime-range>` | `createDateTimeRange` | an interval with a time at both ends, and the hour it hides |
+| `<tz-datetime-range>` | `createDateTimeRange` | an interval: two date-and-time fields, and the hour it hides |
 | `<tz-daily-range>` | `createDailyRange` | a range of days with the same hours on each, overnight allowed |
 
 `renderCell` puts a price, places left or your own class on any day.

@@ -100,7 +100,8 @@ function parisAt(iso: string): Instant {
     <section class="block block--feature">
       <h2>An interval with a time at both ends</h2>
       <p class="lede">
-        A night shift across the end of summer time. Every other picker calls this six hours.
+        Two moments, each chosen or typed. A night shift across the end of summer time:
+        every other picker calls this six hours.
       </p>
 
       <div class="row">
@@ -112,8 +113,16 @@ function parisAt(iso: string): Instant {
         }
       </div>
 
-      <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'"
-                         [stepMinutes]="60" [locale]="'en-GB'" />
+      <div class="row">
+        <span class="note">Hours as</span>
+        @for (l of layouts; track l) {
+          <button type="button" class="chip" [class.on]="intervalLayout() === l"
+                  (click)="intervalLayout.set(l)">{{ l }}</button>
+        }
+      </div>
+      <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
+                         [minuteStep]="15" [locale]="'en-GB'" [timeLayout]="intervalLayout()"
+                         [buttons]="['today', 'clear']" />
     </section>
 
     <section class="block">
@@ -434,6 +443,7 @@ export class Demo {
     end: parisAt('2026-10-25T05:00'),
   });
   protected readonly shiftLabel = signal('Clocks going back');
+  protected readonly intervalLayout = signal<TimeLayout>('input');
 
   protected readonly dailyPresets = [
     { label: 'Night shifts, clocks going back', start: '2026-10-23', end: '2026-10-26', from: '22:00', to: '06:00' },

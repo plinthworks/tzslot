@@ -1,7 +1,9 @@
 import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '@tzslot/core';
 import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
-import { createDateField, type DateFieldInstance } from './date-field.js';
-import { createTimeSlots, type TimeSlotsInstance } from './time-slots.js';
+import { createDateTimeField, type DateTimeFieldInstance } from './datetime-field.js';
+import type { TimeLayout } from './daily-range.js';
+import type { CalendarButton } from './calendar.js';
+import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DTR_CSS, ensureStyles } from './styles.js';
 
@@ -12,13 +14,29 @@ export interface DateTimeRangeValue {
 
 export interface DateTimeRangeSettings {
   value: DateTimeRangeValue;
+  /** An IANA identifier. Both ends are read on this zone's clocks. */
   timeZone: string;
+  /** How each end asks for its time: a compact field, two menus, or the day's times. */
+  timeLayout: TimeLayout;
   stepMinutes: number;
+  /** With 'select': minutes between the options. Every minute by default. */
+  minuteStep: number;
   minTime: PlainTime | string | undefined;
   maxTime: PlainTime | string | undefined;
+  /** Only with timeLayout 'list': rules out slots while still showing them. */
   isSlotDisabled: ((slot: Omit<Slot, 'disabled'>) => boolean) | undefined;
+  hour12: boolean | undefined;
+  /** The time a newly chosen day starts at. Midnight by default. */
+  defaultTime: PlainTime | string;
+  /** Each end can be typed into as well as chosen from. */
+  editable: boolean;
+  /** A pattern for both ends — `yyyy-MM-dd HH:mm`. */
+  format: string | undefined;
   min: PlainDate | null;
   max: PlainDate | null;
+  isDateDisabled: ((date: PlainDate) => boolean) | undefined;
+  renderCell: RenderCell | undefined;
+  buttons: readonly CalendarButton[];
   locale: string | undefined;
   disabled: boolean;
   startLabel: string | undefined;
@@ -45,9 +63,7 @@ interface Leg {
   readonly key: LegKey;
   readonly section: HTMLElement;
   readonly legend: HTMLElement;
-  readonly field: DateFieldInstance;
-  readonly slotsHost: HTMLElement;
-  slots: TimeSlotsInstance | null;
+  readonly field: DateTimeFieldInstance;
 }
 
 const EMPTY: DateTimeRangeValue = { start: null, end: null };
@@ -74,12 +90,21 @@ export function createDateTimeRange(
   const s: DateTimeRangeSettings = {
     value: EMPTY,
     timeZone: 'UTC',
+    timeLayout: 'input',
     stepMinutes: 30,
+    minuteStep: 1,
     minTime: undefined,
     maxTime: undefined,
     isSlotDisabled: undefined,
+    hour12: undefined,
+    defaultTime: '00:00',
+    editable: true,
+    format: undefined,
     min: null,
     max: null,
+    isDateDisabled: undefined,
+    renderCell: undefined,
+    buttons: [],
     locale: undefined,
     disabled: false,
     startLabel: undefined,
@@ -92,13 +117,6 @@ export function createDateTimeRange(
 
   let stylesPending = injectStyles;
 
-  /**
-   * The day each leg is showing. Held apart from the value because a day is
-   * chosen before a time: between the two clicks there is a date with no
-   * instant, and forcing it into the value would mean inventing a time.
-   */
-  const days: Record<LegKey, PlainDate | null> = { start: null, end: null };
-
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string) => {
     const node = doc.createElement(tag);
     node.className = className;
@@ -108,8 +126,8 @@ export function createDateTimeRange(
   const addedHostClass = !host.classList.contains('tz-dtr');
   host.classList.add('tz-dtr');
 
-  // The answer first. Under two lists of twenty-four times it would be below
-  // the fold, and the whole point of the widget would be invisible.
+  // The answer first. Under two fields it would still read first, but under a
+  // list of times it would be below the fold, and the answer is the point.
   const result = el('output', 'tz-dtr__result');
   const summary = el('span', 'tz-dtr__summary');
   const warning = el('span', 'tz-dtr__warning');
@@ -120,42 +138,29 @@ export function createDateTimeRange(
   const legsBox = el('div', 'tz-dtr__legs');
   host.append(legsBox);
 
+  /**
+   * Each end is a whole date-and-time field, so both ends gain what one of
+   * them has: typing, a format, a chooser that suits, and the two readings of
+   * an hour that happens twice.
+   */
   const makeLeg = (key: LegKey): Leg => {
-    // A group, not a <section>: two landmarks per widget is noise for a screen
-    // reader, and a page's own section styles would land on it.
     const section = el('div', 'tz-dtr__leg');
     section.setAttribute('role', 'group');
     const legend = el('h3', 'tz-dtr__legend');
-    // Named like the Angular elements, so the same CSS reaches them either way.
-    const fieldHost = doc.createElement('tz-date-field');
-    const slotsHost = doc.createElement('tz-time-slots');
+    const fieldHost = doc.createElement('tz-datetime-field');
     section.append(legend, fieldHost);
     legsBox.append(section);
     return {
       key,
       section,
       legend,
-      slotsHost,
-      slots: null,
-      field: createDateField(fieldHost, {
+      field: createDateTimeField(fieldHost, {
         injectStyles,
-        onChange: (day) => setDay(key, day),
+        onChange: (value) => commit({ ...s.value, [key]: value }),
       }),
     };
   };
   const legs = [makeLeg('start'), makeLeg('end')];
-
-  const dayOf = (leg: LegKey): PlainDate | null => {
-    const chosen = s.value[leg];
-    return chosen ? chosen.toZonedDateTimeISO(s.timeZone).toPlainDate() : days[leg];
-  };
-
-  function setDay(leg: LegKey, day: PlainDate | null): void {
-    days[leg] = day;
-    // Changing the day invalidates the time chosen on the old one.
-    if (s.value[leg]) commit({ ...s.value, [leg]: null });
-    else render();
-  }
 
   function commit(next: DateTimeRangeValue): void {
     s.value = next;
@@ -218,44 +223,29 @@ export function createDateTimeRange(
       const name = leg.key === 'start' ? (s.startLabel ?? s.messages.from) : (s.endLabel ?? s.messages.to);
       leg.legend.textContent = name;
       leg.section.setAttribute('aria-label', name);
-
-      const day = dayOf(leg.key);
       leg.field.update({
-        value: day,
-        locale: s.locale,
+        value: s.value[leg.key],
+        timeZone: s.timeZone,
+        timeLayout: s.timeLayout,
+        stepMinutes: s.stepMinutes,
+        minuteStep: s.minuteStep,
+        minTime: s.minTime,
+        maxTime: s.maxTime,
+        isSlotDisabled: s.isSlotDisabled,
+        hour12: s.hour12,
+        defaultTime: s.defaultTime,
+        editable: s.editable,
+        format: s.format,
         min: s.min,
         max: s.max,
+        isDateDisabled: s.isDateDisabled,
+        renderCell: s.renderCell,
+        buttons: s.buttons,
+        ariaLabel: name,
+        locale: s.locale,
         disabled: s.disabled,
         messages: s.messages,
       });
-
-      if (!day) {
-        leg.slots?.destroy();
-        leg.slots = null;
-        leg.slotsHost.remove();
-        continue;
-      }
-      const slotSettings = {
-        date: day,
-        timeZone: s.timeZone,
-        stepMinutes: s.stepMinutes,
-        minTime: s.minTime,
-        maxTime: s.maxTime,
-        isDisabled: s.isSlotDisabled,
-        value: s.value[leg.key],
-        disabled: s.disabled,
-        messages: s.messages,
-      };
-      if (!leg.slotsHost.isConnected) leg.section.append(leg.slotsHost);
-      if (leg.slots) leg.slots.update(slotSettings);
-      else {
-        const key = leg.key;
-        leg.slots = createTimeSlots(leg.slotsHost, {
-          ...slotSettings,
-          injectStyles,
-          onChange: (instant) => commit({ ...s.value, [key]: instant }),
-        });
-      }
     }
   }
 
@@ -273,10 +263,7 @@ export function createDateTimeRange(
       commit(EMPTY);
     },
     destroy() {
-      for (const leg of legs) {
-        leg.slots?.destroy();
-        leg.field.destroy();
-      }
+      for (const leg of legs) leg.field.destroy();
       result.remove();
       problem.remove();
       legsBox.remove();

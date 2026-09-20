@@ -99,15 +99,21 @@ describe('createDateRange', () => {
 });
 
 describe('createDateTimeRange', () => {
+  const box = (leg: 0 | 1) =>
+    host.querySelectorAll<HTMLInputElement>('tz-datetime-field input.tz-field__trigger')[leg]!;
+
   it('reports the night the clocks go back as seven hours, in words', () => {
     widget = createDateTimeRange(host, {
       timeZone: 'Europe/Paris',
+      locale: 'en-GB',
       value: { start: paris('2026-10-24T23:00'), end: paris('2026-10-25T05:00') },
     });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('7h');
     expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7h');
-    // A slot list per leg, since both days are known.
-    expect(host.querySelectorAll('.tz-slots')).toHaveLength(2);
+    // Each end is a whole date-and-time field, showing what it holds.
+    expect(host.querySelectorAll('tz-datetime-field')).toHaveLength(2);
+    expect(box(0).value).toBe('24/10/2026 23:00');
+    expect(box(1).value).toBe('25/10/2026 05:00');
   });
 
   it('refuses an end before its start', () => {
@@ -119,18 +125,33 @@ describe('createDateTimeRange', () => {
     expect(host.querySelector('.tz-dtr__summary')).toBeNull();
   });
 
-  it('picking a time on a leg reports the whole interval', () => {
+  it('typing into one end reports the whole interval', () => {
     const onChange = vi.fn();
     widget = createDateTimeRange(host, {
       timeZone: 'Europe/Paris',
-      stepMinutes: 60,
+      locale: 'en-GB',
       value: { start: paris('2026-06-15T09:00'), end: null },
       onChange,
     });
-    const eleven = Array.from(host.querySelectorAll<HTMLButtonElement>('.tz-slots__slot')).find(
-      (b) => b.querySelector('.tz-slots__time')!.textContent === '11:00',
-    )!;
-    eleven.click();
-    expect(onChange.mock.calls[0]![0].start.toString()).toBe('2026-06-15T09:00:00Z');
+    const end = box(1);
+    end.focus();
+    end.value = '15/06/2026 17:00';
+    end.dispatchEvent(new Event('input', { bubbles: true }));
+
+    expect(onChange.mock.calls.at(-1)![0].end.toString()).toBe('2026-06-15T15:00:00Z');
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('8h');
+  });
+
+  it('offers the day\u2019s times on each end when asked to', () => {
+    widget = createDateTimeRange(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      timeLayout: 'list',
+      stepMinutes: 60,
+      value: { start: paris('2026-06-15T09:00'), end: null },
+    });
+    host.querySelectorAll<HTMLButtonElement>('.tz-field__icon-button')[0]!.click();
+    const panel = document.querySelector('.tz-field__panel')!;
+    expect(panel.querySelectorAll('.tz-slots__slot').length).toBeGreaterThan(0);
   });
 });

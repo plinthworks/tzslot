@@ -100,15 +100,16 @@ describe('an end before its start', () => {
 });
 
 describe('inside a form', () => {
-  it('renders two legs, each with its own field', () => {
+  it('renders two legs, each a whole date-and-time field', () => {
     expect(el().querySelectorAll('.tz-dtr__leg')).toHaveLength(2);
-    expect(el().querySelectorAll('tz-date-field')).toHaveLength(2);
+    expect(el().querySelectorAll('tz-datetime-field')).toHaveLength(2);
   });
 
-  it('shows the slot list for a leg once its day is known', () => {
-    expect(el().querySelectorAll('tz-time-slots')).toHaveLength(0);
+  it('each leg shows the moment it holds, in the locale\u2019s own form', () => {
     set('2026-06-14T23:00', null);
-    expect(el().querySelectorAll('tz-time-slots')).toHaveLength(1);
+    const boxes = el().querySelectorAll<HTMLInputElement>('input.tz-field__trigger');
+    expect(boxes[0]!.value).toBe('14/06/2026 23:00');
+    expect(boxes[1]!.value).toBe('');
   });
 
   it('disabling the control disables both fields', () => {

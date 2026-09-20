@@ -32,7 +32,7 @@ beforeEach(async () => {
 describe('the page', () => {
   it('opens on the interval, which is the thing to look at first', () => {
     expect(el().querySelector('tz-datetime-range')).not.toBeNull();
-    expect(el().querySelector('tz-time-slots')).not.toBeNull(); // inside the legs
+    expect(el().querySelectorAll('tz-datetime-field').length).toBeGreaterThanOrEqual(2); // the two ends
     expect(el().querySelector('tz-calendar')).toBeNull(); // another tab
   });
 
@@ -159,7 +159,11 @@ describe('the date-and-time field', () => {
 describe('the hours, compact or listed', () => {
   it('starts compact and switches to a list on request', () => {
     expect(el().querySelectorAll('.tz-daily__input')).toHaveLength(2);
-    chip('list').click();
+    // Two blocks on this tab offer the same choice; this is the daily one.
+    const daily = el().querySelector('.block:has(tz-daily-range)')!;
+    Array.from(daily.querySelectorAll<HTMLButtonElement>('.chip'))
+      .find((b) => b.textContent!.trim() === 'list')!
+      .click();
     fixture.detectChanges();
     expect(el().querySelectorAll('.tz-daily__list')).toHaveLength(2);
     expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('4 days · 33h');

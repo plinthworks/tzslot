@@ -22,7 +22,8 @@ each with an Angular component over it (`<tz-calendar>` … `<tz-daily-range>`),
 every one a `ControlValueAccessor`.
 
 - A time is asked for in the way that suits: a compact field with arrows, two
-  menus down to the minute, or the day's bookable slots.
+  menus down to the minute, or the day's bookable slots — in the date-and-time
+  field, in the interval, and in the daily range alike.
 - A date-and-time field can be typed into as well as chosen from, in the
   locale's own form or a pattern of your own.
 - `renderCell` puts a price, places left or a class of your own on any day;

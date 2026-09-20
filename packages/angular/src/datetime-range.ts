@@ -15,12 +15,15 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 
-import type { PlainDate, Slot } from '@tzslot/core';
+import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
 import {
   createDateTimeRange,
   type DateTimeRangeInstance,
   type DateTimeRangeSettings,
   type DateTimeRangeValue,
+  type RenderCell,
+  type TimeLayout,
+  type CalendarButton,
 } from '@tzslot/dom';
 
 export type { DateTimeRangeValue } from '@tzslot/dom';
@@ -46,7 +49,21 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly value = model<DateTimeRangeValue>(EMPTY);
 
   readonly timeZone = input.required<string>();
+  /** How each end asks for its time: 'input', 'select' or 'list'. */
+  readonly timeLayout = input<TimeLayout>('input');
   readonly stepMinutes = input(30);
+  /** With 'select': minutes between the options. Every minute by default. */
+  readonly minuteStep = input(1);
+  readonly hour12 = input<boolean | undefined>(undefined);
+  /** The time a newly chosen day starts at. Midnight by default. */
+  readonly defaultTime = input<PlainTime | string>('00:00');
+  /** Both ends can be typed into as well as chosen from. */
+  readonly editable = input(true);
+  /** A pattern for both ends — `yyyy-MM-dd HH:mm`. */
+  readonly format = input<string | undefined>(undefined);
+  readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
+  readonly renderCell = input<RenderCell | undefined>(undefined);
+  readonly buttons = input<readonly CalendarButton[]>([]);
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
   readonly isSlotDisabled = input<((slot: Omit<Slot, 'disabled'>) => boolean) | undefined>(undefined);
@@ -65,7 +82,16 @@ export class DateTimeRange implements ControlValueAccessor {
   private readonly settings = computed<Partial<DateTimeRangeSettings>>(() => ({
     value: this.value(),
     timeZone: this.timeZone(),
+    timeLayout: this.timeLayout(),
     stepMinutes: this.stepMinutes(),
+    minuteStep: this.minuteStep(),
+    hour12: this.hour12(),
+    defaultTime: this.defaultTime(),
+    editable: this.editable(),
+    format: this.format(),
+    isDateDisabled: this.isDateDisabled(),
+    renderCell: this.renderCell(),
+    buttons: this.buttons(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     isSlotDisabled: this.isSlotDisabled(),

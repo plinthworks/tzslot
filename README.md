@@ -44,10 +44,10 @@ idioms into calls on them. A behaviour fixed there is fixed everywhere.
 with arrows, `'select'` for two menus (`minuteStep`, every minute by default),
 `'list'` for the times on offer that day. The menus show the chosen day as the
 zone really has it: the hour the clocks skip is not offered, and the hour they
-repeat appears twice, by the name the zone gives each reading — "02 — Summer"
-and "02 — Standard", in the reader's own language — so there is nothing left
-to ask afterwards. The compact field does ask, with the same names, and the
-text itself says which of the two it holds — `25/10/2026 02:30 (Standard)` —
+repeat appears twice, in the words everyone uses — "02 — summer" and
+"02 — winter", "02 — été" and "02 — hiver" — so there is nothing left to ask
+afterwards. The zone's official name for each is on the tooltip. The compact field does ask, with the same names, and the
+text itself says which of the two it holds — `25/10/2026 02:30 (winter)` —
 because 02:30 looks identical either way. Typed back in, that name is read
 too, so the text always means exactly one moment.
 

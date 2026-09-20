@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { zoneName, distinguish } from '../src/index.js';
+import { zoneName, summerFirst } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
 
 const summer = Temporal.Instant.from('2026-10-25T00:30:00Z'); // still +02:00 in Paris
@@ -13,20 +13,11 @@ describe('what a zone calls itself', () => {
   });
 });
 
-describe('telling two readings apart', () => {
-  it('keeps only the words that differ', () => {
-    expect(distinguish('Central European Summer Time', 'Central European Standard Time')).toEqual([
-      'Summer',
-      'Standard',
-    ]);
-    expect(distinguish('heure d’été d’Europe centrale', 'heure normale d’Europe centrale')).toEqual([
-      'd’été',
-      'normale',
-    ]);
-  });
-
-  it('leaves names that share nothing, or everything, as they are', () => {
-    expect(distinguish('AEST', 'AEDT')).toEqual(['AEST', 'AEDT']);
-    expect(distinguish('CET', 'CET')).toEqual(['CET', 'CET']);
+describe('which of the two is summer time', () => {
+  it('is the one whose clocks are further ahead', () => {
+    expect(summerFirst(['+02:00', '+01:00'])).toBe(true); // Paris, the usual order
+    expect(summerFirst(['+01:00', '+02:00'])).toBe(false);
+    expect(summerFirst(['+11:00', '+10:30'])).toBe(true); // Lord Howe, half an hour
+    expect(summerFirst(['-04:00', '-05:00'])).toBe(true); // New York
   });
 });

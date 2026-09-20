@@ -1,7 +1,7 @@
 import { Temporal, getDaySlots } from '@tzslot/core';
 import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
-import { distinguish, zoneName } from './zone-names.js';
+import { summerFirst } from './zone-names.js';
 import { TIMESELECT_CSS, ensureStyles } from './styles.js';
 
 export interface TimeSelectSettings {
@@ -127,12 +127,10 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       const hour = slot.time.hour;
       if (hour % s.hourStep !== 0) continue;
       if (slot.ambiguous && s.timeZone) {
-        // What the zone calls each reading, cut down to the words that differ:
-        // "Summer" and "Standard", "d'été" and "normale".
-        const names = distinguish(
-          zoneName(slot.instants[0]!, s.timeZone, s.locale),
-          zoneName(slot.instants[1]!, s.timeZone, s.locale),
-        );
+        // Summer and winter: the words everyone uses for the two readings.
+        const names = summerFirst(slot.offsets)
+          ? [s.messages.summerTime, s.messages.winterTime]
+          : [s.messages.winterTime, s.messages.summerTime];
         slot.offsets.forEach((offset, i) => {
           seen.set(`${hour}|${offset}`, { hour, offset, name: names[i] ?? offset });
         });

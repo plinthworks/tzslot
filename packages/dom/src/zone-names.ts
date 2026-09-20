@@ -20,33 +20,16 @@ export function zoneName(
   return parts.find((part) => part.type === 'timeZoneName')?.value ?? '';
 }
 
-const words = (text: string) => text.split(/\s+/).filter(Boolean);
-
 /**
- * The words that tell two zone names apart, with what they share taken off
- * both ends: of "Central European Summer Time" and "Central European Standard
- * Time" only "Summer" and "Standard" are left, which is the whole of the
- * difference and short enough for a menu.
- *
- * Names that share nothing, or everything, come back as they were.
+ * Which of two readings is summer time: the one whose clocks are further
+ * ahead. True for both hemispheres — daylight saving is a summer arrangement
+ * wherever it is used — and for the half-hour shifts as much as the whole.
  */
-export function distinguish(first: string, second: string): [string, string] {
-  const a = words(first);
-  const b = words(second);
-  if (a.length === 0 || b.length === 0 || first === second) return [first, second];
-
-  let start = 0;
-  while (start < a.length - 1 && start < b.length - 1 && a[start] === b[start]) start += 1;
-  let end = 0;
-  while (
-    end < a.length - start - 1 &&
-    end < b.length - start - 1 &&
-    a[a.length - 1 - end] === b[b.length - 1 - end]
-  ) {
-    end += 1;
-  }
-
-  const cut = (list: string[]) => list.slice(start, list.length - end).join(' ');
-  const [shortA, shortB] = [cut(a), cut(b)];
-  return shortA && shortB && shortA !== shortB ? [shortA, shortB] : [first, second];
+export function summerFirst(offsets: readonly string[]): boolean {
+  const minutes = (offset: string) => {
+    const match = /([+-])(\d{2}):(\d{2})/.exec(offset);
+    if (!match) return 0;
+    return (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]));
+  };
+  return minutes(offsets[0] ?? '') >= minutes(offsets[1] ?? '');
 }

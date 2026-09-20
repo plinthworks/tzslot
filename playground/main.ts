@@ -1,4 +1,5 @@
 import { provideZonelessChangeDetection } from '@angular/core';
+import { provideTzslotMessages, FR } from '../packages/angular/src/index.js';
 import { bootstrapApplication } from '@angular/platform-browser';
 import { Demo } from './demo.js';
 
@@ -15,6 +16,9 @@ import '../packages/theme/contrast.css';
  * start was the one failure the component tests could not see, because
  * importing this file used to start the application as a side effect.
  */
-bootstrapApplication(Demo, { providers: [provideZonelessChangeDetection()] }).catch((error) =>
+// The words in French, as an application would provide them once.
+bootstrapApplication(Demo, {
+  providers: [provideZonelessChangeDetection(), provideTzslotMessages(FR)],
+}).catch((error) =>
   console.error(error),
 );

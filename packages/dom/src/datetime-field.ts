@@ -8,7 +8,7 @@ import type { TimeLayout } from './daily-range.js';
 import type { RenderCell } from './cells.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
-import { distinguish, zoneName } from './zone-names.js';
+import { summerFirst, zoneName } from './zone-names.js';
 import { EN, type TzslotMessages } from './messages.js';
 import {
   CALENDAR_CSS,
@@ -246,13 +246,15 @@ export function createDateTimeField(
     const zoned = value.toZonedDateTimeISO(s.timeZone);
     const found = resolveWallTime(zoned.toPlainDate(), zoned.toPlainTime(), s.timeZone);
     if (!found.ambiguous) return null;
-    const names = distinguish(
-      zoneName(found.instants[0]!, s.timeZone, s.locale),
-      zoneName(found.instants[1]!, s.timeZone, s.locale),
-    );
     const index = found.offsets.indexOf(zoned.offset);
-    return { names, index: index < 0 ? 0 : index };
+    return { names: seasonNames(found.offsets), index: index < 0 ? 0 : index };
   }
+
+  /** Summer and winter, in that order or the other, by which clocks are ahead. */
+  const seasonNames = (offsets: readonly string[]): [string, string] =>
+    summerFirst(offsets)
+      ? [s.messages.summerTime, s.messages.winterTime]
+      : [s.messages.winterTime, s.messages.summerTime];
 
   const display = (): string => {
     if (!s.value) return '';
@@ -356,10 +358,7 @@ export function createDateTimeField(
     if (hint && date && time) {
       const found = resolveWallTime(date, time, s.timeZone);
       if (found.ambiguous) {
-        const names = distinguish(
-          zoneName(found.instants[0]!, s.timeZone, s.locale),
-          zoneName(found.instants[1]!, s.timeZone, s.locale),
-        );
+        const names = seasonNames(found.offsets);
         const which = names.findIndex((name) => name.toLowerCase() === hint);
         const byOffset = found.offsets.findIndex((offset) => `utc${offset}`.toLowerCase() === hint);
         const index = which >= 0 ? which : byOffset;
@@ -393,11 +392,7 @@ export function createDateTimeField(
     if (found.ambiguous) {
       // Named, not numbered: "heure d'été" is something a person can answer,
       // "+02:00" is something they have to work out.
-      const [first, second] = found.instants;
-      const names = distinguish(
-        zoneName(first!, s.timeZone, s.locale),
-        zoneName(second!, s.timeZone, s.locale),
-      );
+      const names = seasonNames(found.offsets);
       readings = found.instants.map((instant, i) => ({
         instant,
         offset: found.offsets[i] ?? '',

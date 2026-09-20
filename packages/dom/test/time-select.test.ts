@@ -132,8 +132,8 @@ describe('the day the menus are choosing on', () => {
       minuteStep: 30,
     });
     // Named rather than numbered: nobody books a room at UTC+02:00.
-    expect(hours()).toContain('02 — Summer');
-    expect(hours()).toContain('02 — Standard');
+    expect(hours()).toContain('02 — summer');
+    expect(hours()).toContain('02 — winter');
     expect(hours().filter((h) => h?.startsWith('02'))).toHaveLength(2);
   });
 

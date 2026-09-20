@@ -121,7 +121,7 @@ function parisAt(iso: string): Instant {
         }
       </div>
       <tz-datetime-range [(value)]="shift" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
-                         [minuteStep]="15" [locale]="'en-GB'" [timeLayout]="intervalLayout()"
+                         [minuteStep]="15" [locale]="locale" [timeLayout]="intervalLayout()"
                          [buttons]="['today', 'clear']" />
     </section>
 
@@ -146,7 +146,7 @@ function parisAt(iso: string): Instant {
         }
       </div>
       <tz-daily-range [(value)]="rota" [timeZone]="'Europe/Paris'" [stepMinutes]="30"
-                      [locale]="'en-GB'" [today]="rotaToday" [timeLayout]="timeLayout()" />
+                      [locale]="locale" [today]="rotaToday" [timeLayout]="timeLayout()" />
     </section>
     }
 
@@ -209,21 +209,21 @@ function parisAt(iso: string): Instant {
       <section class="block card" data-theme="dark">
         <h2>data-theme="dark"</h2>
         <p class="note">A dark card on whatever the page is.</p>
-        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
-        <div class="gap"><tz-date-field [(value)]="popupDate" [locale]="'en-GB'" /></div>
+        <tz-calendar [(value)]="date" [locale]="locale" />
+        <div class="gap"><tz-date-field [(value)]="popupDate" [locale]="locale" /></div>
       </section>
 
       <section class="block card" style="--tz-accent: #e11d48; --tz-accent-fg: #ffffff">
         <h2>--tz-accent: #e11d48</h2>
         <p class="note">One brand colour; the range tint is derived from it.</p>
-        <tz-date-range [(value)]="stay" [locale]="'en-GB'" />
-        <div class="gap"><tz-date-field [(value)]="dialogDate" [locale]="'en-GB'" mode="dialog" /></div>
+        <tz-date-range [(value)]="stay" [locale]="locale" />
+        <div class="gap"><tz-date-field [(value)]="dialogDate" [locale]="locale" mode="dialog" /></div>
       </section>
 
       <section class="block card" data-contrast="more">
         <h2>data-contrast="more"</h2>
         <p class="note">Also applies by itself when the system asks for more contrast.</p>
-        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
+        <tz-calendar [(value)]="date" [locale]="locale" />
         <div class="gap">
           <tz-time-slots [date]="'2026-10-25'" [timeZone]="'Europe/Paris'" [stepMinutes]="60"
                          [minTime]="'01:00'" [maxTime]="'04:00'" [(value)]="instant" />
@@ -236,25 +236,25 @@ function parisAt(iso: string): Instant {
     <div class="grid">
       <section class="block">
         <h2>Calendar</h2>
-        <tz-calendar [(value)]="date" [locale]="'en-GB'" />
+        <tz-calendar [(value)]="date" [locale]="locale" />
         <p class="note">{{ date()?.toString() ?? 'nothing chosen' }}</p>
       </section>
 
       <section class="block">
         <h2>Field</h2>
         <p class="note">Anchored to the field:</p>
-        <tz-date-field [(value)]="popupDate" [locale]="'en-GB'" mode="popup" />
+        <tz-date-field [(value)]="popupDate" [locale]="locale" mode="popup" />
         <p class="note">Centred over the page:</p>
-        <tz-date-field [(value)]="dialogDate" [locale]="'en-GB'" mode="dialog" />
+        <tz-date-field [(value)]="dialogDate" [locale]="locale" mode="dialog" />
       </section>
 
       <section class="block">
         <h2>Prices, and Today / Clear</h2>
         <p class="note">renderCell: a price per night, the 23rd sold out.</p>
-        <tz-calendar [(value)]="pricedDate" [locale]="'en-GB'" [renderCell]="prices"
+        <tz-calendar [(value)]="pricedDate" [locale]="locale" [renderCell]="prices"
                      [buttons]="['today', 'clear']" />
         <p class="note">The same buttons in a field's panel:</p>
-        <tz-date-field [(value)]="pricedDate" [locale]="'en-GB'" [buttons]="['today', 'clear']" />
+        <tz-date-field [(value)]="pricedDate" [locale]="locale" [buttons]="['today', 'clear']" />
       </section>
 
       <section class="block">
@@ -277,7 +277,7 @@ function parisAt(iso: string): Instant {
                     (click)="format.set(f.value)">{{ f.label }}</button>
           }
         </div>
-        <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="'en-GB'"
+        <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="locale"
                            [timeLayout]="fieldLayout()" [stepMinutes]="30" [minuteStep]="5"
                            [format]="format()" [buttons]="['today', 'clear']" />
         <p class="note">{{ momentText() }}</p>
@@ -286,7 +286,7 @@ function parisAt(iso: string): Instant {
       <section class="block">
         <h2>Several days</h2>
         <p class="note">The sessions of a course: up to five, weekends closed.</p>
-        <tz-multi-date [(value)]="sessions" [locale]="'en-GB'" [maxDates]="5"
+        <tz-multi-date [(value)]="sessions" [locale]="locale" [maxDates]="5"
                        [isDateDisabled]="noWeekends" [buttons]="['today', 'clear']" />
         <p class="note">{{ sessionsText() }}</p>
       </section>
@@ -294,7 +294,7 @@ function parisAt(iso: string): Instant {
       <section class="block">
         <h2>Range</h2>
         <p class="note">Weekends are closed — a range may not step over one.</p>
-        <tz-date-range [(value)]="stay" [locale]="'en-GB'" [isDateDisabled]="noWeekends" />
+        <tz-date-range [(value)]="stay" [locale]="locale" [isDateDisabled]="noWeekends" />
         <p class="note">{{ stayText() }}</p>
       </section>
     </div>
@@ -360,6 +360,9 @@ function parisAt(iso: string): Instant {
 })
 export class Demo {
   protected readonly usingPolyfill = usingPolyfill;
+
+  /** The whole page in one language: the widgets take it, and so do the dates. */
+  protected readonly locale = 'fr-FR';
 
   protected readonly zones = [
     'Europe/Paris', 'America/Chicago', 'Australia/Lord_Howe', 'Asia/Tokyo', 'UTC',

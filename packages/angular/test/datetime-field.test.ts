@@ -65,7 +65,7 @@ describe('<tz-datetime-field> in a form', () => {
     fixture.detectChanges();
 
     const readings = Array.from(panel().querySelectorAll<HTMLButtonElement>('.tz-datetime__reading'));
-    expect(readings.map((b) => b.textContent)).toEqual(['Summer', 'Standard']);
+    expect(readings.map((b) => b.textContent)).toEqual(['summer', 'winter']);
     readings[1]!.click();
     fixture.detectChanges();
     expect(fixture.componentInstance.form.controls.at.value).toBe('2026-10-25T01:30:00Z');

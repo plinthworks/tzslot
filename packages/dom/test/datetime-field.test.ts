@@ -134,7 +134,7 @@ describe('the hour that happens twice', () => {
     typeTime('minute', '30');
 
     // The words that tell the two apart, with the full name on hover.
-    expect(readings().map((b) => b.textContent)).toEqual(['Summer', 'Standard']);
+    expect(readings().map((b) => b.textContent)).toEqual(['summer', 'winter']);
     expect(readings()[0]!.title).toBe('Central European Summer Time (UTC+02:00)');
     expect(note().textContent).toContain('happens twice');
     // And which of the two stands, since the field shows 02:30 either way.
@@ -363,10 +363,10 @@ describe('a moment whose clock face happens twice', () => {
 
   it('says which of the two the field holds', () => {
     mount({ value: ambiguous });
-    expect(shown()).toBe('25/10/2026 02:30 (Standard)');
+    expect(shown()).toBe('25/10/2026 02:30 (winter)');
 
     field.update({ value: Temporal.Instant.from('2026-10-25T00:30:00Z') });
-    expect(shown()).toBe('25/10/2026 02:30 (Summer)');
+    expect(shown()).toBe('25/10/2026 02:30 (summer)');
   });
 
   it('says nothing of the sort on an ordinary day', () => {
@@ -379,11 +379,11 @@ describe('a moment whose clock face happens twice', () => {
     mount({ onChange, today: Temporal.PlainDate.from('2026-10-25') });
     const box = trigger() as HTMLInputElement;
     box.focus();
-    box.value = '25/10/2026 02:30 (Standard)';
+    box.value = '25/10/2026 02:30 (winter)';
     box.dispatchEvent(new Event('input', { bubbles: true }));
     expect(field.value!.toString()).toBe('2026-10-25T01:30:00Z');
 
-    box.value = '25/10/2026 02:30 (Summer)';
+    box.value = '25/10/2026 02:30 (summer)';
     box.dispatchEvent(new Event('input', { bubbles: true }));
     expect(field.value!.toString()).toBe('2026-10-25T00:30:00Z');
   });

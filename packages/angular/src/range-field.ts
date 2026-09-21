@@ -29,7 +29,7 @@ import {
   type RenderCell,
 } from '@tzslot/dom';
 
-import type { ShiftOption, ShiftStep } from '@tzslot/core';
+import type { Instant, ShiftOption, ShiftStep } from '@tzslot/core';
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
@@ -103,6 +103,8 @@ export class RangeField implements ControlValueAccessor {
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
   readonly renderCell = input<RenderCell | undefined>(undefined);
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
+  /** The moment the shortcuts shorter than a day are counted from. The clock by default. */
+  readonly now = input<Instant | null>(null);
   readonly disabled = input(false);
   /** A pattern for each end — `yyyy-MM-dd`. */
   readonly format = input<string | undefined>(undefined);
@@ -139,6 +141,7 @@ export class RangeField implements ControlValueAccessor {
     isDateDisabled: this.isDateDisabled(),
     renderCell: this.renderCell(),
     today: this.today(),
+    now: this.now(),
     disabled: this.disabled() || this.formDisabled(),
     format: this.format(),
     displayWith: this.displayWith(),

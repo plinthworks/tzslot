@@ -1,6 +1,14 @@
 import { describe, it, expect } from 'vitest';
-import { Temporal, presetRange, shiftDayRange, shiftInstant, shiftDate } from '../src/index.js';
-import type { PlainDate } from '../src/index.js';
+import {
+  Temporal,
+  presetRange,
+  presetMoments,
+  presetStep,
+  shiftDayRange,
+  shiftInstant,
+  shiftDate,
+} from '../src/index.js';
+import type { Instant, PlainDate } from '../src/index.js';
 
 const day = (iso: string) => Temporal.PlainDate.from(iso);
 const today = day('2026-09-21');
@@ -71,5 +79,52 @@ describe('an arrow that moves a moment', () => {
     const next = shiftInstant(at, { days: 1 }, 1, paris);
     expect(next.toZonedDateTimeISO(paris).hour).toBe(15);
     expect(next.epochMilliseconds - at.epochMilliseconds).toBe(25 * 3600_000);
+  });
+});
+
+describe('the named ranges shorter than a day', () => {
+  const paris = 'Europe/Paris';
+  const at = (iso: string) => Temporal.Instant.from(iso);
+  const clock = (instant: Instant) =>
+    instant.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' });
+
+  it('the quarter hour that is running, not the next one', () => {
+    const now = at('2026-09-21T09:07:32Z'); // 11:07:32 in Paris
+    const { start, end } = presetMoments('thisQuarterHour', { now, timeZone: paris });
+    expect([clock(start), clock(end)]).toEqual(['11:00', '11:15']);
+  });
+
+  it('and again at the far end of a quarter', () => {
+    const { start, end } = presetMoments('thisQuarterHour', {
+      now: at('2026-09-21T09:29:59Z'), // 11:29:59
+      timeZone: paris,
+    });
+    expect([clock(start), clock(end)]).toEqual(['11:15', '11:30']);
+  });
+
+  it('the hour that is running', () => {
+    const { start, end } = presetMoments('thisHour', { now: at('2026-09-21T09:47:00Z'), timeZone: paris });
+    expect([clock(start), clock(end)]).toEqual(['11:00', '12:00']);
+    expect(end.epochMilliseconds - start.epochMilliseconds).toBe(3600_000);
+  });
+
+  it('rounds on the zone’s clock, not on the epoch', () => {
+    // Kathmandu is +05:45. Rounding the epoch would land on :15, :30, :45 of
+    // somebody else's clock and be wrong by a quarter of an hour here.
+    const { start } = presetMoments('thisQuarterHour', {
+      now: at('2026-09-21T05:22:00Z'), // 11:07 in Kathmandu
+      timeZone: 'Asia/Kathmandu',
+    });
+    expect(start.toZonedDateTimeISO('Asia/Kathmandu').toPlainTime().toString({ smallestUnit: 'minute' })).toBe('11:00');
+  });
+
+  it('a preset carries the step its reader has in mind', () => {
+    expect(presetStep('thisQuarterHour')).toEqual({ minutes: 15 });
+    expect(presetStep('thisHour')).toEqual({ hours: 1 });
+    expect(presetStep('thisQuarter')).toBe('auto');
+  });
+
+  it('asking for one of them as days is refused, not fudged', () => {
+    expect(() => presetRange('thisHour', { today })).toThrow(/shorter than a day/);
   });
 });

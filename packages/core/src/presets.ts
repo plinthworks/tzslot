@@ -1,6 +1,7 @@
 import { Temporal } from './temporal.js';
-import type { PlainDate } from './temporal.js';
+import type { Instant, PlainDate } from './temporal.js';
 import type { Weekday } from './grid.js';
+import type { ShiftStep } from './shift.js';
 
 /** The ranges a search screen offers before anyone touches a calendar. */
 export type PresetName =
@@ -16,9 +17,64 @@ export type PresetName =
   | 'thisQuarter'
   | 'lastQuarter'
   | 'nextQuarter'
+  | 'thisQuarterHour'
+  | 'thisHour'
   | 'next7Days'
   | 'next30Days'
   | 'thisYear';
+
+/**
+ * The named ranges shorter than a day.
+ *
+ * These cannot be two dates: "the current quarter hour" is 11:00 to 11:15 on
+ * a particular day, and only a moment can say that. They are counted from the
+ * clock rather than from midnight, so at 11:07 the answer is the quarter that
+ * is running, not the one that starts next.
+ */
+export const SUB_DAY_PRESETS = ['thisQuarterHour', 'thisHour'] as const;
+export type SubDayPreset = (typeof SUB_DAY_PRESETS)[number];
+
+export function isSubDayPreset(name: string): name is SubDayPreset {
+  return (SUB_DAY_PRESETS as readonly string[]).includes(name);
+}
+
+/** Two moments — what a preset shorter than a day means. */
+export interface MomentRange {
+  readonly start: Instant;
+  /** Exclusive, like every other end in this library. */
+  readonly end: Instant;
+}
+
+/**
+ * The quarter hour or the hour that is running, on a zone's clocks.
+ *
+ * Rounded down through the zone rather than on the epoch: a zone offset by a
+ * half or a quarter of an hour — Kathmandu, Chatham — would otherwise be
+ * rounded to somebody else's clock.
+ */
+export function presetMoments(
+  name: SubDayPreset,
+  { now, timeZone }: { now: Instant; timeZone: string },
+): MomentRange {
+  const here = now.toZonedDateTimeISO(timeZone);
+  const minutes = name === 'thisHour' ? 60 : 15;
+  const start = here.with({ minute: here.minute - (here.minute % minutes), second: 0, millisecond: 0 })
+    .with({ microsecond: 0, nanosecond: 0 });
+  return { start: start.toInstant(), end: start.add({ minutes }).toInstant() };
+}
+
+/**
+ * What one press of an arrow should move, having chosen this range.
+ *
+ * A reader who asks for the current quarter hour and then presses the arrow
+ * means the quarter hour before, not the day before — the named range they
+ * picked is the rule they have in mind.
+ */
+export function presetStep(name: PresetName): ShiftStep {
+  if (name === 'thisQuarterHour') return { minutes: 15 };
+  if (name === 'thisHour') return { hours: 1 };
+  return 'auto';
+}
 
 /** Two days, both included — what a calendar highlights. */
 export interface DayRange {
@@ -100,6 +156,11 @@ export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: Pre
       const first = Temporal.PlainDate.from({ year: today.year, month: 1, day: 1 });
       return { start: first, end: Temporal.PlainDate.from({ year: today.year, month: 12, day: 31 }) };
     }
+    case 'thisQuarterHour':
+    case 'thisHour':
+      // These are moments, not days; presetMoments answers them. Returning the
+      // whole day here would look like it worked.
+      throw new RangeError(`${name} is shorter than a day: use presetMoments`);
   }
 }
 

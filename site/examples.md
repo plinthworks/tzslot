@@ -179,6 +179,40 @@ every press. A period made of whole months moves by months instead, so a
 quarter stays a quarter and a month keeps its own last day. Anything else
 moves by its length, where nothing can drift.
 
+### The shortcut sets the step
+
+With `shift: 'auto'`, the named range just pressed becomes the rule: ask for
+the current quarter hour and the arrows move by fifteen minutes; ask for this
+quarter and they move a quarter at a time. Choosing days on the calendar by
+hand drops the rule, and the arrows go back to following the length of what is
+selected.
+
+Two of the shortcuts are shorter than a day, and those are two *moments*, not
+two dates — 21/09/2026 11:00 to 11:15, counted from the clock in the widget's
+zone:
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  shift: 'auto',
+  presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'],
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, shift: 'auto', showTime: true, presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'] }" />
+
+A shortcut of your own can do both — return two moments, and name the step it
+leaves behind:
+
+```js
+{
+  name: 'lastFiveMinutes',
+  label: 'Last 5 minutes',
+  step: { minutes: 5 },
+  range: (today, { now, timeZone }) => ({ start: now.subtract({ minutes: 5 }), end: now }),
+}
+```
+
 A fixed step is a duration: `shift: { months: 3 }`, `{ days: 7 }`. Give a list
 instead and the reader chooses: a button between the arrows shows the current
 step and advances to the next each press.

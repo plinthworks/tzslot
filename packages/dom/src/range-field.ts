@@ -1,6 +1,17 @@
-import { Temporal, presetRange, matchesPreset, shiftDayRange, resolveWallTime } from '@tzslot/core';
+import {
+  Temporal,
+  presetRange,
+  presetMoments,
+  presetStep,
+  isSubDayPreset,
+  matchesPreset,
+  shiftDayRange,
+  shiftInstant,
+  resolveWallTime,
+} from '@tzslot/core';
 import type {
   DayRange,
+  MomentRange,
   Instant,
   PlainDate,
   PlainTime,
@@ -33,8 +44,22 @@ export interface RangeFieldValue {
 export interface RangePreset {
   readonly name: string;
   readonly label: string;
-  readonly range: (today: PlainDate) => DayRange;
+  /**
+   * Two days — or, for a range shorter than one, two moments. The second
+   * argument carries the clock and the zone, so "the quarter hour that is
+   * running" can be written without reaching for a global.
+   */
+  readonly range: (today: PlainDate, at: { now: Instant; timeZone: string }) => DayRange | MomentRange;
+  /**
+   * What one press of the arrows moves, once this range is chosen. Left out,
+   * whole days move by their own length and a shorter range by its duration.
+   */
+  readonly step?: ShiftStep;
 }
+
+/** True for what a preset shorter than a day returns. */
+const isMoments = (range: DayRange | MomentRange): range is MomentRange =>
+  range.start instanceof Temporal.Instant;
 
 export interface RangeFieldSettings {
   value: RangeFieldValue;
@@ -81,6 +106,11 @@ export interface RangeFieldSettings {
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
   renderCell: RenderCell | undefined;
   today: PlainDate;
+  /**
+   * The moment the ranges shorter than a day are counted from. The clock,
+   * unless a test or a page rendered ahead of time needs it fixed.
+   */
+  now: Instant | null;
   disabled: boolean;
   /** A pattern for each end — `yyyy-MM-dd`. The locale's own form otherwise. */
   format: string | undefined;
@@ -146,6 +176,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     isDateDisabled: undefined,
     renderCell: undefined,
     today: Temporal.Now.plainDateISO(),
+    now: null,
     disabled: false,
     format: undefined,
     displayWith: undefined,
@@ -266,7 +297,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   /** And the other way: two days become two moments, whole or with times. */
   function fromDays(range_: { start: PlainDate | null; end: PlainDate | null }): RangeFieldValue {
-    const allDay = wholeDays();
+    // Without showTime there is nowhere to read or change an hour, so days
+    // chosen on the calendar are whole days — even just after a shortcut that
+    // was an interval, which would otherwise leave times nothing can edit.
+    const allDay = s.showTime ? wholeDays() : true;
     const times = {
       start: draft.start && !allDay ? zoned(draft.start).toPlainTime() : null,
       end: draft.end && !allDay ? zoned(draft.end).toPlainTime() : null,
@@ -357,6 +391,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     else paintPanel();
   }
 
+  /**
+   * The step the last chosen preset left behind.
+   *
+   * Someone who asks for the current quarter hour and then presses an arrow
+   * means the quarter hour before — the named range they picked is the rule
+   * they have in mind. Choosing days by hand on the calendar clears it, and
+   * the arrows go back to following the length of what is selected.
+   */
+  let presetShift: ShiftStep | null = null;
+
   /** The offered steps, when the reader is given the choice. */
   const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) ? s.shift : null);
   /** Which of them is chosen. Kept by position, so a relabelled menu is harmless. */
@@ -364,7 +408,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const currentStep = (): ShiftStep | null => {
     const menu = stepMenu();
     if (menu) return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
-    return s.shift === false ? null : (s.shift as ShiftStep);
+    if (s.shift === false) return null;
+    // 'auto' means "follow what is selected", and a preset says what that is
+    // better than the value can.
+    if (s.shift === 'auto' && presetShift !== null) return presetShift;
+    return s.shift as ShiftStep;
   };
 
   /** True when there is a whole period to move, and something to move it by. */
@@ -389,6 +437,30 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function step(direction: 1 | -1): void {
     const by = currentStep();
     if (!canShift() || by === null) return;
+
+    // A period with times moves as moments when the step is shorter than a
+    // day: fifteen minutes cannot be said in dates. Longer than a day, it
+    // moves as days and the hours come along unchanged — someone comparing
+    // one working week with the next means 09:00 to 17:00 again, not the same
+    // number of hours counted from wherever the first one ended.
+    if (s.value.allDay === false && s.value.start && s.value.end) {
+      const own = s.value.start.until(s.value.end);
+      const moveBy = by === 'auto' ? own : Temporal.Duration.from(by);
+      const shortHop = moveBy.total({ unit: 'hour', relativeTo: zoned(s.value.start) }) < 24;
+      if (shortHop) {
+        draft = s.value;
+        const next = {
+          start: shiftInstant(s.value.start, moveBy, direction, s.timeZone),
+          end: shiftInstant(s.value.end, moveBy, direction, s.timeZone),
+          allDay: false,
+        };
+        readings = { start: [], end: [] };
+        if (panel.isOpen) choose(next);
+        else commit(next);
+        return;
+      }
+    }
+
     const shown = days(s.value);
     if (!shown.start || !shown.end) {
       // One end only. There is no length to follow, so an imposed step moves
@@ -458,17 +530,39 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
   }
 
+  const clock = () => s.now ?? Temporal.Now.instant();
+
   const presets = (): RangePreset[] =>
     s.presets.map((preset) =>
       typeof preset === 'string'
         ? {
             name: preset,
             label: s.messages.presets[preset],
-            range: (today: PlainDate) =>
-              presetRange(preset, { today, firstDayOfWeek: s.firstDayOfWeek }),
+            step: presetStep(preset),
+            range: (today: PlainDate, at_: { now: Instant; timeZone: string }) =>
+              isSubDayPreset(preset)
+                ? presetMoments(preset, at_)
+                : presetRange(preset, { today, firstDayOfWeek: s.firstDayOfWeek }),
           }
         : preset,
     );
+
+  /** What a preset returns, applied — days become a period, moments are one. */
+  function applyPreset(preset: RangePreset): void {
+    const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
+    presetShift = preset.step ?? (isMoments(picked) ? picked.start.until(picked.end) : 'auto');
+    if (isMoments(picked)) {
+      readings = { start: [], end: [] };
+      choose({ start: picked.start, end: picked.end, allDay: false }, { close: !s.confirm });
+      return;
+    }
+    // A shortcut named in days means whole days. Carrying over the hours of
+    // whatever was chosen before — 10:45 because a quarter hour was picked a
+    // moment ago — makes "this quarter" mean something nobody asked for.
+    draft = { ...draft, allDay: true };
+    readings = { start: [], end: [] };
+    choose(fromDays({ start: picked.start, end: picked.end }), { close: !s.confirm });
+  }
 
   function paintPresets(): void {
     if (!presetList) return;
@@ -478,25 +572,43 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         const button = el('button', 'tz-rangefield__preset');
         button.type = 'button';
         button.textContent = preset.label;
-        const on =
-          chosen.start !== null &&
-          chosen.end !== null &&
-          (typeof preset.name === 'string' && isBuiltIn(preset.name)
-            ? matchesPreset(preset.name, { start: chosen.start, end: chosen.end }, {
-                today: s.today,
-                firstDayOfWeek: s.firstDayOfWeek,
-              })
-            : sameRange(preset.range(s.today), { start: chosen.start, end: chosen.end }));
+        const on = marks(preset, chosen);
         button.classList.toggle('tz-rangefield__preset--on', on);
         button.setAttribute('aria-pressed', String(on));
         button.disabled = s.disabled;
-        button.onclick = () => {
-          const picked = preset.range(s.today);
-          choose(fromDays({ start: picked.start, end: picked.end }), { close: !s.confirm });
-        };
+        button.onclick = () => applyPreset(preset);
         return button;
       }),
     );
+  }
+
+  /**
+   * Whether a preset is what is currently chosen, so it can be ticked.
+   *
+   * A range shorter than a day is compared as moments — two quarter hours of
+   * the same day are the same two dates, and comparing dates would tick the
+   * wrong one.
+   */
+  function marks(preset: RangePreset, chosen: { start: PlainDate | null; end: PlainDate | null }): boolean {
+    if (isSubDayPreset(preset.name) || draft.allDay === false) {
+      const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
+      if (!isMoments(picked)) return false;
+      return (
+        draft.start !== null &&
+        draft.end !== null &&
+        draft.start.equals(picked.start) &&
+        draft.end.equals(picked.end)
+      );
+    }
+    if (chosen.start === null || chosen.end === null) return false;
+    if (isBuiltIn(preset.name)) {
+      return matchesPreset(preset.name, { start: chosen.start, end: chosen.end }, {
+        today: s.today,
+        firstDayOfWeek: s.firstDayOfWeek,
+      });
+    }
+    const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
+    return !isMoments(picked) && sameRange(picked, { start: chosen.start, end: chosen.end });
   }
 
   const isBuiltIn = (name: string): name is PresetName => (BUILT_IN as string[]).includes(name) || [
@@ -736,6 +848,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       range = createDateRange(rangeHost, {
         injectStyles: false,
         onChange: ({ start, end }) => {
+          presetShift = null; // chosen by hand now, so no preset rule applies
           if (bounds !== 'between') {
             // One end only: every click is a fresh answer, and the one just
             // pressed is whichever of the two the calendar reports as new.

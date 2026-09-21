@@ -26,6 +26,7 @@
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
 | `today` | `PlainDate` | `Temporal.Now.plainDateISO()` | Which day is today. Settable so a test does not depend on the day it runs. |
+| `now` | `Instant \| null` | `null` | The moment the ranges shorter than a day are counted from. The clock, unless a test or a page rendered ahead of time needs it fixed. |
 | `disabled` | `boolean` | `false` | Nothing can be chosen while this is set. |
 | `format` | `string \| undefined` | — | A pattern for each end — `yyyy-MM-dd`. The locale's own form otherwise. |
 | `displayWith` | `((value: RangeFieldValue, timeZone: string) => string) \| undefined` | — | The last word on the text the field shows. |

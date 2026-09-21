@@ -288,11 +288,12 @@ function parisAt(iso: string): Instant {
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
                         [openEnded]="openEnded()"
-                        [presets]="['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth', 'lastMonth']" />
+                        [presets]="['thisQuarterHour', 'thisHour', 'thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
-          Les flèches ‹ › décalent la période entière d'un cran — un trimestre par trimestre,
-          sept jours par sept jours. Elles n'apparaissent que si on les demande.
+          Les flèches ‹ › décalent la période entière d'un cran, et c'est le raccourci choisi
+          qui donne le pas : le quart d'heure courant se décale de quinze minutes, un trimestre
+          de trimestre en trimestre. Elles n'apparaissent que si on les demande.
         </p>
       </section>
 

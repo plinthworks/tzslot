@@ -18,13 +18,24 @@ let field: RangeFieldInstance;
 const panel = () => document.querySelector('.tz-field__panel')!;
 const input = (edge: 0 | 1) =>
   panel().querySelectorAll<HTMLInputElement>('.tz-dateinput__input')[edge]!;
-/** Typing into one of the two fields, the way a reader does. */
+/** Typing a day into one of the two fields, the way a reader does. */
 const type = (edge: 0 | 1, text: string) => {
   const node = input(edge);
   node.focus();
   node.value = text;
   node.dispatchEvent(new Event('input', { bubbles: true }));
   node.dispatchEvent(new Event('blur'));
+};
+/** And setting its hour, which has a field of its own beside the day. */
+const setHour = (edge: 0 | 1, clock: string) => {
+  const box = panel().querySelectorAll('.tz-dateinput')[edge]!;
+  for (const [part, value] of [['hour', clock.slice(0, 2)], ['minute', clock.slice(3)]] as const) {
+    const node = box.querySelector<HTMLInputElement>(`.tz-time__input[data-part="${part}"]`)!;
+    node.focus();
+    node.value = value;
+    node.dispatchEvent(new Event('input', { bubbles: true }));
+    node.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+  }
 };
 const readings = () =>
   [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__extra')].map((box) =>
@@ -66,9 +77,9 @@ describe('the morning an hour happens twice', () => {
     field.open();
     expect(readings()[0]).toEqual([]); // 00:00 happens once
 
-    type(0, '25/10/2026 01:00');
+    setHour(0, '01:00');
     expect(readings()[0]).toEqual([]);
-    type(0, '25/10/2026 02:00'); // and there are two of those
+    setHour(0, '02:00'); // and there are two of those
     expect(readings()[0]).toEqual(['été', 'hiver']);
     expect(startAt()).toBe('2026-10-25T02:00+02:00[Europe/Paris]'); // summer, offered first
 
@@ -76,7 +87,7 @@ describe('the morning an hour happens twice', () => {
     expect(startAt()).toBe('2026-10-25T02:00+01:00[Europe/Paris]'); // winter, chosen
     expect(readings()[0]).toEqual(['été', 'hiver']); // and the choice stays on screen
 
-    type(0, '25/10/2026 03:00'); // ordinary again
+    setHour(0, '03:00'); // ordinary again
     expect(readings()[0]).toEqual([]);
   });
 
@@ -107,7 +118,7 @@ describe('the morning an hour does not happen', () => {
     field.open();
     expect(startAt()).toBe('2026-03-29T01:00+01:00[Europe/Paris]');
 
-    type(0, '29/03/2026 02:00'); // never happens that morning
+    setHour(0, '02:00'); // never happens that morning
     expect(startAt()).toBe('2026-03-29T03:00+02:00[Europe/Paris]');
     expect(readings()[0]).toEqual([]);
   });

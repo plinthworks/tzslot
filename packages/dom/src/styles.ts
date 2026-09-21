@@ -726,6 +726,9 @@ export const DATEINPUT_CSS = `
   opacity: 0.6;
 }
 .tz-dateinput__label[hidden] { display: none; }
+/* The same field as everywhere else in the library — same border, same
+   radius, same ground — because one of these sitting next to a tz-field that
+   looks different reads as a mistake. */
 .tz-dateinput__row {
   display: inline-flex;
   align-items: center;
@@ -734,15 +737,19 @@ export const DATEINPUT_CSS = `
   background: var(--tz-field-bg, var(--tz-bg, transparent));
   min-width: 0;
 }
+.tz-dateinput__row:focus-within { border-color: var(--tz-accent, currentColor); }
 .tz-dateinput__input {
-  flex: 1 1 auto;
+  flex: 0 1 auto;
   min-width: 0;
-  width: 9rem;
+  /* Wide enough for the longest date the locale writes, and no wider: a field
+     stretched across the panel invites text that does not belong in it. */
+  width: 8.5rem;
+  box-sizing: border-box;
   border: 0;
   background: transparent;
   color: var(--tz-field-fg, var(--tz-fg, inherit));
   font: var(--tz-font, inherit);
-  padding: 0.4rem 0.55rem;
+  padding: var(--tz-field-padding, 0.5rem 0.75rem);
 }
 .tz-dateinput__input:focus { outline: none; }
 .tz-dateinput__input:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -766,17 +773,31 @@ export const DATEINPUT_CSS = `
   border-color: var(--tz-accent, currentColor);
   box-shadow: 0 0 0 2px var(--tz-ring, color-mix(in srgb, var(--tz-accent, currentColor) 35%, transparent));
 }
+/* The hour beside the day, not on a row of its own: one field, two halves.
+   It brings its own frame everywhere else; here the field is the frame. */
+.tz-dateinput__time { padding-right: 0.3rem; }
+.tz-dateinput__time .tz-time { gap: 0; }
+.tz-dateinput__time .tz-time__field { border: 0; background: transparent; }
+.tz-dateinput__time .tz-time__input { width: 1.8rem; padding: 0.2rem 0; text-align: center; }
+.tz-dateinput__time .tz-time__arrow { padding: 0 0.2rem; font-size: 0.65em; border: 0; }
+.tz-dateinput__time .tz-time__separator { padding: 0 0.1rem; }
+.tz-dateinput__time[hidden] { display: none; }
 .tz-dateinput__extra:empty { display: none; }
 .tz-dateinput__extra { display: flex; gap: 0.375rem; margin-top: 0.15rem; }
 `;
 
 export const RANGEFIELD_CSS = `
 .tz-rangefield__panel { display: grid; gap: 0.75rem; }
+/* The dates and their arrows are one thing; the calendar and its shortcuts
+   are another. Without a line between them the panel reads as one long column
+   of controls. */
 .tz-rangefield__head {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
   gap: 0.75rem 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
 }
 /* The two fields sit side by side, with whatever separates them between
    them — a word, an arrow, nothing. They drop onto two lines only when the

@@ -106,7 +106,9 @@ describe('asking for one end only', () => {
     });
     expect(shown()).toBe('From 14/09/2026 09:00');
     field.open();
-    expect(input(0).value).toBe('14/09/2026 09:00');
+    expect(input(0).value).toBe('14/09/2026');
+    const hour = panel().querySelector<HTMLInputElement>('.tz-dateinput .tz-time__input[data-part="hour"]')!;
+    expect(hour.value).toBe('09'); // the hour has its own field beside the day
   });
 
   it('an imposed step moves the single end, and “auto” falls back to a day', () => {
@@ -234,8 +236,9 @@ describe('the hours live in the two fields now', () => {
     expect(input(0).value).toBe('14/09/2026'); // whole days to start with
 
     panel().querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
-    expect(input(0).value).toBe('14/09/2026 00:00');
-    expect(input(1).value).toBe('20/09/2026 00:00');
+    expect(input(0).value).toBe('14/09/2026'); // the day stays where it was
+    const hours = [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__time')];
+    expect(hours.map((h) => h.hidden)).toEqual([false, false]); // and both hours appear
   });
 });
 

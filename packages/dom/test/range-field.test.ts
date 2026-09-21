@@ -103,7 +103,8 @@ describe('with times', () => {
     const fields = panel()!.querySelectorAll<HTMLInputElement>('.tz-dateinput__input');
     expect(fields.length).toBe(2); // one per end, the hour inside it
     expect(panel()!.querySelector('.tz-dtr__allday-box')!.getAttribute('aria-checked')).toBe('true');
-    expect(panel()!.querySelectorAll('.tz-time__input').length).toBe(0); // no separate row any more
+    // The hour lives inside each field now, not on a row of its own.
+    expect(panel()!.querySelectorAll('.tz-rangefield__times').length).toBe(0);
   });
 
   it('a time typed into a field turns the range into moments', () => {
@@ -114,11 +115,11 @@ describe('with times', () => {
     day('2026-09-22').click();
     panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
 
-    const from = panel()!.querySelector<HTMLInputElement>('.tz-dateinput__input')!;
-    from.focus();
-    from.value = '21/09/2026 09:00';
-    from.dispatchEvent(new Event('input', { bubbles: true }));
-    from.dispatchEvent(new Event('blur'));
+    const hour = panel()!.querySelector<HTMLInputElement>('.tz-dateinput .tz-time__input[data-part="hour"]')!;
+    hour.focus();
+    hour.value = '09';
+    hour.dispatchEvent(new Event('input', { bubbles: true }));
+    hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
     const value = onChange.mock.calls.at(-1)![0];
     expect(value.allDay).toBe(false);
@@ -168,5 +169,33 @@ describe('words', () => {
     field.open();
     expect(presets().map((b) => b.textContent)).toContain('7 derniers jours');
     expect(panel()!.querySelector('.tz-rangefield__preset')!.textContent).toBe("Aujourd'hui");
+  });
+});
+
+describe('the panel reads as two halves', () => {
+  it('the dates are ruled off from the calendar and its shortcuts', () => {
+    mount({ showTime: true });
+    field.open();
+    const head = panel()!.querySelector('.tz-rangefield__head')!;
+    // Both fields and the whole-day switch belong to the first half…
+    expect(head.querySelectorAll('.tz-dateinput').length).toBe(2);
+    expect(head.querySelector('.tz-dtr__allday')).not.toBeNull();
+    // …and the calendar and its shortcuts to the second.
+    expect(head.querySelector('.tz-range__grid')).toBeNull();
+    expect(head.querySelector('.tz-rangefield__presets')).toBeNull();
+    const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
+    expect(css).toContain('.tz-rangefield__head');
+    expect(css).toMatch(/\.tz-rangefield__head[^}]*border-bottom/);
+  });
+
+  it('the hour sits inside its field, framed by it and not by itself', () => {
+    mount({ showTime: true });
+    field.open();
+    day('2026-09-21').click();
+    panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
+    const inside = panel()!.querySelector('.tz-dateinput__row .tz-dateinput__time.tz-time .tz-time__field');
+    expect(inside).not.toBeNull(); // the hour is in the field, not on a row below
+    const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
+    expect(css).toContain('.tz-dateinput__time .tz-time__field { border: 0; background: transparent; }');
   });
 });

@@ -30,7 +30,15 @@ import {
 } from './zone-names.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { DATETIME_CSS, FIELD_CSS, RANGEFIELD_CSS, RANGE_CSS, TIME_CSS, ensureStyles } from './styles.js';
+import {
+  DATEINPUT_CSS,
+  DATETIME_CSS,
+  FIELD_CSS,
+  RANGEFIELD_CSS,
+  RANGE_CSS,
+  TIME_CSS,
+  ensureStyles,
+} from './styles.js';
 
 /** What the field holds: two moments, and whether they are whole days. */
 export interface RangeFieldValue {
@@ -698,6 +706,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         inputs[edge].update({
           value: wallOf(edge),
           withTime: s.showTime && !wholeDays(),
+          stepMinutes: s.stepMinutes,
+          date: edge === 'start' ? days(draft).start : days(draft).end,
+          timeZone: s.timeZone,
           format: s.format,
           locale: s.locale,
           mask: s.mask,
@@ -825,6 +836,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
       ensureStyles(node, 'range', RANGE_CSS);
       ensureStyles(node, 'time', TIME_CSS);
+      ensureStyles(node, 'dateinput', DATEINPUT_CSS);
       ensureStyles(node, 'datetime', DATETIME_CSS);
 
       if (currentStep() !== null) {

@@ -1,5 +1,6 @@
 import { Temporal } from '@tzslot/core';
 import type { PlainDate, PlainTime } from '@tzslot/core';
+import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATEINPUT_CSS, ensureStyles } from './styles.js';
@@ -12,8 +13,17 @@ export interface WallValue {
 
 export interface DateInputSettings {
   value: WallValue;
-  /** Whether a time is part of it. False leaves a date alone. */
+  /**
+   * Whether a time is part of it. The day is typed; the hour gets the compact
+   * field with arrows beside it, which is how every other widget here asks
+   * for one — and an hour is stepped far more often than it is typed.
+   */
   withTime: boolean;
+  /** What the hour's arrows move by. */
+  stepMinutes: number;
+  /** The day the hour belongs to, so its arrows can step over a missing one. */
+  date: PlainDate | null;
+  timeZone: string | undefined;
   /** A pattern of your own. The locale's numeric form otherwise. */
   format: string | undefined;
   locale: string | undefined;
@@ -70,6 +80,9 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   const s: DateInputSettings = {
     value: EMPTY,
     withTime: false,
+    stepMinutes: 30,
+    date: null,
+    timeZone: undefined,
     format: undefined,
     locale: undefined,
     mask: true,
@@ -100,17 +113,18 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   input.type = 'text';
   input.className = 'tz-dateinput__input';
   input.autocomplete = 'off';
+  const timeHost = el('div', 'tz-dateinput__time');
   const clear = doc.createElement('button');
   clear.type = 'button';
   clear.className = 'tz-dateinput__clear';
   clear.textContent = '×';
   const extra = el('div', 'tz-dateinput__extra');
-  row.append(input, clear);
+  row.append(input, timeHost, clear);
+  let time: TimeInputInstance | null = null;
   host.append(caption, row, extra);
 
-  const pattern = () => s.format ?? patternFor(s.locale, { time: s.withTime });
-  const written = () =>
-    s.value.date || s.value.time ? formatWith(pattern(), { date: s.value.date, time: s.value.time }, s.locale) : '';
+  const pattern = () => s.format ?? patternFor(s.locale);
+  const written = () => (s.value.date ? formatWith(pattern(), { date: s.value.date }, s.locale) : '');
   const beingTyped = () => doc.activeElement === input;
 
   function settle(value: WallValue): void {
@@ -148,7 +162,9 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     input.removeAttribute('aria-invalid');
     settle({
       date: parsed.date,
-      time: s.withTime ? (parsed.time ?? Temporal.PlainTime.from('00:00')) : null,
+      // A day typed where an hour is expected starts at midnight, and an hour
+      // already chosen is not thrown away by retyping the day under it.
+      time: s.withTime ? (parsed.time ?? s.value.time ?? Temporal.PlainTime.from('00:00')) : null,
     });
     return true;
   }
@@ -168,6 +184,23 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     input.disabled = s.disabled;
     // A picture above the field says nothing to a screen reader.
     input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
+    timeHost.hidden = !s.withTime;
+    if (s.withTime && !time) {
+      time = createTimeInput(timeHost, {
+        injectStyles: false,
+        variant: 'boxed', // framed by the field around it, not by itself
+        onChange: (picked) => settle({ date: s.value.date, time: picked }),
+      });
+    }
+    time?.update({
+      value: s.withTime ? s.value.time : null,
+      stepMinutes: s.stepMinutes,
+      locale: s.locale,
+      messages: s.messages,
+      disabled: s.disabled || s.value.date === null,
+      date: s.date ?? s.value.date,
+      timeZone: s.timeZone,
+    });
     clear.hidden = !s.clearable;
     clear.disabled = s.disabled || (s.value.date === null && s.value.time === null);
     clear.setAttribute('aria-label', s.messages.clearField);
@@ -240,6 +273,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     },
     destroy() {
       listening.abort();
+      time?.destroy();
       caption.remove();
       row.remove();
       extra.remove();

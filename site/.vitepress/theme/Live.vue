@@ -22,7 +22,16 @@ const props = withDefaults(
 );
 
 const stage = ref<HTMLElement>();
-const held = ref('nothing chosen');
+/**
+ * The words follow the page.
+ *
+ * `locale` decides what Intl writes — month names, the order of a date — and
+ * nothing else: everything the library says itself comes from a bundle. A
+ * French page showing a widget labelled "From / To" is the page failing to
+ * say which of the two it is demonstrating.
+ */
+const french = () => typeof window !== 'undefined' && window.location.pathname.includes('/fr/');
+const held = ref(french() ? 'rien choisi' : 'nothing chosen');
 const instance = shallowRef<{ destroy(): void } | null>(null);
 
 onMounted(() => {
@@ -31,6 +40,7 @@ onMounted(() => {
     | undefined;
   if (!create || !stage.value) return;
   instance.value = create(stage.value, {
+    ...(french() ? { locale: 'fr-FR', messages: tzslot.FR } : {}),
     ...props.options,
     onChange: (value: unknown) => {
       held.value = props.show ? props.show(value) : describe(value);
@@ -42,8 +52,9 @@ onBeforeUnmount(() => instance.value?.destroy());
 
 /** Whatever a widget hands back, in one line a reader can compare with theirs. */
 function describe(value: unknown): string {
-  if (value === null || value === undefined) return 'nothing chosen';
-  if (Array.isArray(value)) return value.length ? value.map(describe).join(', ') : 'nothing chosen';
+  const nothing = french() ? 'rien choisi' : 'nothing chosen';
+  if (value === null || value === undefined) return nothing;
+  if (Array.isArray(value)) return value.length ? value.map(describe).join(', ') : nothing;
   // A Temporal value is an object that knows how to write itself; only a plain
   // one gets taken apart, or a date would read as "{ }".
   if (typeof value === 'object' && value.toString !== Object.prototype.toString) {

@@ -17,6 +17,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
@@ -49,12 +50,15 @@ export type { FieldMode } from '@tzslot/dom';
   template: `<span #icon hidden><ng-content select="[tzIcon]" /></span>`,
 })
 export class DateField implements ControlValueAccessor, AfterViewInit {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   readonly value = model<PlainDate | null>(null);
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
-  readonly locale = input<string | undefined>(undefined);
-  readonly firstDayOfWeek = input<Weekday>(1);
+  readonly locale = input<string | undefined>(this.defaults.locale);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
@@ -65,14 +69,14 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
    * existing FormControl<Date> keep working untouched, which is the whole of a
    * flatpickr migration on most screens.
    */
-  readonly valueAs = input<ValueShape>('temporal');
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
 
   /**
    * The zone used to turn a Date into a calendar day and back. Only consulted
    * when valueAs is 'date': which day an instant falls on depends on where you
    * are standing, so it is explicit rather than guessed.
    */
-  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
+  readonly valueTimeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
 
   /** How the chosen date is written in the field. Defaults to the locale's medium form. */
   readonly displayWith = input<((date: PlainDate) => string) | undefined>(undefined);

@@ -133,6 +133,43 @@ hours, not 168, because one of those days had twenty-five.
 costs something. `presets: []` removes the column, and your own are
 `{ name, label, range: (today) => ({ start, end }) }`.
 
+## Stepping a period
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  locale: 'en-GB',
+  presets: ['thisQuarter', 'lastQuarter', 'nextQuarter'],
+  shift: 'auto',
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, shift: 'auto', presets: ['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth'] }" />
+
+A report is read by comparing: this quarter against the one before, this week
+against the last. Through a calendar that is four clicks. The arrows make it
+one, and they appear only where you ask for them — a field that means one
+chosen day has nothing to step through.
+
+`'auto'` moves by what is selected, and that is not the same as moving by its
+length in days. The third quarter of 2026 is 92 days long; stepping back 92
+days from 1 July lands on 31 March — one day early, and drifting further on
+every press. A period made of whole months moves by months instead, so a
+quarter stays a quarter and a month keeps its own last day. Anything else
+moves by its length, where nothing can drift.
+
+A fixed step is a duration: `shift: { months: 3 }`, `{ days: 7 }`. And on a
+single moment — `createDateTimeField` — the step is always explicit, because
+one moment has no length of its own to follow:
+
+```js
+createDateTimeField(element, { timeZone: 'Europe/Paris', shift: { hours: 1 } });
+```
+
+It is counted on the zone's clocks, not in milliseconds: an hour after the
+first 02:30 on 25 October in Paris is the *second* 02:30, and a day after
+15:00 that afternoon is 15:00 the next day — twenty-five hours later.
+
 ## A whole day, or an interval
 
 ```js

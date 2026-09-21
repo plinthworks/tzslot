@@ -270,8 +270,13 @@ function parisAt(iso: string): Instant {
           affichés côte à côte.
         </p>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
-                        [showTime]="true" [weekNumbers]="true" />
+                        [showTime]="true" [weekNumbers]="true" [shift]="'auto'"
+                        [presets]="['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth', 'lastMonth']" />
         <p class="note">{{ periodText() }}</p>
+        <p class="note">
+          Les flèches ‹ › décalent la période entière d'un cran — un trimestre par trimestre,
+          sept jours par sept jours. Elles n'apparaissent que si on les demande.
+        </p>
       </section>
 
       <section class="block">
@@ -296,8 +301,12 @@ function parisAt(iso: string): Instant {
         </div>
         <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="locale"
                            [timeLayout]="fieldLayout()" [stepMinutes]="30" [minuteStep]="5"
-                           [format]="format()" [buttons]="['today', 'clear']" />
+                           [format]="format()" [buttons]="['today', 'clear']" [shift]="{ hours: 1 }" />
         <p class="note">{{ momentText() }}</p>
+        <p class="note">
+          Les flèches avancent d'une heure réelle : le 25 octobre, une heure après 02:30 est
+          le second 02:30, pas 03:30.
+        </p>
       </section>
 
       <section class="block">

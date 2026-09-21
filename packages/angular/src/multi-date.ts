@@ -16,6 +16,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
@@ -46,14 +47,17 @@ import {
   `,
 })
 export class MultiDate implements ControlValueAccessor, AfterViewInit {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   /** The chosen days, in date order. Two-way: `[(value)]`. */
   readonly value = model<readonly PlainDate[]>([]);
 
   /** Once this many are chosen, the other days stop taking clicks. */
   readonly maxDates = input<number | undefined>(undefined);
 
-  readonly firstDayOfWeek = input<Weekday>(1);
-  readonly locale = input<string | undefined>(undefined);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly disabled = input(false);
@@ -67,9 +71,9 @@ export class MultiDate implements ControlValueAccessor, AfterViewInit {
   readonly buttons = input<readonly CalendarButton[]>([]);
 
   /** What the form control holds, each day as a Temporal date, a Date, or an ISO string. */
-  readonly valueAs = input<ValueShape>('temporal');
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
   /** The zone a Date is read in. Only consulted when valueAs is 'date'. */
-  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
+  readonly valueTimeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
 
   protected readonly formDisabled = signal(false);
   private readonly host: HTMLElement = inject(ElementRef).nativeElement;

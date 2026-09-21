@@ -576,13 +576,30 @@ export const TIME_CSS = `
 }
 .tz-time--bare .tz-time__input {
   width: 2.75rem;
-  padding: 0.35rem 0.1rem;
+  padding: 0.15rem 0.1rem;
+  font-size: 1.25em;
   font-weight: 600;
 }
-.tz-time--bare .tz-time__arrows { opacity: 0; transition: opacity 120ms ease; }
-.tz-time--bare .tz-time__field:hover .tz-time__arrows,
-.tz-time--bare .tz-time__field:focus-within .tz-time__arrows { opacity: 1; }
-.tz-time--bare .tz-time__arrow { border: 0; opacity: 0.6; }
+/* In a panel there is room, so the arrows go where a hand expects them: one
+   above the figures and one below, standing on their own. Nothing moves in
+   the DOM for this — the column is made here, so the reading order stays
+   input-then-arrows for a screen reader. */
+.tz-time--bare .tz-time__field { flex-direction: column; gap: 0.1rem; }
+.tz-time--bare .tz-time__arrows { display: contents; }
+.tz-time--bare .tz-time__arrow {
+  border: 0;
+  opacity: 0.55;
+  padding: 0.1rem 0.75rem;
+  font-size: 0.8em;
+  line-height: 1;
+  border-radius: var(--tz-radius, 0.375rem);
+}
+.tz-time--bare .tz-time__arrow--up { order: -1; }
+.tz-time--bare .tz-time__arrow:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent));
+}
+.tz-time--bare .tz-time__separator { align-self: center; }
 .tz-time--bare .tz-time__meridiem {
   border: 0;
   background: transparent;

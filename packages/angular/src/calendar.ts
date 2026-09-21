@@ -16,6 +16,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal, toPlainDate, fromPlainDate } from '@tzslot/core';
 import type { PlainDate, Weekday, ValueShape, DateLike } from '@tzslot/core';
@@ -53,14 +54,17 @@ export type { CalendarView } from '@tzslot/dom';
   `,
 })
 export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   /** The selected day. Two-way: `[(value)]`. */
   readonly value = model<PlainDate | null>(null);
 
   /** Monday by default, as ISO-8601 numbers the week. */
-  readonly firstDayOfWeek = input<Weekday>(1);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
 
   /** A BCP-47 tag for the month and weekday names. Defaults to the browser's. */
-  readonly locale = input<string | undefined>(undefined);
+  readonly locale = input<string | undefined>(this.defaults.locale);
 
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
@@ -71,14 +75,14 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
    * existing FormControl<Date> keep working untouched, which is the whole of a
    * flatpickr migration on most screens.
    */
-  readonly valueAs = input<ValueShape>('temporal');
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
 
   /**
    * The zone used to turn a Date into a calendar day and back. Only consulted
    * when valueAs is 'date': which day an instant falls on depends on where you
    * are standing, so it is explicit rather than guessed.
    */
-  readonly valueTimeZone = input<string>(Temporal.Now.timeZoneId());
+  readonly valueTimeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
 
   /** Rules out individual days inside the range: closures, weekends, full days. */
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);

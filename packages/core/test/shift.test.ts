@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { Temporal, presetRange, shiftDayRange, shiftInstant, shiftDate } from '../src/index.js';
+import type { PlainDate } from '../src/index.js';
 
 const day = (iso: string) => Temporal.PlainDate.from(iso);
 const today = day('2026-09-21');
-const span = (r: { start: Temporal.PlainDate; end: Temporal.PlainDate }) =>
+const span = (r: { start: PlainDate; end: PlainDate }) =>
   `${r.start.toString()}…${r.end.toString()}`;
 
 describe('quarters', () => {

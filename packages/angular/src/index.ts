@@ -7,6 +7,8 @@
  */
 export { TimeSlotPicker } from './time-slot-picker.js';
 export { TZSLOT_MESSAGES, provideTzslotMessages, EN, FR } from './messages.js';
+export { TZSLOT_DEFAULTS, provideTzslot } from './defaults.js';
+export type { TzslotDefaults } from './defaults.js';
 export type { TzslotMessages } from './messages.js';
 export { Calendar } from './calendar.js';
 export type { CalendarView } from './calendar.js';

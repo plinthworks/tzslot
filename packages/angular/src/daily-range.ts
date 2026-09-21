@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal } from '@tzslot/core';
 import type { DailyWindowsSummary, PlainDate, Weekday } from '@tzslot/core';
@@ -44,10 +45,18 @@ const EMPTY: DailyRangeValue = { start: null, end: null, from: null, to: null };
   template: '',
 })
 export class DailyRange implements ControlValueAccessor {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   readonly value = model<DailyRangeValue>(EMPTY);
 
-  /** An IANA identifier. The hours are read on the clocks of this zone. */
-  readonly timeZone = input.required<string>();
+  /**
+   * An IANA identifier. Required in spirit: given here, it wins; left out, it
+   * is the zone provideTzslot() settled for the application, and only when
+   * nothing was settled anywhere does it fall back to the browser's — which
+   * is a guess, and the one thing this library exists not to do silently.
+   */
+  readonly timeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
   readonly stepMinutes = input(30);
 
   /** 'input' (default) for two compact fields, 'list' for times to click. */
@@ -61,8 +70,8 @@ export class DailyRange implements ControlValueAccessor {
   /** The first and last times offered. */
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
-  readonly firstDayOfWeek = input<Weekday>(1);
-  readonly locale = input<string | undefined>(undefined);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);

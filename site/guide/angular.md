@@ -108,8 +108,29 @@ screens:
 | `valueAs` | The control holds |
 |---|---|
 | `'temporal'` (default) | `PlainDate` or `Instant` |
+| `'utc'` | a string, always an instant: `2026-09-20T07:30:00Z` — a date-only field gives the midnight that opens the day |
 | `'date'` | a `Date` — read in `valueTimeZone`, which is required to be explicit because an instant's day depends on where you stand |
 | `'iso'` | a string: `2026-09-20`, or `2026-09-20T07:30:00Z` |
+
+## Settling the conventions once
+
+A zone, a locale, the shape values leave in: decisions about the application,
+not about the field. `provideTzslot` sets them for every component, and
+anything written on a tag still wins.
+
+```ts
+import { provideTzslot, FR } from '@tzslot/angular';
+
+bootstrapApplication(App, {
+  providers: [
+    provideTzslot({ valueAs: 'utc', timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR }),
+  ],
+});
+```
+
+`timeZone` given here is the zone every component reads in, so it stops being
+required on the tag. [What you get back](./values) explains the shapes, and
+why whole days end at the midnight *after* the last one.
 
 ## Words
 

@@ -16,6 +16,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal } from '@tzslot/core';
 import type { PlainDate, Weekday } from '@tzslot/core';
@@ -45,10 +46,13 @@ const EMPTY: DateRangeValue = { start: null, end: null };
   `,
 })
 export class DateRange implements ControlValueAccessor, AfterViewInit {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   readonly value = model<DateRangeValue>(EMPTY);
 
-  readonly firstDayOfWeek = input<Weekday>(1);
-  readonly locale = input<string | undefined>(undefined);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly disabled = input(false);

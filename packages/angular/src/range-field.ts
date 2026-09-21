@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal } from '@tzslot/core';
 import type { PlainDate, PresetName, Weekday } from '@tzslot/core';
@@ -27,6 +28,8 @@ import {
   type RangePreset,
   type RenderCell,
 } from '@tzslot/dom';
+
+import type { ShiftStep } from '@tzslot/core';
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
@@ -47,10 +50,18 @@ const EMPTY: RangeFieldValue = { start: null, end: null, allDay: true };
   template: '',
 })
 export class RangeField implements ControlValueAccessor {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   readonly value = model<RangeFieldValue>(EMPTY);
 
-  /** An IANA identifier. Days become moments on this zone's clocks. */
-  readonly timeZone = input.required<string>();
+  /**
+   * An IANA identifier. Required in spirit: given here, it wins; left out, it
+   * is the zone provideTzslot() settled for the application, and only when
+   * nothing was settled anywhere does it fall back to the browser's — which
+   * is a guess, and the one thing this library exists not to do silently.
+   */
+  readonly timeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
 
   /** Named ranges beside the calendar: the built-in names, or your own. */
   readonly presets = input<readonly (PresetName | RangePreset)[]>([
@@ -67,13 +78,19 @@ export class RangeField implements ControlValueAccessor {
   readonly stepMinutes = input(30);
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
+  /**
+   * Arrows that step the whole period without opening the panel. `false` —
+   * the default — draws none. `'auto'` moves by what is selected; a duration
+   * such as `{ months: 3 }` imposes the step.
+   */
+  readonly shift = input<ShiftStep | false>(false);
   readonly months = input(2);
   readonly weekNumbers = input(false);
-  readonly firstDayOfWeek = input<Weekday>(1);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
-  readonly locale = input<string | undefined>(undefined);
+  readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
@@ -101,6 +118,7 @@ export class RangeField implements ControlValueAccessor {
     showTime: this.showTime(),
     stepMinutes: this.stepMinutes(),
     confirm: this.confirm(),
+    shift: this.shift(),
     months: this.months(),
     weekNumbers: this.weekNumbers(),
     firstDayOfWeek: this.firstDayOfWeek(),

@@ -17,9 +17,19 @@ import {
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal, toInstant, fromInstant } from '@tzslot/core';
-import type { Instant, InstantLike, PlainDate, PlainTime, Slot, ValueShape, Weekday } from '@tzslot/core';
+import type {
+  DurationLike,
+  Instant,
+  InstantLike,
+  PlainDate,
+  PlainTime,
+  Slot,
+  ValueShape,
+  Weekday,
+} from '@tzslot/core';
 import {
   createDateTimeField,
   type CalendarButton,
@@ -48,24 +58,38 @@ import {
   template: `<span #icon hidden><ng-content select="[tzIcon]" /></span>`,
 })
 export class DateTimeField implements ControlValueAccessor, AfterViewInit {
+  /** Set once for the application with provideTzslot(); a binding still wins. */
+  private readonly defaults = inject(TZSLOT_DEFAULTS);
+
   readonly value = model<Instant | null>(null);
 
-  /** An IANA identifier. The date and the time are read on this zone's clocks. */
-  readonly timeZone = input.required<string>();
+  /**
+   * An IANA identifier. Required in spirit: given here, it wins; left out, it
+   * is the zone provideTzslot() settled for the application, and only when
+   * nothing was settled anywhere does it fall back to the browser's — which
+   * is a guess, and the one thing this library exists not to do silently.
+   */
+  readonly timeZone = input<string>(this.defaults.timeZone ?? Temporal.Now.timeZoneId());
 
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
-  readonly locale = input<string | undefined>(undefined);
-  readonly firstDayOfWeek = input<Weekday>(1);
+  readonly locale = input<string | undefined>(this.defaults.locale);
+  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
 
   /** 'input' (default) for a compact time field, 'list' for the day's times. */
   readonly timeLayout = input<TimeLayout>('input');
+  /**
+   * Arrows beside the field that step the chosen moment without opening the
+   * panel: `{ hours: 1 }`, `{ days: 1 }`. `false` — the default — draws none.
+   * Counted on the zone's clocks, so a day is 23 or 25 hours when they change.
+   */
+  readonly shift = input<DurationLike | false>(false);
   readonly stepMinutes = input(30);
-  /** With timeLayout 'columns': minutes between the options. Every minute by default. */
+  /** With timeLayout 'select': minutes between the options. Every minute by default. */
   readonly minuteStep = input(1);
   readonly minTime = input<PlainTime | string | undefined>(undefined);
   readonly maxTime = input<PlainTime | string | undefined>(undefined);
@@ -101,7 +125,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly buttons = input<readonly CalendarButton[]>([]);
 
   /** What the form control holds: a Temporal Instant, a Date, or an ISO string. */
-  readonly valueAs = input<ValueShape>('temporal');
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
 
   readonly opened = output<void>();
   readonly closed = output<void>();
@@ -128,6 +152,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     max: this.max(),
     isDateDisabled: this.isDateDisabled(),
     timeLayout: this.timeLayout(),
+    shift: this.shift(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
     minTime: this.minTime(),

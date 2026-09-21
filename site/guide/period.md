@@ -53,10 +53,30 @@ below.
 
 ## Whole days, or an interval
 
-The switch marked *All day* says which one you are holding, and the value
-carries it as `allDay`. Whole days run from the midnight that opens the first
-to **the midnight after the last** — the exclusive end explained in
+`showTime` decides, and the reader never has to. A switch marked *All day*
+asked them to classify their own answer before giving it, and left them
+wondering what the hours they could see were for.
+
+With `showTime: false` a period is whole days: the midnight that opens the
+first to **the midnight after the last**, the exclusive end explained in
 [What you get back](./values#whole-days-allday-and-the-end-you-don-t-see).
+
+With `showTime: true` every chosen day carries an hour, midnight unless the
+screen says otherwise:
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  defaultTimes: { start: '09:00', end: '18:00' },
+});
+```
+
+A value handed to the field keeps its own hours — `defaultTimes` is only for
+days picked afterwards — so a screen can open on a period it worked out
+itself. And a shortcut named in days still means those days entirely: *This
+quarter* ends at the midnight after 30 September, not at 30 September 00:00,
+which would quietly drop the last day of it.
 
 ## One end, or none
 
@@ -182,10 +202,11 @@ word is still read out to a screen reader whatever is drawn.
 ## The two mornings a year
 
 On the morning the clocks go back, an hour happens twice, and a field reading
-`02:30` could be either of them. The panel offers both readings under the
-field concerned — *summer* and *winter*, named rather than numbered, because
+`02:30` could be either of them. Both are named rather than numbered, because
 "heure d'été" is something a person can answer and `+02:00` is something they
-have to work out — and the closed field says which was chosen:
+have to work out. The menus carry them in the list itself — `02 — winter` —
+and the figures, which cannot, get a pair of buttons under the field instead.
+Either way the closed field says which was chosen:
 
 ```
 25/10/2026 00:00 – 25/10/2026 02:30 (winter)

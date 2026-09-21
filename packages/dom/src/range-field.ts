@@ -120,8 +120,14 @@ export interface RangeFieldSettings {
   openEnded: boolean;
   /** Times as well as days, with a switch back to whole days. */
   showTime: boolean;
-  /** Minutes the time fields step by. */
+  /** Minutes the hour's arrows step by. */
   stepMinutes: number;
+  /**
+   * Minutes between the options of the hour menu. Every minute by default:
+   * a menu that offered only the half hours would have nothing to show for a
+   * time already set to 00:15, and would show an empty box instead.
+   */
+  minuteStep: number;
   /** Nothing is reported until Apply is pressed. For searches that cost. */
   confirm: boolean;
   /**
@@ -250,6 +256,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     openEnded: false,
     showTime: false,
     stepMinutes: 30,
+    minuteStep: 1,
     confirm: false,
     shift: false,
     months: 2,
@@ -829,6 +836,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           withTime: s.showTime && !wholeDays(),
           timeLayout: s.timeLayout,
           stepMinutes: s.stepMinutes,
+          minuteStep: s.minuteStep,
           date: edge === 'start' ? days(draft).start : days(draft).end,
           timeZone: s.timeZone,
           format: s.format,

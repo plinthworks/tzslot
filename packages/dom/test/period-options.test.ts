@@ -177,3 +177,24 @@ describe('a length never destroys a period it was given', () => {
     expect(shown()).toBe('18/09/2026 10:00 – 18/09/2026 12:00');
   });
 });
+
+describe('the hour menu always has the hour it is showing', () => {
+  it('a time off the step grid is still one of the options', () => {
+    // Seen on the screen as an empty minute box: the menu was built from
+    // stepMinutes (thirty), so a period sitting at 00:15 had nothing to
+    // select and showed a blank.
+    make({ showTime: true, stepMinutes: 30 });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-20T22:15:00Z'), // 00:15 in Paris
+        end: Temporal.Instant.from('2026-09-21T22:15:00Z'),
+        allDay: false,
+      },
+    });
+    field.open();
+    const minutes = panel()
+      .querySelector('.tz-dateinput')!
+      .querySelectorAll<HTMLSelectElement>('.tz-dateinput__time .tz-timeselect__menu')[1]!;
+    expect(minutes.selectedOptions[0]!.textContent).toBe('15');
+  });
+});

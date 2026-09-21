@@ -101,6 +101,8 @@ export class RangeField implements ControlValueAccessor {
   /** Times as well as days, with a switch back to whole days. */
   readonly showTime = input(false);
   readonly stepMinutes = input(30);
+  /** Minutes between the options of the hour menu. Every minute by default. */
+  readonly minuteStep = input(1);
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
   /**
@@ -161,6 +163,7 @@ export class RangeField implements ControlValueAccessor {
     timeLayout: this.timeLayout(),
     showTime: this.showTime(),
     stepMinutes: this.stepMinutes(),
+    minuteStep: this.minuteStep(),
     confirm: this.confirm(),
     shift: this.shift(),
     months: this.months(),

@@ -584,7 +584,7 @@ export class Demo {
   ];
   protected readonly periodShift = signal<ShiftStep | readonly ShiftOption[] | false>('auto');
   protected readonly openEnded = signal(false);
-  protected readonly periodTimeLayout = signal<'input' | 'select'>('input');
+  protected readonly periodTimeLayout = signal<'input' | 'select'>('select');
   protected readonly lengthMeans = signal<'period' | 'step'>('period');
   /** Words above the two fields, or a mark between them — the screen decides. */
   protected readonly labelStyle = signal<'words' | 'arrow'>('words');

@@ -27,8 +27,10 @@ export interface DateInputSettings {
    * nudging a time already close to right.
    */
   timeLayout: 'input' | 'select';
-  /** What the hour's arrows move by, and the minutes a menu offers. */
+  /** What the hour's arrows move by. */
   stepMinutes: number;
+  /** Minutes between the options of a menu. */
+  minuteStep: number;
   /** The day the hour belongs to, so its arrows can step over a missing one. */
   date: PlainDate | null;
   timeZone: string | undefined;
@@ -90,6 +92,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     withTime: false,
     timeLayout: 'input',
     stepMinutes: 30,
+    minuteStep: 1,
     date: null,
     timeZone: undefined,
     format: undefined,
@@ -209,7 +212,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     time?.update({
       value: s.withTime ? s.value.time : null,
       stepMinutes: s.stepMinutes,
-      minuteStep: s.stepMinutes,
+      minuteStep: s.minuteStep,
       locale: s.locale,
       messages: s.messages,
       disabled: s.disabled || s.value.date === null,

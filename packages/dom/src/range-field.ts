@@ -187,6 +187,13 @@ export interface RangeFieldSettings {
    */
   mask: boolean;
   /**
+   * The mark inside each of the panel's two fields, and which end it sits at.
+   * A calendar by default; `null` for none; a node of your own for an
+   * application that already has an icon set.
+   */
+  fieldIcon: Node | string | null | undefined;
+  fieldIconSide: 'start' | 'end';
+  /**
    * What is written above each of the panel's two fields, and between them.
    *
    * Words by default — From / To in the messages — but a screen that prefers
@@ -292,6 +299,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     format: undefined,
     mask: true,
     labels: {},
+    fieldIcon: undefined,
+    fieldIconSide: 'start',
     displayWith: undefined,
     messages: EN,
     onChange: undefined,
@@ -891,6 +900,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           withTime: s.showTime,
           timeLayout: s.timeLayout,
           readingStyle: 'marked',
+          icon: s.fieldIcon,
+          iconSide: s.fieldIconSide,
           stepMinutes: s.stepMinutes,
           minuteStep: s.minuteStep,
           date: edge === 'start' ? days(draft).start : days(draft).end,

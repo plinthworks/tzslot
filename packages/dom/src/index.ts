@@ -57,6 +57,8 @@ export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
 export type { MultiDateInstance, MultiDateOptions, MultiDateSettings } from './multi-date.js';
+export { icon } from './icons.js';
+export type { IconName } from './icons.js';
 export { createDateInput } from './date-input.js';
 export type {
   DateInputOptions,

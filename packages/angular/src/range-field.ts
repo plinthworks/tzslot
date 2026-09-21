@@ -143,6 +143,12 @@ export class RangeField implements ControlValueAccessor {
    * default; `{ start: null, end: null, between: '»' }` for a screen that
    * prefers a mark. A DOM node is taken as it is.
    */
+  /**
+   * The mark inside the panel's two fields — a calendar by default, `null`
+   * for none, or a node of your own.
+   */
+  readonly fieldIcon = input<Node | string | null | undefined>(undefined);
+  readonly fieldIconSide = input<'start' | 'end'>('start');
   readonly labels = input<{
     start?: Node | string | null;
     end?: Node | string | null;
@@ -193,6 +199,8 @@ export class RangeField implements ControlValueAccessor {
     disabled: this.disabled() || this.formDisabled(),
     format: this.format(),
     labels: this.labels(),
+    fieldIcon: this.fieldIcon(),
+    fieldIconSide: this.fieldIconSide(),
     mask: this.mask(),
     displayWith: this.displayWith(),
     messages: this.messages,

@@ -38,11 +38,13 @@ before anything is typed is a field asking a question instead of inviting an
 answer.
 
 **The hour lives inside the field,** to the right of the day. It appears when
-`showTime` is on and the whole-day switch is off, and `timeLayout` says how it
-is asked for. `'select'` — an hour menu and a minute menu — is the default,
+`showTime` is on, and `timeLayout` says how it is asked for. `'select'` — an hour menu and a minute menu — is the default,
 because most of the time an hour is chosen outright and a menu is two clicks.
 `'input'` puts an arrow above and below the figures, which suits nudging a
 time already close to right.
+
+**A calendar inside each field,** because a date field without one reads as a
+text box that happens to want a date. See [Marks](#marks) below.
 
 **The shortcuts, shortest first.** Ordered by the length of what they mean,
 ending at *This quarter*, so a reader scanning the column can stop as soon as
@@ -186,6 +188,31 @@ length in days: 92 days back from 1 July is 31 March, one day early and
 drifting further on every press, so a span made of whole months moves by
 months. And a period open at one end has no length at all, so `'auto'` moves
 it by a day — the unit the calendar works in.
+
+## Marks
+
+Each field carries a calendar, before the text by default:
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  fieldIcon: myOwnCalendar,   // a node of your own, or null for none
+  fieldIconSide: 'end',       // the far end instead
+});
+```
+
+The drawings are the library's own — a 24 by 24 box, a two-unit stroke, round
+caps, the rules the Lucide and Feather families follow — so they sit beside
+those icons without looking borrowed. They are not taken from either: a
+library that pulls in an icon set makes every consumer carry it, and one that
+asks for it makes every consumer install it before a field will render.
+
+They are drawn in `currentColor` at `1em`, so they take the weight of the text
+beside them and follow it into a dark theme without being told, and they never
+take a click: a hand aiming at the field and hitting the calendar lands in the
+field. `icon('calendar')` from `@tzslot/dom` gives you the same node if you
+want it elsewhere; `'clock'`, `'chevronLeft'`, `'chevronRight'` and `'x'` are
+there too.
 
 ## The words above the fields
 

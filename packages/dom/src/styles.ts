@@ -738,6 +738,18 @@ export const DATEINPUT_CSS = `
   min-width: 0;
 }
 .tz-dateinput__row:focus-within { border-color: var(--tz-accent, currentColor); }
+.tz-dateinput__icon[hidden] { display: none; }
+.tz-dateinput__icon {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 0.6rem;
+  opacity: 0.55;
+  pointer-events: none; /* a hand aiming at the field must reach the field */
+}
+/* At the far end instead: the mark moves, the field does not. */
+.tz-dateinput__row--icon-end .tz-dateinput__icon { order: 9; padding: 0 0.6rem 0 0; }
+.tz-dateinput__row--icon-end .tz-dateinput__input { padding-left: 0.75rem; }
+.tz-dateinput__icon + .tz-dateinput__input { padding-left: 0.4rem; }
 .tz-dateinput__input {
   flex: 0 1 auto;
   min-width: 0;

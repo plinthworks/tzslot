@@ -1,5 +1,6 @@
 import { Temporal } from '@tzslot/core';
 import type { PlainDate, PlainTime } from '@tzslot/core';
+import { icon as drawIcon } from './icons.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
@@ -61,6 +62,14 @@ export interface DateInputSettings {
   disabled: boolean;
   /** A cross that empties it, for a period allowed to stop at one end. */
   clearable: boolean;
+  /**
+   * A mark inside the field — the calendar every date field carries. `null`
+   * draws none; a node of your own replaces it, so an application already
+   * using an icon set keeps its own drawing.
+   */
+  icon: Node | string | null | undefined;
+  /** Which end of the field it sits at. */
+  iconSide: 'start' | 'end';
   messages: TzslotMessages;
   /** Every settled reading of the text. Null when it has been emptied. */
   onChange: ((value: WallValue) => void) | undefined;
@@ -115,6 +124,8 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     placeholder: undefined,
     disabled: false,
     clearable: false,
+    icon: undefined,
+    iconSide: 'start',
     messages: EN,
     onChange: undefined,
     onFocus: undefined,
@@ -137,13 +148,14 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   input.type = 'text';
   input.className = 'tz-dateinput__input';
   input.autocomplete = 'off';
+  const mark = el('span', 'tz-dateinput__icon');
   const timeHost = el('div', 'tz-dateinput__time');
   const clear = doc.createElement('button');
   clear.type = 'button';
   clear.className = 'tz-dateinput__clear';
   clear.textContent = '×';
   const extra = el('div', 'tz-dateinput__extra');
-  row.append(input, timeHost, clear);
+  row.append(mark, input, timeHost, clear);
   let time: TimeInputInstance | TimeSelectInstance | null = null;
   /** Which shape is mounted, so a change of layout rebuilds it. */
   let mounted: 'input' | 'select' | null = null;
@@ -214,6 +226,18 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     input.disabled = s.disabled;
     // A picture above the field says nothing to a screen reader.
     input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
+    // The mark is decoration: a click on it lands in the field, which is what
+    // a hand aiming at a field and hitting its icon meant to do.
+    const wanted = s.icon === undefined ? drawIcon('calendar', doc) : s.icon;
+    if (wanted === null) {
+      mark.replaceChildren();
+    } else if (typeof wanted === 'string') {
+      mark.textContent = wanted;
+    } else if (mark.firstChild !== wanted && !(mark.firstChild instanceof SVGElement && s.icon === undefined)) {
+      mark.replaceChildren(wanted);
+    }
+    mark.hidden = mark.childNodes.length === 0;
+    row.classList.toggle('tz-dateinput__row--icon-end', s.iconSide === 'end');
     timeHost.hidden = !s.withTime;
     if (s.withTime && mounted !== s.timeLayout) {
       time?.destroy();
@@ -318,6 +342,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
       time?.destroy();
       caption.remove();
       row.remove();
+      mark.remove();
       extra.remove();
       if (addedHostClass) host.classList.remove('tz-dateinput');
     },

@@ -194,3 +194,26 @@ describe('a single moment steps too', () => {
     field.destroy();
   });
 });
+
+describe('a step in minutes', () => {
+  it('moves by quarter hours, and over the hour that does not happen', async () => {
+    const { createDateTimeField } = await import('../src/index.js');
+    const field = createDateTimeField(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      shift: { minutes: 15 },
+      // 29 March 2026, 01:45 in Paris: at 02:00 the clocks jump to 03:00.
+      value: Temporal.Instant.from('2026-03-29T00:45:00Z'),
+    });
+    const next = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[1]!;
+    const reads = () => host.querySelector<HTMLInputElement>('.tz-field__trigger')!.value;
+
+    expect(reads()).toContain('01:45');
+    next().click();
+    // A quarter of an hour later the clock says 03:00: 02:00 never happens.
+    expect(reads()).toContain('03:00');
+    next().click();
+    expect(reads()).toContain('03:15');
+    field.destroy();
+  });
+});

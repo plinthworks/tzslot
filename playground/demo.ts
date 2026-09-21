@@ -16,7 +16,7 @@ import {
   type DateTimeRangeValue,
 } from '@tzslot/angular';
 import { Temporal, usingPolyfill } from '@tzslot/core';
-import type { Instant, PlainDate, PlainTime, ShiftStep } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftStep } from '@tzslot/core';
 
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {
@@ -316,9 +316,16 @@ function parisAt(iso: string): Instant {
                     (click)="format.set(f.value)">{{ f.label }}</button>
           }
         </div>
+        <div class="row">
+          <span class="note">Flèches ‹ ›</span>
+          @for (s of momentShifts; track s.label) {
+            <button type="button" class="chip" [class.on]="momentShiftLabel() === s.label"
+                    (click)="momentShift.set(s.value)">{{ s.label }}</button>
+          }
+        </div>
         <tz-datetime-field [(value)]="moment" [timeZone]="'Europe/Paris'" [locale]="locale"
                            [timeLayout]="fieldLayout()" [stepMinutes]="30" [minuteStep]="5"
-                           [format]="format()" [buttons]="['today', 'clear']" [shift]="{ hours: 1 }" />
+                           [format]="format()" [buttons]="['today', 'clear']" [shift]="momentShift()" />
         <p class="note">{{ momentText() }}</p>
         <p class="note">
           Les flèches avancent d'une heure réelle : le 25 octobre, une heure après 02:30 est
@@ -546,6 +553,20 @@ export class Demo {
   protected shiftLabelOf(): string {
     const current = this.periodShift();
     return this.shiftChoices.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;
+  }
+
+  /** What one press of the arrows moves the chosen moment by. */
+  protected readonly momentShifts: { label: string; value: DurationLike | false }[] = [
+    { label: 'aucune', value: false },
+    { label: '15 min', value: { minutes: 15 } },
+    { label: '30 min', value: { minutes: 30 } },
+    { label: '1 h', value: { hours: 1 } },
+    { label: '1 jour', value: { days: 1 } },
+  ];
+  protected readonly momentShift = signal<DurationLike | false>({ minutes: 15 });
+  protected momentShiftLabel(): string {
+    const current = this.momentShift();
+    return this.momentShifts.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;
   }
 
   protected readonly fieldLayout = signal<TimeLayout>('input');

@@ -324,6 +324,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     };
   }
 
+  /**
+   * The name of the reading a moment is, when its clock face happens twice
+   * that day. Null on the other three hundred and sixty-three days.
+   */
+  function readingName(at_: Instant): string | null {
+    const here = zoned(at_);
+    const found = resolveWallTime(here.toPlainDate(), here.toPlainTime(), s.timeZone);
+    if (!found.exists || !found.ambiguous) return null;
+    const index = found.offsets.indexOf(here.offset);
+    return seasonNames(found.offsets)[index < 0 ? 0 : index] ?? null;
+  }
+
   /** Summer and winter, in whichever order the offsets put them. */
   const seasonNames = (offsets: readonly string[]): [string, string] =>
     summerFirst(offsets)
@@ -363,10 +375,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const { start, end } = days(value);
     if (!start && !end) return '';
     const shape = pattern();
-    const time = (at_: Instant | null) =>
-      value.allDay === false && at_
-        ? ` ${formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale)}`
-        : '';
+    const time = (at_: Instant | null) => {
+      if (value.allDay !== false || !at_) return '';
+      const written = formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale);
+      // Which 02:30 was chosen is visible in the panel and nowhere else once
+      // it closes, and a field that reads 02:30 twice over is a field the
+      // reader cannot check. The name rides along in brackets.
+      const reading = readingName(at_);
+      return reading ? ` ${written} (${reading})` : ` ${written}`;
+    };
     const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : null;
     const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end) : null;
     // An open end is a statement, not an unfinished sentence: "From 14/09/2026",

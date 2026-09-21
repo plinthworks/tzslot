@@ -151,6 +151,11 @@ cross on a chosen end drops it. The end stays exclusive either way, so *Until
 20 September* is the midnight that opens the 21st.
 
 It is off by default: a booking form must not take a stay that never ends.
+
+Whatever the period, a time that happens twice is named in the field as well
+as in the panel — `25/10/2026 02:30 (winter)` — because once the panel closes
+the choice is invisible, and two identical clock faces make a field nobody can
+check.
 [What you get back](./guide/values#one-end-only) has the shapes and the query
 that goes with each.
 

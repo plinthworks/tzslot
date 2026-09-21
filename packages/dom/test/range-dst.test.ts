@@ -109,3 +109,62 @@ describe('the morning an hour does not happen', () => {
     expect(readings()[0]).toEqual([]);
   });
 });
+
+describe('once the panel is closed', () => {
+  it('the field still says which 02:30 it is', () => {
+    make('2026-10-25', {
+      messages: FR,
+      locale: 'fr-FR',
+      value: {
+        start: Temporal.Instant.from('2026-10-24T22:00:00Z'), // 00:00
+        end: Temporal.Instant.from('2026-10-25T00:30:00Z'), // 02:30 summer
+        allDay: false,
+      },
+    });
+    const shown = () => host.querySelector('.tz-field__text')!.textContent;
+    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (été)');
+
+    // The other reading is an hour later and reads differently, which is the
+    // whole point: two identical clock faces, two different fields.
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-10-24T22:00:00Z'),
+        end: Temporal.Instant.from('2026-10-25T01:30:00Z'),
+        allDay: false,
+      },
+    });
+    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (hiver)');
+  });
+
+  it('and says it for a period open at one end', () => {
+    make('2026-10-25', {
+      messages: FR,
+      locale: 'fr-FR',
+      openEnded: true,
+      value: { start: Temporal.Instant.from('2026-10-25T00:15:00Z'), end: null, allDay: false },
+    });
+    // Seen on the screen as "À partir du 25/10/2026 02:15", which of the two
+    // being anyone's guess.
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('À partir du 25/10/2026 02:15 (été)');
+  });
+
+  it('says nothing on an ordinary day, and nothing for whole days', () => {
+    make('2026-09-21', {
+      value: {
+        start: Temporal.Instant.from('2026-09-21T07:00:00Z'),
+        end: Temporal.Instant.from('2026-09-21T15:00:00Z'),
+        allDay: false,
+      },
+    });
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('21/09/2026 09:00 – 21/09/2026 17:00');
+
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-10-24T22:00:00Z'),
+        end: Temporal.Instant.from('2026-10-25T23:00:00Z'),
+        allDay: true,
+      },
+    });
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026');
+  });
+});

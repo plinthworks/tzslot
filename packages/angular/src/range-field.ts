@@ -84,16 +84,6 @@ export class RangeField implements ControlValueAccessor {
    * accept a period with no end.
    */
   readonly openEnded = input(false);
-  /**
-   * A box above the shortcuts where a length is typed — `25mn`, `1h`, `3d`.
-   * Off by default: it suits a screen read all day by the same people.
-   */
-  readonly lengthBox = input(false);
-  /**
-   * What a typed length does: give the period that length (`'period'`), or
-   * only tell the arrows how far to move (`'step'`), leaving the dates alone.
-   */
-  readonly lengthMeans = input<'period' | 'step'>('period');
   /** A word or two saying what is being chosen — "Travel dates". */
   readonly title = input<string | undefined>(undefined);
   /** How an hour is asked for: two menus (default), or figures with arrows. */
@@ -173,8 +163,6 @@ export class RangeField implements ControlValueAccessor {
     timeZone: this.timeZone(),
     presets: this.presets(),
     openEnded: this.openEnded(),
-    lengthBox: this.lengthBox(),
-    lengthMeans: this.lengthMeans(),
     title: this.title(),
     timeLayout: this.timeLayout(),
     showTime: this.showTime(),

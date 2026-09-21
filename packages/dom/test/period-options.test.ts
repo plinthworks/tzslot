@@ -96,107 +96,60 @@ describe('how an hour is asked for', () => {
   });
 });
 
-describe('what a typed length means', () => {
-  it('by default it is the length of the period, filling the end', () => {
-    make({ lengthBox: true, showTime: true });
+describe('a step written the short way', () => {
+  it('reads 25mn, 1h, 3d the way the documentation writes them', () => {
+    make({ shift: '15mn', showTime: true });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false }, // 10:00
+      value: {
+        start: Temporal.Instant.from('2026-09-18T08:00:00Z'), // 10:00
+        end: Temporal.Instant.from('2026-09-21T03:00:00Z'), // 05:00
+        allDay: false,
+      },
     });
-    field.open();
-    enter('1h');
-    expect(shown()).toBe('18/09/2026 10:00 – 18/09/2026 11:00');
+    const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
+    arrows()[1]!.click();
+    expect(shown()).toBe('18/09/2026 10:15 – 21/09/2026 05:15');
+
+    field.update({ shift: '1h' });
+    arrows()[1]!.click();
+    expect(shown()).toBe('18/09/2026 11:15 – 21/09/2026 06:15');
   });
 
-  it("'step' leaves the dates alone and only moves the arrows by it", () => {
-    make({ lengthBox: true, showTime: true, lengthMeans: 'step', shift: 'auto', openEnded: true });
-    field.update({
-      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false },
-    });
-    field.open();
-    enter('15mn');
-
-    // Still one date, still open at the other end.
-    expect(shown()).toBe('From 18/09/2026 10:00');
-    expect(field.value.end).toBe(null);
-
-    const arrows = host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
-    arrows[1]!.click();
-    expect(shown()).toBe('From 18/09/2026 10:15');
-    arrows[0]!.click();
-    arrows[0]!.click();
-    expect(shown()).toBe('From 18/09/2026 09:45');
-  });
-
-  it('and emptying an end keeps that step rather than forgetting it', () => {
-    make({ lengthBox: true, showTime: true, shift: 'auto', openEnded: true });
+  it('and a word it cannot read simply moves nothing', () => {
+    make({ shift: 'soon' as never, showTime: true });
     field.update({
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
-        end: Temporal.Instant.from('2026-09-18T09:00:00Z'),
+        end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
         allDay: false,
       },
     });
-    field.open();
-    enter('15mn'); // both ends, fifteen minutes apart
-    panel().querySelectorAll<HTMLButtonElement>('.tz-dateinput__clear')[1]!.click();
-    expect(field.value.end).toBe(null);
-
+    const before = shown();
     host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[1]!.click();
-    expect(shown()).toBe('From 18/09/2026 10:15'); // fifteen minutes, not a day
+    expect(shown()).toBe(before);
   });
-});
 
-describe('a length never destroys a period it was given', () => {
-  it('with both dates chosen it is only a step', () => {
-    make({ lengthBox: true, showTime: true, shift: 'auto' });
+  it('a menu of them takes the short form too', () => {
+    make({
+      showTime: true,
+      shift: [
+        { step: '15mn', label: '15 min' },
+        { step: '1d', label: '1 jour' },
+      ],
+    });
     field.update({
       value: {
-        start: Temporal.Instant.from('2026-09-20T22:00:00Z'), // 21 Sept
-        end: Temporal.Instant.from('2026-10-24T22:00:00Z'), // 25 Oct
+        start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
+        end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
         allDay: false,
       },
     });
-    field.open();
-    enter('15mn');
-
-    // Seen on the screen as the end being recomputed to a quarter of an hour
-    // after the start, which threw away a month of period.
-    expect(shown()).toBe('21/09/2026 00:00 – 25/10/2026 00:00');
-
-    // And what it does mean: both ends move by a quarter of an hour.
+    const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;
     host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[1]!.click();
-    expect(shown()).toBe('21/09/2026 00:15 – 25/10/2026 00:15');
-  });
-
-  it('but it still fills an end that is missing', () => {
-    make({ lengthBox: true, showTime: true, openEnded: true });
-    field.update({
-      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false },
-    });
-    field.open();
-    enter('2h');
-    expect(shown()).toBe('18/09/2026 10:00 – 18/09/2026 12:00');
-  });
-});
-
-describe('the hour menu always has the hour it is showing', () => {
-  it('a time off the step grid is still one of the options', () => {
-    // Seen on the screen as an empty minute box: the menu was built from
-    // stepMinutes (thirty), so a period sitting at 00:15 had nothing to
-    // select and showed a blank.
-    make({ showTime: true, stepMinutes: 30 });
-    field.update({
-      value: {
-        start: Temporal.Instant.from('2026-09-20T22:15:00Z'), // 00:15 in Paris
-        end: Temporal.Instant.from('2026-09-21T22:15:00Z'),
-        allDay: false,
-      },
-    });
-    field.open();
-    const minutes = panel()
-      .querySelector('.tz-dateinput')!
-      .querySelectorAll<HTMLSelectElement>('.tz-dateinput__time .tz-timeselect__menu')[1]!;
-    expect(minutes.selectedOptions[0]!.textContent).toBe('15');
+    expect(shown()).toBe('18/09/2026 10:15 – 21/09/2026 05:15');
+    picker.click();
+    host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[1]!.click();
+    expect(shown()).toBe('19/09/2026 10:15 – 22/09/2026 05:15');
   });
 });
 

@@ -282,11 +282,6 @@ function parisAt(iso: string): Instant {
             <button type="button" class="chip" [class.on]="periodTimeLayout() === l"
                     (click)="periodTimeLayout.set($any(l))">{{ l }}</button>
           }
-          <span class="note">Durée tapée</span>
-          @for (m of ['period', 'step']; track m) {
-            <button type="button" class="chip" [class.on]="lengthMeans() === m"
-                    (click)="lengthMeans.set($any(m))">{{ m }}</button>
-          }
         </div>
         <div class="row">
           <span class="note">Libellés</span>
@@ -306,8 +301,7 @@ function parisAt(iso: string): Instant {
         </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
-                        [openEnded]="openEnded()" [labels]="rangeLabels()" [lengthBox]="true"
-                        [lengthMeans]="lengthMeans()" [timeLayout]="periodTimeLayout()"
+                        [openEnded]="openEnded()" [labels]="rangeLabels()" [timeLayout]="periodTimeLayout()"
                         [defaultTimes]="{ start: '09:00', end: '18:00' }"
                         [title]="'Dates de voyage'"
                         [presets]="['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour', 'yesterday', 'today', 'tomorrow', 'last7Days', 'thisMonth', 'thisQuarter']" />
@@ -586,7 +580,6 @@ export class Demo {
   protected readonly periodShift = signal<ShiftStep | readonly ShiftOption[] | false>('auto');
   protected readonly openEnded = signal(false);
   protected readonly periodTimeLayout = signal<'input' | 'select'>('select');
-  protected readonly lengthMeans = signal<'period' | 'step'>('period');
   /** Words above the two fields, or a mark between them — the screen decides. */
   protected readonly labelStyle = signal<'words' | 'arrow'>('words');
   protected readonly rangeLabels = computed(() =>

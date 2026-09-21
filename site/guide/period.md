@@ -4,7 +4,7 @@
 period: a trigger that reads `18/09/2026 – 24/09/2026`, and a panel holding
 everything needed to change it.
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, showTime: true, openEnded: true, lengthBox: true, shift: 'auto', weekNumbers: true }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, showTime: true, openEnded: true, shift: 'auto', weekNumbers: true }" />
 
 ## Saying what it is for
 
@@ -126,36 +126,6 @@ may return either shape:
 }
 ```
 
-### A length, typed
-
-`lengthBox: true` puts a box above them. No column holds every length someone
-might want, and the people who read a filter screen all day know what they
-want before it opens.
-
-| | |
-|---|---|
-| `25mn` `25min` `25m` `25` | twenty-five minutes |
-| `1h` | an hour |
-| `3d` `3j` | three days |
-| `2w` `2s` | two weeks |
-| `6mo` | six months |
-
-`m` is minutes and never months: `mo` says months, and a screen that read `6m`
-as six months would be wrong by a factor of forty-odd thousand.
-
-A length **never rewrites an end that is already there**. Someone with both
-dates chosen who asks for fifteen minutes means the arrows — not "throw away
-my end and make this fifteen minutes long".
-
-| `lengthMeans` | with an end missing | with both dates chosen |
-|---|---|---|
-| `'period'` (default) | fills it from the start, or from now backwards | nothing but the step |
-| `'step'` | nothing but the step | nothing but the step |
-
-Either way the arrows end up moving by it, and emptying an end never forgets
-the step — so a period can be opened at one end and go on being stepped by
-what was typed.
-
 ## The arrows
 
 ```js
@@ -165,13 +135,24 @@ createRangeField(element, { timeZone: 'Europe/Paris', shift: 'auto' });
 Off by default, because a field that means one chosen day has nothing to step
 through. Given `'auto'`, one press moves by what the reader just asked for:
 the shortcut they pressed, or — if they picked the days by hand — the length
-of what is selected. A duration imposes the step instead, whatever is
-selected, which is the way to move a three-day period a quarter of an hour at
-a time:
+of what is selected. A duration imposes the step instead, whatever is selected — the way to move a
+three-day period a quarter of an hour at a time. It can be written short:
 
 ```js
 shift: { minutes: 15 }
+shift: '15mn'   // the same, and how a screen says it in one word
 ```
+
+| | |
+|---|---|
+| `25mn` `25min` `25m` | twenty-five minutes |
+| `1h` | an hour |
+| `3d` `3j` | three days |
+| `2w` `2s` | two weeks |
+| `6mo` | six months |
+
+`m` is minutes and never months: `mo` says months, and a screen that read `6m`
+as six months would be wrong by a factor of forty-odd thousand.
 
 A list puts a small button between the arrows and lets the reader choose:
 

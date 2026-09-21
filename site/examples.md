@@ -115,12 +115,11 @@ createRangeField(element, {
   locale: 'en-GB',
   showTime: true,
   openEnded: true,
-  lengthBox: true,
   months: 2,
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, weekNumbers: true, showTime: true, openEnded: true, lengthBox: true }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, weekNumbers: true, showTime: true, openEnded: true }" />
 
 Two fields in the panel, one per end: a click fills the armed one, so
 correcting the end does not throw the start away. Both are typed into, which

@@ -81,9 +81,6 @@ export interface TzslotMessages {
   /** Above the two fields of a period: the day it runs from, the day it runs to. */
   readonly rangeStart: string;
   readonly rangeEnd: string;
-  /** The box above the shortcuts where a length is typed, and what it accepts. */
-  readonly lengthLabel: string;
-  readonly lengthHelp: string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -187,8 +184,6 @@ export const EN: TzslotMessages = {
   clearField: 'Empty this field',
   rangeStart: 'From',
   rangeEnd: 'To',
-  lengthLabel: 'Length',
-  lengthHelp: '25mn a length of 25 minutes · 1h an hour · 3d three days · 2w two weeks · 6mo six months. A bare number is minutes.',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -275,8 +270,6 @@ export const FR: TzslotMessages = {
   clearField: 'Vider ce champ',
   rangeStart: 'Du',
   rangeEnd: 'Au',
-  lengthLabel: 'Durée',
-  lengthHelp: "25mn une durée de 25 minutes · 1h une heure · 3j trois jours · 2s deux semaines · 6mo six mois. Un nombre seul vaut des minutes.",
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

@@ -81,21 +81,7 @@ export interface RangeFieldSettings {
   timeZone: string;
   /** Named ranges beside the calendar. The built-in names, or your own. */
   presets: readonly (PresetName | RangePreset)[];
-  /**
-   * A box above them where a length is typed — `25mn`, `1h`, `3d`. Off by
-   * default: it suits a screen read all day by the same people, and not a
-   * booking form.
-   */
-  lengthBox: boolean;
-  /**
-   * What a typed length does.
-   *
-   * `'period'` fills a *missing* end from the start — what someone measuring
-   * a window wants. `'step'` never touches the dates at all. Neither ever
-   * rewrites an end that is already there: with both dates chosen, a length
-   * is a step and nothing else. Either way the arrows end up moving by it.
-   */
-  lengthMeans: 'period' | 'step';
+
   /**
    * A word or two saying what is being chosen — "Travel dates", "Effective
    * date". Written above the panel, and read out for the field itself. A
@@ -152,6 +138,9 @@ export interface RangeFieldSettings {
    * selected, so a quarter moves by a quarter and seven days by seven days;
    * a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever
    * is selected, for a screen whose window is fixed.
+   *
+   * A duration may be written short — `'25mn'`, `'1h'`, `'3d'`, `'2w'`,
+   * `'6mo'` — which is how a screen says its step in one word.
    *
    * A list of `{ step, label }` instead puts a menu between the arrows and
    * lets the reader choose, for a page used to sweep both weeks and quarters.
@@ -271,8 +260,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     value: EMPTY,
     timeZone: Temporal.Now.timeZoneId(),
     presets: BUILT_IN,
-    lengthBox: false,
-    lengthMeans: 'period',
     title: undefined,
     timeLayout: 'select',
     openEnded: false,
@@ -560,8 +547,28 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * unit the calendar itself works in, so that is the fallback; anything else
    * is imposed with a step of its own.
    */
+  /**
+   * A step as Temporal can use it.
+   *
+   * `'25mn'` is not an ISO duration and Temporal would refuse it; it is the
+   * short form a screen writes, and reading it here means `shift` takes the
+   * same words the documentation shows.
+   */
+  const asStep = (step_: ShiftStep | null): ShiftStep | null => {
+    if (typeof step_ !== 'string' || step_ === 'auto') return step_;
+    const short = parseDuration(step_);
+    if (short) return short;
+    try {
+      return Temporal.Duration.from(step_); // an ISO duration, 'PT1H'
+    } catch {
+      // Neither. Drawing no arrows is a better answer than throwing out of a
+      // click handler and taking the panel with it.
+      return null;
+    }
+  };
+
   const effectiveStep = (): ShiftStep | null => {
-    const step_ = currentStep();
+    const step_ = asStep(currentStep());
     if (step_ !== 'auto') return step_;
     const { start, end } = days(s.value);
     return start !== null && end !== null ? 'auto' : { days: 1 };
@@ -682,73 +689,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const given = edge === 'start' ? s.labels.start : s.labels.end;
     if (given !== undefined) return given;
     return edge === 'start' ? s.messages.rangeStart : s.messages.rangeEnd;
-  }
-
-  /**
-   * A length typed rather than chosen: 25mn, 1h, 3d.
-   *
-   * No list of shortcuts holds every length someone might want, and the
-   * people who use a filter screen all day know what they want before it
-   * opens. What is typed becomes the length of the period — measured from the
-   * start if there is one, and ending now if there is not — and the arrows
-   * then move by it, exactly as a shortcut would.
-   */
-  function applyLength(text: string): boolean {
-    const length = parseDuration(text);
-    if (!length) return false;
-    presetShift = length;
-    // A length never rewrites an end that exists. Someone with both dates
-    // chosen who then asks for a step of fifteen minutes means the arrows,
-    // not "throw away my end and make the period fifteen minutes long" —
-    // which is what this did, and it destroyed the period it was given.
-    if (s.lengthMeans === 'step' || (draft.start !== null && draft.end !== null)) {
-      render();
-      return true;
-    }
-    // Through the zone, not on the instant: an instant cannot be moved by days
-    // at all — Temporal refuses — and a day is not always twenty-four hours.
-    const from = draft.start ?? clock().toZonedDateTimeISO(s.timeZone).subtract(length).toInstant();
-    draft = { ...draft, start: from, end: from.toZonedDateTimeISO(s.timeZone).add(length).toInstant(), allDay: false };
-    choose(draft);
-    return true;
-  }
-
-  function buildLengthBox(): HTMLElement {
-    const box = el('div', 'tz-rangefield__length');
-    const field = doc.createElement('input');
-    field.type = 'text';
-    field.className = 'tz-rangefield__length-input';
-    field.placeholder = s.messages.lengthLabel;
-    field.setAttribute('aria-label', s.messages.lengthLabel);
-    const help = doc.createElement('button');
-    help.type = 'button';
-    help.className = 'tz-rangefield__length-help';
-    help.textContent = 'ⓘ';
-    help.title = s.messages.lengthHelp;
-    help.setAttribute('aria-label', s.messages.lengthHelp);
-    // A tooltip is not readable on a touch screen and not reachable by a
-    // keyboard, so the same words are also a line that the button shows.
-    const note = el('p', 'tz-rangefield__length-note');
-    note.textContent = s.messages.lengthHelp;
-    note.hidden = true;
-    help.addEventListener('click', () => {
-      note.hidden = !note.hidden;
-    });
-    field.addEventListener('keydown', (event) => {
-      if (event.key !== 'Enter') return;
-      event.preventDefault();
-      const read = applyLength(field.value);
-      field.classList.toggle('tz-rangefield__length-input--invalid', !read);
-      field.setAttribute('aria-invalid', String(!read));
-    });
-    field.addEventListener('input', () => {
-      field.classList.remove('tz-rangefield__length-input--invalid');
-      field.removeAttribute('aria-invalid');
-    });
-    const row = el('div', 'tz-rangefield__length-row');
-    row.append(field, help);
-    box.append(row, note);
-    return box;
   }
 
   /** The clock face an end already carries, so a click on a day keeps it. */
@@ -1120,9 +1060,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const body = el('div', 'tz-rangefield__body');
       const rangeHost = doc.createElement('div');
       body.append(rangeHost);
-      if (s.presets.length > 0 || s.lengthBox) {
+      if (s.presets.length > 0) {
         const column = el('div', 'tz-rangefield__presets');
-        if (s.lengthBox) column.append(buildLengthBox());
         presetList = el('div', 'tz-rangefield__preset-list');
         column.append(presetList);
         body.append(column);

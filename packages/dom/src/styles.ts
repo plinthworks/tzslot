@@ -937,40 +937,6 @@ export const RANGEFIELD_CSS = `
   order: var(--tz-rangefield-presets-order, 1);
 }
 .tz-rangefield__preset-list { display: flex; flex-direction: column; gap: 0.125rem; }
-.tz-rangefield__length { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.4rem; }
-.tz-rangefield__length-row { display: flex; align-items: center; gap: 0.25rem; }
-.tz-rangefield__length-input {
-  flex: 1 1 auto;
-  min-width: 0;
-  width: 5rem;
-  border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
-  border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
-  background: var(--tz-field-bg, var(--tz-bg, transparent));
-  color: var(--tz-field-fg, var(--tz-fg, inherit));
-  font: var(--tz-font, inherit);
-  font-size: 0.875em;
-  padding: 0.3rem 0.5rem;
-}
-.tz-rangefield__length-input:focus { outline: none; border-color: var(--tz-accent, currentColor); }
-.tz-rangefield__length-input--invalid { border-color: var(--tz-danger, currentColor); }
-.tz-rangefield__length-help {
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: var(--tz-font, inherit);
-  opacity: 0.6;
-  cursor: help;
-  padding: 0.1rem 0.2rem;
-}
-.tz-rangefield__length-help:hover { opacity: 1; }
-.tz-rangefield__length-note[hidden] { display: none; }
-.tz-rangefield__length-note {
-  margin: 0;
-  font-size: 0.75em;
-  line-height: 1.35;
-  opacity: 0.75;
-  max-width: 13rem;
-}
 .tz-rangefield__preset {
   border: 0;
   border-radius: var(--tz-radius, 0.375rem);

@@ -91,6 +91,9 @@ export interface RangeFieldSettings {
    *
    * A list of `{ step, label }` instead puts a menu between the arrows and
    * lets the reader choose, for a page used to sweep both weeks and quarters.
+   *
+   * A period open at one end has no length, so `'auto'` moves it by a day
+   * there — the unit the calendar itself works in.
    */
   shift: ShiftStep | readonly ShiftOption[] | false;
   /** How many months the panel shows side by side. */
@@ -416,14 +419,26 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   };
 
   /** True when there is a whole period to move, and something to move it by. */
-  const canShift = () => {
+  /**
+   * What one press moves, with 'auto' resolved.
+   *
+   * A period open at one end has no length to follow, and refusing to move at
+   * all was the wrong answer: nothing stops someone wanting "from the 18th"
+   * to become "from the 17th" without reopening the calendar. A day is the
+   * unit the calendar itself works in, so that is the fallback; anything else
+   * is imposed with a step of its own.
+   */
+  const effectiveStep = (): ShiftStep | null => {
     const step_ = currentStep();
-    if (step_ === null || s.disabled) return false;
+    if (step_ !== 'auto') return step_;
     const { start, end } = days(s.value);
-    if (start !== null && end !== null) return true;
-    // A period open at one end has no length of its own, so only an imposed
-    // step can move it.
-    return step_ !== 'auto' && (start !== null || end !== null);
+    return start !== null && end !== null ? 'auto' : { days: 1 };
+  };
+
+  const canShift = () => {
+    if (effectiveStep() === null || s.disabled) return false;
+    const { start, end } = days(s.value);
+    return start !== null || end !== null;
   };
 
   /**
@@ -435,7 +450,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * number of hours, which is the truth of it.
    */
   function step(direction: 1 | -1): void {
-    const by = currentStep();
+    const by = effectiveStep();
     if (!canShift() || by === null) return;
 
     // A period with times moves as moments when the step is shorter than a
@@ -463,17 +478,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
     const shown = days(s.value);
     if (!shown.start || !shown.end) {
-      // One end only. There is no length to follow, so an imposed step moves
-      // the end that exists and 'auto' does nothing — which is why canShift
-      // says no to it.
-      if (by === 'auto') return;
+      // One end only: the bound that exists moves, and the open side stays
+      // open. A step shorter than a day moves the moment — "from the 18th at
+      // 10:00" to 09:45 — and anything longer moves the day, hours and all.
+      const only = s.value.start ?? s.value.end!;
+      const moveBy = Temporal.Duration.from(by === 'auto' ? { days: 1 } : by);
       draft = s.value;
-      const moved = shiftDayRange(
-        { start: shown.start ?? shown.end!, end: shown.start ?? shown.end! },
-        by,
-        direction,
-      );
-      const next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
+      readings = { start: [], end: [] };
+      let next: RangeFieldValue;
+      if (moveBy.total({ unit: 'hour', relativeTo: zoned(only) }) < 24) {
+        const moved = shiftInstant(only, moveBy, direction, s.timeZone);
+        next = s.value.start
+          ? { start: moved, end: null, allDay: false }
+          : { start: null, end: moved, allDay: false };
+      } else {
+        const day = shown.start ?? shown.end!;
+        const moved = shiftDayRange({ start: day, end: day }, moveBy, direction);
+        next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
+      }
       if (panel.isOpen) choose(next);
       else commit(next);
       return;

@@ -87,6 +87,11 @@ a cross that drops it:
 21st and the whole of the 20th is included — the same rule as everywhere else,
 which is the point of keeping it.
 
+The arrows work on it too, and that matters: "from the 18th" becomes "from the
+17th" with one press, without reopening the calendar. There is no length to
+follow, so `shift: 'auto'` moves it by a day — the unit the calendar itself
+works in — and any step you impose wins, down to a quarter of an hour.
+
 Both ends null means nothing has been chosen yet. That is the one case a
 screen still has to tell apart, and it is the obvious one.
 

@@ -128,7 +128,7 @@ describe('asking for one end only', () => {
     expect(shown()).toBe('From 14/09/2026 09:00');
   });
 
-  it('an imposed step moves the single end; “auto” has nothing to follow', () => {
+  it('an imposed step moves the single end, and “auto” falls back to a day', () => {
     make({ shift: { days: 7 } });
     field.update({
       value: { start: Temporal.Instant.from('2026-09-13T22:00:00Z'), end: null, allDay: true },
@@ -138,8 +138,12 @@ describe('asking for one end only', () => {
     arrows()[1]!.click();
     expect(shown()).toBe('From 21/09/2026');
 
+    // There is no length to follow here, but refusing to move was worse than
+    // choosing the unit the calendar itself works in.
     field.update({ shift: 'auto' });
-    expect(arrows()[1]!.disabled).toBe(true);
+    expect(arrows()[1]!.disabled).toBe(false);
+    arrows()[1]!.click();
+    expect(shown()).toBe('From 22/09/2026');
   });
 });
 
@@ -194,5 +198,46 @@ describe('the panel drops what cannot apply', () => {
     expect(columns()).toEqual([true, false]);
     mode('Between').click();
     expect(columns()).toEqual([false, false]);
+  });
+});
+
+describe('moving a period that is open at one end', () => {
+  const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
+
+  it('a day at a time, without reopening the calendar', () => {
+    make({ shift: 'auto' });
+    field.update({
+      value: { start: Temporal.Instant.from('2026-09-17T22:00:00Z'), end: null, allDay: true }, // from 18 Sept
+    });
+    expect(shown()).toBe('From 18/09/2026');
+    expect(arrows()[0]!.disabled).toBe(false); // it used to refuse
+
+    arrows()[0]!.click();
+    expect(shown()).toBe('From 17/09/2026');
+    expect(field.isOpen).toBe(false); // and the panel never had to open
+    arrows()[1]!.click();
+    arrows()[1]!.click();
+    expect(shown()).toBe('From 19/09/2026');
+    expect(field.value.end).toBe(null); // still open at the other end
+  });
+
+  it('an imposed step wins, and a short one moves the moment', () => {
+    make({ shift: { minutes: 15 }, showTime: true });
+    field.update({
+      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false }, // 10:00
+    });
+    expect(shown()).toBe('From 18/09/2026 10:00');
+    arrows()[0]!.click();
+    expect(shown()).toBe('From 18/09/2026 09:45');
+  });
+
+  it('a month steps the month, and the hour stays put', () => {
+    make({ shift: { months: 1 }, showTime: true });
+    field.update({
+      value: { start: null, end: Temporal.Instant.from('2026-09-20T15:00:00Z'), allDay: false }, // until 17:00
+    });
+    expect(shown()).toBe('Until 20/09/2026 17:00');
+    arrows()[1]!.click();
+    expect(shown()).toBe('Until 20/10/2026 17:00');
   });
 });

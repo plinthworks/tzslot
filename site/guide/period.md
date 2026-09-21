@@ -204,9 +204,14 @@ word is still read out to a screen reader whatever is drawn.
 On the morning the clocks go back, an hour happens twice, and a field reading
 `02:30` could be either of them. Both are named rather than numbered, because
 "heure d'été" is something a person can answer and `+02:00` is something they
-have to work out. The menus carry them in the list itself — `02 — winter` —
-and the figures, which cannot, get a pair of buttons under the field instead.
-Either way the closed field says which was chosen:
+have to work out.
+
+The menus offer the hour twice and star the second — `02` and `02*` — with a
+line under the field saying what the star means, lit when that reading is the
+one in force. Naming both inside the list would widen the menu to the longest
+word in the language, on every ordinary day of the year as much as on this
+one. The figures cannot say it at all, so there a pair of buttons appears
+instead. Either way the closed field says which was chosen:
 
 ```
 25/10/2026 00:00 – 25/10/2026 02:30 (winter)

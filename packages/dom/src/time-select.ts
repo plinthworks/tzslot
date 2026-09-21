@@ -22,6 +22,16 @@ export interface TimeSelectSettings {
   timeZone: string | undefined;
   /** Minutes between the options. Every minute by default. */
   minuteStep: number;
+  /**
+   * How the two readings of a repeated hour are told apart in the list.
+   *
+   * `'named'` writes them out — "02 — winter" — which is unmistakable and
+   * widens the menu to the length of the longest word in the language. Inside
+   * a field standing beside another, that width is a hole on every ordinary
+   * day of the year, so `'marked'` stars the second reading instead and
+   * leaves the naming to a line underneath.
+   */
+  readingStyle: 'named' | 'marked';
   /** Hours between them. */
   hourStep: number;
   minTime: PlainTime | string | undefined;
@@ -70,6 +80,7 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
   const s: TimeSelectSettings = {
     value: null,
     offset: null,
+    readingStyle: 'named',
     date: null,
     timeZone: undefined,
     minuteStep: 1,
@@ -244,12 +255,28 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
     if (slots) {
       // The day as it is: no hour that cannot happen, and the one that happens
       // twice told apart by its offset, so nothing is left to ask afterwards.
+      const offered = realHours(slots);
+      // The later of two readings of the same clock face: the one a star marks.
+      const starred = new Set(
+        offered
+          .filter(({ hour: h, offset }) => offset !== null && offered.filter((o) => o.hour === h).length === 2)
+          .slice(1)
+          .map(({ hour: h, offset }) => `${h}|${offset}`),
+      );
       fillKeyed(
         hour,
-        realHours(slots).map(({ hour: h, offset, name }) => ({
-          value: `${h}|${offset ?? ''}`,
-          label: offset === null ? shownHour(h) : `${shownHour(h)} — ${name}`,
-        })),
+        offered.map(({ hour: h, offset, name }) => {
+          const key = `${h}|${offset ?? ''}`;
+          return {
+            value: key,
+            label:
+              offset === null
+                ? shownHour(h)
+                : s.readingStyle === 'marked'
+                  ? `${shownHour(h)}${starred.has(key) ? '*' : ''}`
+                  : `${shownHour(h)} — ${name}`,
+          };
+        }),
         time === null ? null : `${time.hour}|${s.offset ?? ''}`,
       );
       fillKeyed(

@@ -11,6 +11,7 @@
 | `date` | `PlainDate \| string \| null` | `null` | The day the time is on, and the zone it is read in. Given both, the menus show that day as it really is: the hour the clocks skip is not offered, and the hour they repeat is offered twice, by its two offsets. Left out, they offer every hour of an ordinary day. |
 | `timeZone` | `string \| undefined` | — | An IANA identifier — 'Europe/Paris', never an offset. Offsets change twice a year. |
 | `minuteStep` | `number` | `1` | Minutes between the options. Every minute by default. |
+| `readingStyle` | `'named' \| 'marked'` | `'named'` | How the two readings of a repeated hour are told apart in the list. `'named'` writes them out — "02 — winter" — which is unmistakable and widens the menu to the length of the longest word in the language. Inside a field standing beside another, that width is a hole on every ordinary day of the year, so `'marked'` stars the second reading instead and leaves the naming to a line underneath. |
 | `hourStep` | `number` | `1` | Hours between them. |
 | `minTime` | `PlainTime \| string \| undefined` | — | The earliest time offered. |
 | `maxTime` | `PlainTime \| string \| undefined` | — | The latest time offered. |

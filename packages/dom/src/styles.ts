@@ -784,6 +784,11 @@ export const DATEINPUT_CSS = `
 .tz-dateinput__time .tz-time__separator { padding: 0 0.05rem; }
 .tz-dateinput__time[hidden] { display: none; }
 .tz-dateinput__extra:empty { display: none; }
+/* What the star in the hour menu means, said once under the field rather than
+   in every option — and lit when that reading is the one in force. */
+.tz-dateinput__legend { font-size: 0.75em; opacity: 0.65; }
+.tz-dateinput__legend--on { opacity: 1; color: var(--tz-accent, currentColor); font-weight: 600; }
+.tz-dateinput__time .tz-timeselect__menu { color: var(--tz-field-fg, var(--tz-fg, inherit)); }
 .tz-dateinput__extra { display: flex; gap: 0.375rem; margin-top: 0.15rem; }
 `;
 

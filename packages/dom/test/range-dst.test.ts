@@ -192,7 +192,7 @@ describe('the menus name both readings themselves', () => {
     select.dispatchEvent(new Event('change', { bubbles: true }));
   };
 
-  it('so the buttons underneath would say the same thing twice', () => {
+  it('star the second, and say what the star means once, underneath', () => {
     make('2026-10-25', {
       timeLayout: 'select',
       messages: FR,
@@ -204,8 +204,14 @@ describe('the menus name both readings themselves', () => {
       },
     });
     field.open();
-    expect([...menu(0).options].map((o) => o.textContent)).toContain('02 — été');
-    expect([...menu(0).options].map((o) => o.textContent)).toContain('02 — hiver');
+    // Naming both in the list widens the menu to the longest word in the
+    // language, on every ordinary day of the year as well as this one.
+    const labels = [...menu(0).options].map((o) => o.textContent);
+    expect(labels).toContain('02');
+    expect(labels).toContain('02*');
+    expect(labels).not.toContain('02 — hiver');
+    const legend = panel().querySelectorAll('.tz-dateinput')[0]!.querySelector('.tz-dateinput__legend')!;
+    expect(legend.textContent).toBe('* hiver');
     expect(panel().querySelectorAll('.tz-dateinput__extra button').length).toBe(0);
   });
 
@@ -223,11 +229,15 @@ describe('the menus name both readings themselves', () => {
     field.open();
     const at = () => field.value.start!.toZonedDateTimeISO(paris).offset;
 
-    pick(menu(0), '02 — hiver');
+    pick(menu(0), '02*');
     expect(at()).toBe('+01:00');
+    const legend = () => panel().querySelectorAll('.tz-dateinput')[0]!.querySelector('.tz-dateinput__legend')!;
+    expect(legend().classList.contains('tz-dateinput__legend--on')).toBe(true); // lit: that is the one
+
     // Back again: the two share a clock face, so nothing but the reading
     // changes — and that used to read as no change at all.
-    pick(menu(0), '02 — été');
+    pick(menu(0), '02');
     expect(at()).toBe('+02:00');
+    expect(legend().classList.contains('tz-dateinput__legend--on')).toBe(false);
   });
 });

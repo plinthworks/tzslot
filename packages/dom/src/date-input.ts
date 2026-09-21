@@ -33,6 +33,11 @@ export interface DateInputSettings {
    * nudging a time already close to right.
    */
   timeLayout: 'input' | 'select';
+  /**
+   * How the menus tell the two readings of a repeated hour apart: by name, or
+   * by a star with the naming left to whoever draws the field.
+   */
+  readingStyle: 'named' | 'marked';
   /** What the hour's arrows move by. */
   stepMinutes: number;
   /** Minutes between the options of a menu. */
@@ -97,6 +102,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     value: EMPTY,
     withTime: false,
     timeLayout: 'input',
+    readingStyle: 'named',
     stepMinutes: 30,
     minuteStep: 1,
     date: null,
@@ -227,6 +233,8 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     }
     time?.update({
       value: s.withTime ? s.value.time : null,
+      offset: s.withTime ? (s.value.offset ?? null) : null,
+      readingStyle: s.readingStyle,
       stepMinutes: s.stepMinutes,
       minuteStep: s.minuteStep,
       locale: s.locale,

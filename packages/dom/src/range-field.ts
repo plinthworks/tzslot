@@ -749,10 +749,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     return zoned(at_).toPlainTime();
   }
 
-  /** The two ends as a field writes them: a day, and an hour when there is one. */
+  /** The two ends as a field writes them: a day, an hour, and which reading. */
   function wallOf(edge: Edge): WallValue {
     const shown = days(draft);
-    return { date: edge === 'start' ? shown.start : shown.end, time: timeOf(edge) };
+    const at_ = draft[edge];
+    return {
+      date: edge === 'start' ? shown.start : shown.end,
+      time: timeOf(edge),
+      // Only where there are two identical clock faces to tell apart. On an
+      // ordinary day the hour is offered without an offset, and naming one
+      // would match no option at all — the menu would show a blank.
+      offset: at_ && s.showTime && readingsFor(edge).length > 0 ? zoned(at_).offset : null,
+    };
   }
 
   const clock = () => s.now ?? Temporal.Now.instant();
@@ -882,6 +890,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           value: wallOf(edge),
           withTime: s.showTime,
           timeLayout: s.timeLayout,
+          readingStyle: 'marked',
           stepMinutes: s.stepMinutes,
           minuteStep: s.minuteStep,
           date: edge === 'start' ? days(draft).start : days(draft).end,
@@ -906,10 +915,33 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (readingBoxes) {
       for (const edge of ['start', 'end'] as const) {
         const box = readingBoxes[edge];
-        // The menus name the two readings in the list itself — "02 — winter" —
-        // so a second pair of buttons underneath says the same thing twice.
-        // The figures cannot, so there they stay.
+        // The menus tell the two readings apart with a star, which keeps the
+        // list as narrow as any other day of the year; what the star means is
+        // said underneath, once, instead of in every option.
         const offered = s.timeLayout === 'select' ? [] : readingsFor(edge);
+        if (s.timeLayout === 'select') {
+          const pair = readingsFor(edge);
+          const starred = pair[1];
+          const chosen = draft[edge];
+          if (starred) {
+            box.hidden = false;
+            const legend = (box.firstElementChild as HTMLElement | null) ?? el('span', 'tz-dateinput__legend');
+            legend.className = 'tz-dateinput__legend';
+            legend.textContent = `* ${starred.name}`;
+            legend.title = starred.full;
+            // Lit when it is the one in force, so the star is not only a
+            // footnote but says which of the two is answered.
+            legend.classList.toggle(
+              'tz-dateinput__legend--on',
+              chosen !== null && chosen.equals(starred.instant),
+            );
+            if (!legend.isConnected) box.replaceChildren(legend);
+            continue;
+          }
+          box.hidden = true;
+          box.replaceChildren();
+          continue;
+        }
         box.hidden = offered.length === 0;
         if (offered.length === 0) {
           box.replaceChildren();

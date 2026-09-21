@@ -792,6 +792,18 @@ export const RANGEFIELD_CSS = `
 /* The dates and their arrows are one thing; the calendar and its shortcuts
    are another. Without a line between them the panel reads as one long column
    of controls. */
+.tz-rangefield__title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95em;
+  font-weight: 600;
+}
+/* The menus of an hour, inside a field: no frame of their own either. */
+.tz-dateinput__time .tz-timeselect { gap: 0.15rem; }
+.tz-dateinput__time .tz-timeselect__menu {
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0.1rem;
+}
 .tz-rangefield__head {
   display: flex;
   flex-wrap: wrap;

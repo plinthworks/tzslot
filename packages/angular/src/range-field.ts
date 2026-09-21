@@ -89,6 +89,15 @@ export class RangeField implements ControlValueAccessor {
    * Off by default: it suits a screen read all day by the same people.
    */
   readonly lengthBox = input(false);
+  /**
+   * What a typed length does: give the period that length (`'period'`), or
+   * only tell the arrows how far to move (`'step'`), leaving the dates alone.
+   */
+  readonly lengthMeans = input<'period' | 'step'>('period');
+  /** A word or two saying what is being chosen — "Travel dates". */
+  readonly title = input<string | undefined>(undefined);
+  /** How an hour is asked for: figures with arrows, or two menus. */
+  readonly timeLayout = input<'input' | 'select'>('input');
   /** Times as well as days, with a switch back to whole days. */
   readonly showTime = input(false);
   readonly stepMinutes = input(30);
@@ -147,6 +156,9 @@ export class RangeField implements ControlValueAccessor {
     presets: this.presets(),
     openEnded: this.openEnded(),
     lengthBox: this.lengthBox(),
+    lengthMeans: this.lengthMeans(),
+    title: this.title(),
+    timeLayout: this.timeLayout(),
     showTime: this.showTime(),
     stepMinutes: this.stepMinutes(),
     confirm: this.confirm(),

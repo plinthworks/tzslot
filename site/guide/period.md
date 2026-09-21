@@ -6,6 +6,17 @@ everything needed to change it.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, showTime: true, openEnded: true, lengthBox: true, shift: 'auto', weekNumbers: true }" />
 
+## Saying what it is for
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', title: 'Travel dates' });
+```
+
+The title is written above the panel and read out for the field itself. A
+picker with no subject is one the reader has to infer from whatever happens to
+sit beside it, and two pickers on the same screen are then told apart by
+position alone.
+
 ## The panel, top to bottom
 
 **Two fields, From and To.** A click in the calendar fills the one that is
@@ -26,9 +37,12 @@ pattern is never shown as a placeholder — a field explaining its own format
 before anything is typed is a field asking a question instead of inviting an
 answer.
 
-**The hour lives inside the field,** to the right of the day, with an arrow
-above and below: an hour is stepped far more often than it is typed. It
-appears when `showTime` is on and the whole-day switch is off.
+**The hour lives inside the field,** to the right of the day. It appears when
+`showTime` is on and the whole-day switch is off, and `timeLayout` says how it
+is asked for: `'input'` puts an arrow above and below the figures, which suits
+nudging a time already close to right; `'select'` gives an hour menu and a
+minute menu, which is the shorter road when the answer is simply one of a few
+dozen.
 
 **The shortcuts, shortest first.** Ordered by the length of what they mean,
 ending at *This quarter*, so a reader scanning the column can stop as soon as
@@ -105,9 +119,19 @@ want before it opens.
 | `6mo` | six months |
 
 `m` is minutes and never months: `mo` says months, and a screen that read `6m`
-as six months would be wrong by a factor of forty-odd thousand. What is typed
-becomes the length of the period — from the start if there is one, ending now
-if there is not — and the arrows then move by it.
+as six months would be wrong by a factor of forty-odd thousand.
+
+What it does with that length is the screen's to decide:
+
+| `lengthMeans` | |
+|---|---|
+| `'period'` (default) | the period is given that length — the end is filled from the start, or from now backwards if there is no start |
+| `'step'` | the dates are left exactly as they are; the length only tells the arrows how far to move |
+
+Either way the arrows end up moving by it. `'step'` is for a screen that walks
+a single date forward a quarter of an hour at a time and has no second date to
+fill — and emptying an end never forgets the step, so a period can be opened
+at one end and go on being stepped by it.
 
 ## The arrows
 

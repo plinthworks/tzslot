@@ -1,6 +1,7 @@
 import { Temporal } from '@tzslot/core';
 import type { PlainDate, PlainTime } from '@tzslot/core';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
+import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATEINPUT_CSS, ensureStyles } from './styles.js';
@@ -19,7 +20,14 @@ export interface DateInputSettings {
    * for one — and an hour is stepped far more often than it is typed.
    */
   withTime: boolean;
-  /** What the hour's arrows move by. */
+  /**
+   * How the hour is asked for: `'input'` for figures with an arrow above and
+   * below, `'select'` for an hour menu and a minute menu. A menu is the
+   * shorter road when the answer is one of a few dozen; the arrows suit
+   * nudging a time already close to right.
+   */
+  timeLayout: 'input' | 'select';
+  /** What the hour's arrows move by, and the minutes a menu offers. */
   stepMinutes: number;
   /** The day the hour belongs to, so its arrows can step over a missing one. */
   date: PlainDate | null;
@@ -80,6 +88,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   const s: DateInputSettings = {
     value: EMPTY,
     withTime: false,
+    timeLayout: 'input',
     stepMinutes: 30,
     date: null,
     timeZone: undefined,
@@ -120,7 +129,9 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   clear.textContent = '×';
   const extra = el('div', 'tz-dateinput__extra');
   row.append(input, timeHost, clear);
-  let time: TimeInputInstance | null = null;
+  let time: TimeInputInstance | TimeSelectInstance | null = null;
+  /** Which shape is mounted, so a change of layout rebuilds it. */
+  let mounted: 'input' | 'select' | null = null;
   host.append(caption, row, extra);
 
   const pattern = () => s.format ?? patternFor(s.locale);
@@ -185,16 +196,20 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     // A picture above the field says nothing to a screen reader.
     input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
     timeHost.hidden = !s.withTime;
-    if (s.withTime && !time) {
-      time = createTimeInput(timeHost, {
-        injectStyles: false,
-        variant: 'bare', // arrows above and below, framed by the field around it
-        onChange: (picked) => settle({ date: s.value.date, time: picked }),
-      });
+    if (s.withTime && mounted !== s.timeLayout) {
+      time?.destroy();
+      timeHost.replaceChildren();
+      const onChange = (picked: PlainTime | null) => settle({ date: s.value.date, time: picked });
+      time =
+        s.timeLayout === 'select'
+          ? createTimeSelect(timeHost, { injectStyles: false, onChange })
+          : createTimeInput(timeHost, { injectStyles: false, variant: 'bare', onChange });
+      mounted = s.timeLayout;
     }
     time?.update({
       value: s.withTime ? s.value.time : null,
       stepMinutes: s.stepMinutes,
+      minuteStep: s.stepMinutes,
       locale: s.locale,
       messages: s.messages,
       disabled: s.disabled || s.value.date === null,

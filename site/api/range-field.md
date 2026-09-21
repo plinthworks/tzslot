@@ -10,6 +10,9 @@
 | `timeZone` | `string` | `Temporal.Now.timeZoneId()` | An IANA identifier. Days become moments on this zone's clocks. |
 | `presets` | `readonly (PresetName \| RangePreset)[]` | `BUILT_IN` | Named ranges beside the calendar. The built-in names, or your own. |
 | `lengthBox` | `boolean` | `false` | A box above them where a length is typed — `25mn`, `1h`, `3d`. Off by default: it suits a screen read all day by the same people, and not a booking form. |
+| `lengthMeans` | `'period' \| 'step'` | `'period'` | What a typed length does. `'period'` gives the period that length, filling the end from the start — which is what someone measuring a window wants. `'step'` leaves the dates alone and only tells the arrows how far to move, for a screen that walks a single date forward a quarter of an hour at a time. Either way the arrows end up moving by it. |
+| `title` | `string \| undefined` | — | A word or two saying what is being chosen — "Travel dates", "Effective date". Written above the panel, and read out for the field itself. A picker with no subject is a picker the reader has to infer from what is around it. |
+| `timeLayout` | `'input' \| 'select'` | `'input'` | How an hour is asked for inside the two fields: `'input'` for figures with arrows, `'select'` for an hour menu and a minute menu. |
 | `openEnded` | `boolean` | `false` | Lets a period stop at one end: "from 14 September", "until 20 September". A search means that — `WHERE at >= :start` with no upper bound — and a booking form does not, which is why it is asked for rather than assumed. The panel then offers Between / From / Until, and each chosen end can be dropped with the cross beside it. |
 | `showTime` | `boolean` | `false` | Times as well as days, with a switch back to whole days. |
 | `stepMinutes` | `number` | `30` | Minutes the time fields step by. |

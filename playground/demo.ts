@@ -277,6 +277,18 @@ function parisAt(iso: string): Instant {
           }
         </div>
         <div class="row">
+          <span class="note">Heure</span>
+          @for (l of ['input', 'select']; track l) {
+            <button type="button" class="chip" [class.on]="periodTimeLayout() === l"
+                    (click)="periodTimeLayout.set($any(l))">{{ l }}</button>
+          }
+          <span class="note">Durée tapée</span>
+          @for (m of ['period', 'step']; track m) {
+            <button type="button" class="chip" [class.on]="lengthMeans() === m"
+                    (click)="lengthMeans.set($any(m))">{{ m }}</button>
+          }
+        </div>
+        <div class="row">
           <span class="note">Libellés</span>
           <button type="button" class="chip" [class.on]="labelStyle() === 'words'"
                   (click)="labelStyle.set('words')">Du / Au</button>
@@ -295,6 +307,8 @@ function parisAt(iso: string): Instant {
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
                         [openEnded]="openEnded()" [labels]="rangeLabels()" [lengthBox]="true"
+                        [lengthMeans]="lengthMeans()" [timeLayout]="periodTimeLayout()"
+                        [title]="'Dates de voyage'"
                         [presets]="['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour', 'yesterday', 'today', 'tomorrow', 'last7Days', 'thisMonth', 'thisQuarter']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
@@ -570,6 +584,8 @@ export class Demo {
   ];
   protected readonly periodShift = signal<ShiftStep | readonly ShiftOption[] | false>('auto');
   protected readonly openEnded = signal(false);
+  protected readonly periodTimeLayout = signal<'input' | 'select'>('input');
+  protected readonly lengthMeans = signal<'period' | 'step'>('period');
   /** Words above the two fields, or a mark between them — the screen decides. */
   protected readonly labelStyle = signal<'words' | 'arrow'>('words');
   protected readonly rangeLabels = computed(() =>

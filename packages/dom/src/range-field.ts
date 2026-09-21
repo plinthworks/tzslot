@@ -37,6 +37,7 @@ import {
   FIELD_CSS,
   RANGEFIELD_CSS,
   RANGE_CSS,
+  TIMESELECT_CSS,
   TIME_CSS,
   ensureStyles,
 } from './styles.js';
@@ -86,6 +87,28 @@ export interface RangeFieldSettings {
    * booking form.
    */
   lengthBox: boolean;
+  /**
+   * What a typed length does.
+   *
+   * `'period'` gives the period that length, filling the end from the start —
+   * which is what someone measuring a window wants. `'step'` leaves the dates
+   * alone and only tells the arrows how far to move, for a screen that walks
+   * a single date forward a quarter of an hour at a time. Either way the
+   * arrows end up moving by it.
+   */
+  lengthMeans: 'period' | 'step';
+  /**
+   * A word or two saying what is being chosen — "Travel dates", "Effective
+   * date". Written above the panel, and read out for the field itself. A
+   * picker with no subject is a picker the reader has to infer from what is
+   * around it.
+   */
+  title: string | undefined;
+  /**
+   * How an hour is asked for inside the two fields: `'input'` for figures with
+   * arrows, `'select'` for an hour menu and a minute menu.
+   */
+  timeLayout: 'input' | 'select';
   /**
    * Lets a period stop at one end: "from 14 September", "until 20 September".
    * A search means that — `WHERE at >= :start` with no upper bound — and a
@@ -220,6 +243,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     timeZone: Temporal.Now.timeZoneId(),
     presets: BUILT_IN,
     lengthBox: false,
+    lengthMeans: 'period',
+    title: undefined,
+    timeLayout: 'input',
     openEnded: false,
     showTime: false,
     stepMinutes: 30,
@@ -613,10 +639,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function applyLength(text: string): boolean {
     const length = parseDuration(text);
     if (!length) return false;
+    presetShift = length;
+    if (s.lengthMeans === 'step') {
+      // The dates are the reader's; the length only says how far the arrows
+      // move. A period left with one end keeps that end.
+      render();
+      return true;
+    }
     // Through the zone, not on the instant: an instant cannot be moved by days
     // at all — Temporal refuses — and a day is not always twenty-four hours.
     const from = draft.start ?? clock().toZonedDateTimeISO(s.timeZone).subtract(length).toInstant();
-    presetShift = length;
     draft = { ...draft, start: from, end: from.toZonedDateTimeISO(s.timeZone).add(length).toInstant(), allDay: false };
     choose(draft);
     return true;
@@ -792,6 +824,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         inputs[edge].update({
           value: wallOf(edge),
           withTime: s.showTime && !wholeDays(),
+          timeLayout: s.timeLayout,
           stepMinutes: s.stepMinutes,
           date: edge === 'start' ? days(draft).start : days(draft).end,
           timeZone: s.timeZone,
@@ -887,7 +920,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
     trigger.classList.toggle('tz-field__trigger--empty', s.value.start === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
-    trigger.setAttribute('aria-label', s.ariaLabel ?? s.messages.chooseRange);
+    trigger.setAttribute('aria-label', s.ariaLabel ?? s.title ?? s.messages.chooseRange);
     trigger.disabled = s.disabled;
     if (s.disabled) panel.close({ restoreFocus: false });
     paintPanel();
@@ -898,7 +931,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     source: host,
     container,
     mode: () => s.mode,
-    label: () => s.ariaLabel ?? s.messages.chooseRange,
+    label: () => s.ariaLabel ?? s.title ?? s.messages.chooseRange,
     onOpen: () => {
       draft = s.value;
       armed = 'start';
@@ -923,7 +956,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'range', RANGE_CSS);
       ensureStyles(node, 'time', TIME_CSS);
       ensureStyles(node, 'dateinput', DATEINPUT_CSS);
+      ensureStyles(node, 'timeselect', TIMESELECT_CSS);
       ensureStyles(node, 'datetime', DATETIME_CSS);
+
+      if (s.title) {
+        const heading = el('h2', 'tz-rangefield__title');
+        heading.textContent = s.title;
+        node.append(heading);
+      }
 
       if (currentStep() !== null) {
         const row = el('div', 'tz-rangefield__shift');
@@ -964,7 +1004,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           },
           onChange: (typedValue) => {
             armed = edge;
-            presetShift = null; // typed by hand, so no preset rule applies
+            // A date typed by hand replaces whatever rule a shortcut left, but
+            // emptying a field is not choosing a date: it opens that end, and
+            // the arrows go on moving by the step that was in force.
+            if (typedValue.date !== null) presetShift = null;
             setEdge(edge, typedValue);
           },
         });

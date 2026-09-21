@@ -18,7 +18,10 @@ export type PresetName =
   | 'lastQuarter'
   | 'nextQuarter'
   | 'thisQuarterHour'
+  | 'lastHour'
   | 'thisHour'
+  | 'nextHour'
+  | 'tomorrow'
   | 'next7Days'
   | 'next30Days'
   | 'thisYear';
@@ -31,7 +34,7 @@ export type PresetName =
  * clock rather than from midnight, so at 11:07 the answer is the quarter that
  * is running, not the one that starts next.
  */
-export const SUB_DAY_PRESETS = ['thisQuarterHour', 'thisHour'] as const;
+export const SUB_DAY_PRESETS = ['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour'] as const;
 export type SubDayPreset = (typeof SUB_DAY_PRESETS)[number];
 
 export function isSubDayPreset(name: string): name is SubDayPreset {
@@ -57,9 +60,13 @@ export function presetMoments(
   { now, timeZone }: { now: Instant; timeZone: string },
 ): MomentRange {
   const here = now.toZonedDateTimeISO(timeZone);
-  const minutes = name === 'thisHour' ? 60 : 15;
-  const start = here.with({ minute: here.minute - (here.minute % minutes), second: 0, millisecond: 0 })
+  const minutes = name === 'thisQuarterHour' ? 15 : 60;
+  const running = here
+    .with({ minute: here.minute - (here.minute % minutes), second: 0, millisecond: 0 })
     .with({ microsecond: 0, nanosecond: 0 });
+  // The hour before and the hour after are whole hours on the clock too: at
+  // 11:07 the one before is 10:00 to 11:00, not 10:07 to 11:07.
+  const start = name === 'lastHour' ? running.subtract({ hours: 1 }) : name === 'nextHour' ? running.add({ hours: 1 }) : running;
   return { start: start.toInstant(), end: start.add({ minutes }).toInstant() };
 }
 
@@ -72,7 +79,8 @@ export function presetMoments(
  */
 export function presetStep(name: PresetName): ShiftStep {
   if (name === 'thisQuarterHour') return { minutes: 15 };
-  if (name === 'thisHour') return { hours: 1 };
+  if (name === 'lastHour' || name === 'thisHour' || name === 'nextHour') return { hours: 1 };
+  if (name === 'yesterday' || name === 'today' || name === 'tomorrow') return { days: 1 };
   return 'auto';
 }
 
@@ -120,6 +128,8 @@ export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: Pre
       return { start: today, end: today };
     case 'yesterday':
       return { start: back(1), end: back(1) };
+    case 'tomorrow':
+      return { start: today.add({ days: 1 }), end: today.add({ days: 1 }) };
     case 'last7Days':
       return { start: back(6), end: today };
     case 'last14Days':
@@ -157,7 +167,9 @@ export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: Pre
       return { start: first, end: Temporal.PlainDate.from({ year: today.year, month: 12, day: 31 }) };
     }
     case 'thisQuarterHour':
+    case 'lastHour':
     case 'thisHour':
+    case 'nextHour':
       // These are moments, not days; presetMoments answers them. Returning the
       // whole day here would look like it worked.
       throw new RangeError(`${name} is shorter than a day: use presetMoments`);

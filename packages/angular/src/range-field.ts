@@ -65,12 +65,16 @@ export class RangeField implements ControlValueAccessor {
 
   /** Named ranges beside the calendar: the built-in names, or your own. */
   readonly presets = input<readonly (PresetName | RangePreset)[]>([
-    'today',
+    'thisQuarterHour',
+    'lastHour',
+    'thisHour',
+    'nextHour',
     'yesterday',
+    'today',
+    'tomorrow',
     'last7Days',
-    'last30Days',
     'thisMonth',
-    'lastMonth',
+    'thisQuarter',
   ]);
 
   /**
@@ -80,6 +84,11 @@ export class RangeField implements ControlValueAccessor {
    * accept a period with no end.
    */
   readonly openEnded = input(false);
+  /**
+   * A box above the shortcuts where a length is typed — `25mn`, `1h`, `3d`.
+   * Off by default: it suits a screen read all day by the same people.
+   */
+  readonly lengthBox = input(false);
   /** Times as well as days, with a switch back to whole days. */
   readonly showTime = input(false);
   readonly stepMinutes = input(30);
@@ -137,6 +146,7 @@ export class RangeField implements ControlValueAccessor {
     timeZone: this.timeZone(),
     presets: this.presets(),
     openEnded: this.openEnded(),
+    lengthBox: this.lengthBox(),
     showTime: this.showTime(),
     stepMinutes: this.stepMinutes(),
     confirm: this.confirm(),

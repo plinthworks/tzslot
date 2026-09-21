@@ -1,5 +1,5 @@
 import { Temporal } from './temporal.js';
-import type { DurationLike, Instant, PlainDate } from './temporal.js';
+import type { Duration, DurationLike, Instant, PlainDate } from './temporal.js';
 import type { DayRange } from './presets.js';
 
 /**
@@ -85,4 +85,44 @@ export function shiftInstant(
 export function shiftDate(date: PlainDate, step: DurationLike, direction: 1 | -1): PlainDate {
   const by = Temporal.Duration.from(step);
   return date.add(direction === 1 ? by : by.negated());
+}
+
+/**
+ * A length of time written the short way: `25mn`, `1h`, `3d`, `2w`, `6mo`.
+ *
+ * Filter screens are used all day by people who know what they want before
+ * the panel opens, and a list of shortcuts cannot hold every length anyone
+ * might need. Typing one is faster than any list — as long as what may be
+ * typed is small enough to remember, which is why this takes units and not a
+ * sentence.
+ *
+ * Accepted: mn, min, m (minutes) · h (hours) · d, j (days) · w, s (weeks) ·
+ * mo (months). Case is ignored, and a space before the unit is allowed. A
+ * bare number is read as minutes, because that is what the short forms are
+ * mostly used for. `m` is minutes, never months: `mo` says months, and the
+ * ambiguity between the two is the reason the short one is spelled out.
+ */
+export function parseDuration(text: string): Duration | null {
+  const match = /^\s*(\d+)\s*(mn|min|mo|[mhdjws])?\s*$/i.exec(text);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  switch ((match[2] ?? 'mn').toLowerCase()) {
+    case 'mn':
+    case 'min':
+    case 'm':
+      return Temporal.Duration.from({ minutes: amount });
+    case 'h':
+      return Temporal.Duration.from({ hours: amount });
+    case 'd':
+    case 'j':
+      return Temporal.Duration.from({ days: amount });
+    case 'w':
+    case 's':
+      return Temporal.Duration.from({ weeks: amount });
+    case 'mo':
+      return Temporal.Duration.from({ months: amount });
+    default:
+      return null;
+  }
 }

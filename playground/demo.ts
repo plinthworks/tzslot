@@ -294,8 +294,8 @@ function parisAt(iso: string): Instant {
         </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
-                        [openEnded]="openEnded()" [labels]="rangeLabels()"
-                        [presets]="['thisQuarterHour', 'thisHour', 'thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth']" />
+                        [openEnded]="openEnded()" [labels]="rangeLabels()" [lengthBox]="true"
+                        [presets]="['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour', 'yesterday', 'today', 'tomorrow', 'last7Days', 'thisMonth', 'thisQuarter']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
           Les flèches ‹ › décalent la période entière d'un cran. En « auto », c'est le raccourci

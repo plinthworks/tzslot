@@ -7,6 +7,7 @@ import {
   shiftDayRange,
   shiftInstant,
   shiftDate,
+  parseDuration,
 } from '../src/index.js';
 import type { Instant, PlainDate } from '../src/index.js';
 
@@ -126,5 +127,40 @@ describe('the named ranges shorter than a day', () => {
 
   it('asking for one of them as days is refused, not fudged', () => {
     expect(() => presetRange('thisHour', { today })).toThrow(/shorter than a day/);
+  });
+});
+
+describe('a length written the short way', () => {
+  const read = (text: string) => {
+    const parsed = parseDuration(text);
+    return parsed ? parsed.toString() : null;
+  };
+
+  it('reads the units a filter screen actually uses', () => {
+    expect(read('25mn')).toBe('PT25M');
+    expect(read('25 min')).toBe('PT25M');
+    expect(read('1h')).toBe('PT1H');
+    expect(read('3d')).toBe('P3D');
+    expect(read('3j')).toBe('P3D'); // the French spelling, for a French screen
+    expect(read('2w')).toBe('P2W');
+    expect(read('6mo')).toBe('P6M');
+  });
+
+  it('is not fussy about case or spacing, and reads a bare number as minutes', () => {
+    expect(read('  90 MN ')).toBe('PT90M');
+    expect(read('45')).toBe('PT45M');
+  });
+
+  it("'m' is minutes and never months — 'mo' says months", () => {
+    // The whole reason the longer form exists: a screen that read 6m as six
+    // months would be wrong by a factor of forty-three thousand.
+    expect(read('6m')).toBe('PT6M');
+    expect(read('6mo')).toBe('P6M');
+  });
+
+  it('refuses what it cannot read rather than guessing', () => {
+    for (const text of ['', 'soon', '0h', '-2d', '2 days', '1.5h', '12x']) {
+      expect(read(text)).toBe(null);
+    }
   });
 });

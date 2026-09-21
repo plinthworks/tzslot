@@ -168,7 +168,11 @@ describe('words', () => {
     mount({ messages: FR, locale: 'fr-FR' });
     field.open();
     expect(presets().map((b) => b.textContent)).toContain('7 derniers jours');
-    expect(panel()!.querySelector('.tz-rangefield__preset')!.textContent).toBe("Aujourd'hui");
+    // Shortest first, longest last: the column grows steadily, so a reader can
+    // stop as soon as it overshoots what they wanted.
+    const offered = presets().map((b) => b.textContent);
+    expect(offered[0]).toBe("Le quart d'heure courant");
+    expect(offered.at(-1)).toBe('Ce trimestre');
   });
 });
 
@@ -196,6 +200,8 @@ describe('the panel reads as two halves', () => {
     const inside = panel()!.querySelector('.tz-dateinput__row .tz-dateinput__time.tz-time .tz-time__field');
     expect(inside).not.toBeNull(); // the hour is in the field, not on a row below
     const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
-    expect(css).toContain('.tz-dateinput__time .tz-time__field { border: 0; background: transparent; }');
+    expect(css).toContain('.tz-dateinput__time .tz-time__field { border: 0; background: transparent; min-width: 0; }');
+    // Arrows above and below the figures, which is the shape asked for.
+    expect(inside!.closest('.tz-time')!.classList.contains('tz-time--bare')).toBe(true);
   });
 });

@@ -5,6 +5,7 @@ import {
   presetStep,
   isSubDayPreset,
   matchesPreset,
+  parseDuration,
   shiftDayRange,
   shiftInstant,
   resolveWallTime,
@@ -77,8 +78,14 @@ export interface RangeFieldSettings {
   value: RangeFieldValue;
   /** An IANA identifier. Days become moments on this zone's clocks. */
   timeZone: string;
-  /** Named ranges beside the calendar. The ten built-in names, or your own. */
+  /** Named ranges beside the calendar. The built-in names, or your own. */
   presets: readonly (PresetName | RangePreset)[];
+  /**
+   * A box above them where a length is typed — `25mn`, `1h`, `3d`. Off by
+   * default: it suits a screen read all day by the same people, and not a
+   * booking form.
+   */
+  lengthBox: boolean;
   /**
    * Lets a period stop at one end: "from 14 September", "until 20 September".
    * A search means that — `WHERE at >= :start` with no upper bound — and a
@@ -175,7 +182,25 @@ const EMPTY: RangeFieldValue = { start: null, end: null, allDay: true };
 
 /** Which of the two ends a click or a keystroke is about. */
 type Edge = 'start' | 'end';
-const BUILT_IN: PresetName[] = ['today', 'yesterday', 'last7Days', 'last30Days', 'thisMonth', 'lastMonth'];
+/**
+ * What a filter screen offers unless told otherwise, shortest first.
+ *
+ * Ordered by the length of what they mean rather than by how often they are
+ * used: a reader scanning the column is looking for a size, and a list that
+ * grows steadily is one they can stop reading as soon as it overshoots.
+ */
+const BUILT_IN: PresetName[] = [
+  'thisQuarterHour',
+  'lastHour',
+  'thisHour',
+  'nextHour',
+  'yesterday',
+  'today',
+  'tomorrow',
+  'last7Days',
+  'thisMonth',
+  'thisQuarter',
+];
 
 /**
  * One field for a period: "22/08/2026 – 20/09/2026".
@@ -194,6 +219,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     value: EMPTY,
     timeZone: Temporal.Now.timeZoneId(),
     presets: BUILT_IN,
+    lengthBox: false,
     openEnded: false,
     showTime: false,
     stepMinutes: 30,
@@ -575,6 +601,65 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     return edge === 'start' ? s.messages.rangeStart : s.messages.rangeEnd;
   }
 
+  /**
+   * A length typed rather than chosen: 25mn, 1h, 3d.
+   *
+   * No list of shortcuts holds every length someone might want, and the
+   * people who use a filter screen all day know what they want before it
+   * opens. What is typed becomes the length of the period — measured from the
+   * start if there is one, and ending now if there is not — and the arrows
+   * then move by it, exactly as a shortcut would.
+   */
+  function applyLength(text: string): boolean {
+    const length = parseDuration(text);
+    if (!length) return false;
+    // Through the zone, not on the instant: an instant cannot be moved by days
+    // at all — Temporal refuses — and a day is not always twenty-four hours.
+    const from = draft.start ?? clock().toZonedDateTimeISO(s.timeZone).subtract(length).toInstant();
+    presetShift = length;
+    draft = { ...draft, start: from, end: from.toZonedDateTimeISO(s.timeZone).add(length).toInstant(), allDay: false };
+    choose(draft);
+    return true;
+  }
+
+  function buildLengthBox(): HTMLElement {
+    const box = el('div', 'tz-rangefield__length');
+    const field = doc.createElement('input');
+    field.type = 'text';
+    field.className = 'tz-rangefield__length-input';
+    field.placeholder = s.messages.lengthLabel;
+    field.setAttribute('aria-label', s.messages.lengthLabel);
+    const help = doc.createElement('button');
+    help.type = 'button';
+    help.className = 'tz-rangefield__length-help';
+    help.textContent = 'ⓘ';
+    help.title = s.messages.lengthHelp;
+    help.setAttribute('aria-label', s.messages.lengthHelp);
+    // A tooltip is not readable on a touch screen and not reachable by a
+    // keyboard, so the same words are also a line that the button shows.
+    const note = el('p', 'tz-rangefield__length-note');
+    note.textContent = s.messages.lengthHelp;
+    note.hidden = true;
+    help.addEventListener('click', () => {
+      note.hidden = !note.hidden;
+    });
+    field.addEventListener('keydown', (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      const read = applyLength(field.value);
+      field.classList.toggle('tz-rangefield__length-input--invalid', !read);
+      field.setAttribute('aria-invalid', String(!read));
+    });
+    field.addEventListener('input', () => {
+      field.classList.remove('tz-rangefield__length-input--invalid');
+      field.removeAttribute('aria-invalid');
+    });
+    const row = el('div', 'tz-rangefield__length-row');
+    row.append(field, help);
+    box.append(row, note);
+    return box;
+  }
+
   /** The clock face an end already carries, so a click on a day keeps it. */
   function timeOf(edge: Edge): PlainTime | null {
     const at_ = draft[edge];
@@ -670,9 +755,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   const isBuiltIn = (name: string): name is PresetName => (BUILT_IN as string[]).includes(name) || [
     'last14Days',
+    'last30Days',
     'thisWeek',
     'lastWeek',
-    'thisQuarter',
+    'lastMonth',
     'lastQuarter',
     'nextQuarter',
     'next7Days',
@@ -911,9 +997,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const body = el('div', 'tz-rangefield__body');
       const rangeHost = doc.createElement('div');
       body.append(rangeHost);
-      if (s.presets.length > 0) {
-        presetList = el('div', 'tz-rangefield__presets');
-        body.append(presetList);
+      if (s.presets.length > 0 || s.lengthBox) {
+        const column = el('div', 'tz-rangefield__presets');
+        if (s.lengthBox) column.append(buildLengthBox());
+        presetList = el('div', 'tz-rangefield__preset-list');
+        column.append(presetList);
+        body.append(column);
       }
       node.append(body);
 

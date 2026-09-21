@@ -774,13 +774,14 @@ export const DATEINPUT_CSS = `
   box-shadow: 0 0 0 2px var(--tz-ring, color-mix(in srgb, var(--tz-accent, currentColor) 35%, transparent));
 }
 /* The hour beside the day, not on a row of its own: one field, two halves.
-   It brings its own frame everywhere else; here the field is the frame. */
+   Its arrows sit above and below the figures, as they do in a panel, and the
+   field around it is its frame — it brings none of its own here. */
 .tz-dateinput__time { padding-right: 0.3rem; }
-.tz-dateinput__time .tz-time { gap: 0; }
-.tz-dateinput__time .tz-time__field { border: 0; background: transparent; }
-.tz-dateinput__time .tz-time__input { width: 1.8rem; padding: 0.2rem 0; text-align: center; }
-.tz-dateinput__time .tz-time__arrow { padding: 0 0.2rem; font-size: 0.65em; border: 0; }
-.tz-dateinput__time .tz-time__separator { padding: 0 0.1rem; }
+.tz-dateinput__time.tz-time { width: auto; gap: 0.1rem; font-size: 1rem; }
+.tz-dateinput__time .tz-time__field { border: 0; background: transparent; min-width: 0; }
+.tz-dateinput__time .tz-time__input { width: 1.7rem; padding: 0; font-size: 1em; text-align: center; }
+.tz-dateinput__time .tz-time__arrow { padding: 0 0.5rem; font-size: 0.6em; opacity: 0.5; }
+.tz-dateinput__time .tz-time__separator { padding: 0 0.05rem; }
 .tz-dateinput__time[hidden] { display: none; }
 .tz-dateinput__extra:empty { display: none; }
 .tz-dateinput__extra { display: flex; gap: 0.375rem; margin-top: 0.15rem; }
@@ -794,7 +795,7 @@ export const RANGEFIELD_CSS = `
 .tz-rangefield__head {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: flex-start;
   gap: 0.75rem 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
@@ -805,13 +806,18 @@ export const RANGEFIELD_CSS = `
 .tz-rangefield__inputs {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  /* Tops aligned, not bottoms: the two readings of a repeated hour appear
+     under one of the two fields, and aligning bottoms let that lift the other
+     field half an inch off the line. */
+  align-items: flex-start;
   gap: 0.5rem 0.75rem;
   min-width: 0;
 }
+/* The switch and the mark between the fields stand on the line of the fields,
+   not of the words above them. */
+.tz-rangefield__head > .tz-dtr__allday { padding-top: 1.35rem; }
 .tz-rangefield__between {
-  align-self: center;
-  padding-bottom: 0.45rem;
+  padding-top: 1.75rem;
   opacity: 0.6;
   font-size: 1.1em;
 }
@@ -900,6 +906,41 @@ export const RANGEFIELD_CSS = `
   max-height: var(--tz-rangefield-presets-height, 17rem);
   overflow-y: auto;
   order: var(--tz-rangefield-presets-order, 1);
+}
+.tz-rangefield__preset-list { display: flex; flex-direction: column; gap: 0.125rem; }
+.tz-rangefield__length { display: flex; flex-direction: column; gap: 0.25rem; margin-bottom: 0.4rem; }
+.tz-rangefield__length-row { display: flex; align-items: center; gap: 0.25rem; }
+.tz-rangefield__length-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 5rem;
+  border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
+  background: var(--tz-field-bg, var(--tz-bg, transparent));
+  color: var(--tz-field-fg, var(--tz-fg, inherit));
+  font: var(--tz-font, inherit);
+  font-size: 0.875em;
+  padding: 0.3rem 0.5rem;
+}
+.tz-rangefield__length-input:focus { outline: none; border-color: var(--tz-accent, currentColor); }
+.tz-rangefield__length-input--invalid { border-color: var(--tz-danger, currentColor); }
+.tz-rangefield__length-help {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  opacity: 0.6;
+  cursor: help;
+  padding: 0.1rem 0.2rem;
+}
+.tz-rangefield__length-help:hover { opacity: 1; }
+.tz-rangefield__length-note[hidden] { display: none; }
+.tz-rangefield__length-note {
+  margin: 0;
+  font-size: 0.75em;
+  line-height: 1.35;
+  opacity: 0.75;
+  max-width: 13rem;
 }
 .tz-rangefield__preset {
   border: 0;

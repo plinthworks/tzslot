@@ -152,6 +152,23 @@ cross on a chosen end drops it. The end stays exclusive either way, so *Until
 
 It is off by default: a booking form must not take a stay that never ends.
 
+### A length, typed
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', lengthBox: true });
+```
+
+No column of shortcuts holds every length anyone might want, and the people
+who read a filter screen all day know what they want before it opens. A box
+above the shortcuts takes one: **25mn**, **1h**, **3d**, **2w**, **6mo** — a
+bare number is minutes, and `m` is minutes too, because `mo` says months and
+a screen that read `6m` as six months would be wrong by a factor of forty-odd
+thousand.
+
+What is typed becomes the length of the period, measured from the start if
+there is one and ending now if there is not, and the arrows then move by it —
+exactly as a shortcut does.
+
 Whatever the period, a time that happens twice is named in the field as well
 as in the panel — `25/10/2026 02:30 (winter)` — because once the panel closes
 the choice is invisible, and two identical clock faces make a field nobody can

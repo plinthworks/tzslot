@@ -188,7 +188,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     if (s.withTime && !time) {
       time = createTimeInput(timeHost, {
         injectStyles: false,
-        variant: 'boxed', // framed by the field around it, not by itself
+        variant: 'bare', // arrows above and below, framed by the field around it
         onChange: (picked) => settle({ date: s.value.date, time: picked }),
       });
     }

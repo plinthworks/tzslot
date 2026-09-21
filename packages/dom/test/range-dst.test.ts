@@ -210,8 +210,9 @@ describe('the menus name both readings themselves', () => {
     expect(labels).toContain('02');
     expect(labels).toContain('02*');
     expect(labels).not.toContain('02 — hiver');
+    // The value here is the summer reading, so that is what the line names.
     const legend = panel().querySelectorAll('.tz-dateinput')[0]!.querySelector('.tz-dateinput__legend')!;
-    expect(legend.textContent).toBe('* hiver');
+    expect(legend.textContent).toBe('été');
     expect(panel().querySelectorAll('.tz-dateinput__extra button').length).toBe(0);
   });
 
@@ -229,15 +230,18 @@ describe('the menus name both readings themselves', () => {
     field.open();
     const at = () => field.value.start!.toZonedDateTimeISO(paris).offset;
 
+    const legend = () => panel().querySelectorAll('.tz-dateinput')[0]!.querySelector('.tz-dateinput__legend')!;
     pick(menu(0), '02*');
     expect(at()).toBe('+01:00');
-    const legend = () => panel().querySelectorAll('.tz-dateinput')[0]!.querySelector('.tz-dateinput__legend')!;
-    expect(legend().classList.contains('tz-dateinput__legend--on')).toBe(true); // lit: that is the one
+    // The starred option is the answer, so the star is explained as well.
+    expect(legend().textContent).toBe('* hiver');
+    expect(legend().classList.contains('tz-dateinput__legend--on')).toBe(true);
 
     // Back again: the two share a clock face, so nothing but the reading
     // changes — and that used to read as no change at all.
     pick(menu(0), '02');
     expect(at()).toBe('+02:00');
+    expect(legend().textContent).toBe('été');
     expect(legend().classList.contains('tz-dateinput__legend--on')).toBe(false);
   });
 });

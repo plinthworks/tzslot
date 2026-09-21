@@ -207,8 +207,9 @@ On the morning the clocks go back, an hour happens twice, and a field reading
 have to work out.
 
 The menus offer the hour twice and star the second — `02` and `02*` — with a
-line under the field saying what the star means, lit when that reading is the
-one in force. Naming both inside the list would widen the menu to the longest
+line under the field naming the reading in force: *summer*, or *\* winter*
+when the starred one is the answer, which is the moment the mark needs
+explaining. Naming both inside the list would widen the menu to the longest
 word in the language, on every ordinary day of the year as much as on this
 one. The figures cannot say it at all, so there a pair of buttons appears
 instead. Either way the closed field says which was chosen:

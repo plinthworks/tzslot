@@ -921,20 +921,20 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         const offered = s.timeLayout === 'select' ? [] : readingsFor(edge);
         if (s.timeLayout === 'select') {
           const pair = readingsFor(edge);
-          const starred = pair[1];
           const chosen = draft[edge];
-          if (starred) {
+          // The line names the reading in force, not the starred one: it
+          // answers "which 02:00 is this?", which is the question the reader
+          // has. The star comes along only when the starred option is the
+          // answer, because then it also explains the mark in the list.
+          const held = chosen === null ? undefined : pair.find((r) => r.instant.equals(chosen));
+          if (held) {
+            const starred = held === pair[1];
             box.hidden = false;
             const legend = (box.firstElementChild as HTMLElement | null) ?? el('span', 'tz-dateinput__legend');
             legend.className = 'tz-dateinput__legend';
-            legend.textContent = `* ${starred.name}`;
-            legend.title = starred.full;
-            // Lit when it is the one in force, so the star is not only a
-            // footnote but says which of the two is answered.
-            legend.classList.toggle(
-              'tz-dateinput__legend--on',
-              chosen !== null && chosen.equals(starred.instant),
-            );
+            legend.textContent = starred ? `* ${held.name}` : held.name;
+            legend.title = held.full;
+            legend.classList.toggle('tz-dateinput__legend--on', starred);
             if (!legend.isConnected) box.replaceChildren(legend);
             continue;
           }

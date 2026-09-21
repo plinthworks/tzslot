@@ -1,5 +1,5 @@
 import { Temporal } from './temporal.js';
-import type { Duration, DurationLike, Instant, PlainDate } from './temporal.js';
+import type { Duration, DurationLike, Instant, PlainDate, PlainTime } from './temporal.js';
 import type { DayRange } from './presets.js';
 
 /**
@@ -125,4 +125,25 @@ export function parseDuration(text: string): Duration | null {
     default:
       return null;
   }
+}
+
+/**
+ * A clock face moved to the nearest mark of a grid.
+ *
+ * A field that takes fifteen-minute appointments and accepts 10:07 has two
+ * truths about the same booking: what the reader typed and what the system
+ * will honour. Snapping settles it at the moment of typing, where the reader
+ * can still see it happen.
+ *
+ * Ties go up — 10:07:30 becomes 10:15 — because the alternative is a rule
+ * nobody can predict at the one minute it matters.
+ */
+export function snapTime(time: PlainTime, minutes: number): PlainTime {
+  if (!Number.isFinite(minutes) || minutes <= 1) return time;
+  const total = time.hour * 60 + time.minute + (time.second >= 30 ? 1 : 0);
+  const snapped = Math.round(total / minutes) * minutes;
+  // Round past the end of the day and the answer is tomorrow; the last mark
+  // of this one is the honest one.
+  const capped = Math.min(snapped, Math.floor((24 * 60 - 1) / minutes) * minutes);
+  return Temporal.PlainTime.from({ hour: Math.floor(capped / 60), minute: capped % 60 });
 }

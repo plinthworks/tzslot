@@ -2,7 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { Component, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
-import { Calendar, DateField } from '../src/index.js';
+import { Calendar, DateField, RangeField } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
 import type { PlainDate } from '@tzslot/core';
 
@@ -221,5 +221,46 @@ describe('renderCell and buttons, from a template', () => {
     el.querySelector<HTMLButtonElement>('.tz-cal__action--today')!.click();
     f.detectChanges();
     expect(f.componentInstance.day()!.toString()).toBe('2026-06-15');
+  });
+});
+
+describe('the options a real screen asked for', () => {
+  @Component({
+    standalone: true,
+    imports: [RangeField],
+    template: `
+      <tz-range-field
+        [(value)]="period"
+        timeZone="Europe/Paris"
+        locale="en-GB"
+        [showTime]="true"
+        [timeLayout]="'input'"
+        [snapMinutes]="15"
+        [maxSpan]="'30d'"
+        [disabled]="{ end: true }"
+      />
+    `,
+  })
+  class Locked {
+    readonly period = signal({
+      start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
+      end: Temporal.Instant.from('2026-09-18T15:00:00Z'),
+      allDay: false,
+    });
+  }
+
+  it('reach the widget through the wrapper', async () => {
+    const fixture = TestBed.createComponent(Locked);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    const field = (fixture.nativeElement as HTMLElement).querySelector<HTMLElement>('.tz-field__trigger')!;
+    field.click();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    const inputs = document.querySelectorAll<HTMLInputElement>('.tz-field__panel .tz-dateinput__input');
+    expect(inputs[1]!.readOnly).toBe(true); // the locked end
+    expect(inputs[0]!.readOnly).toBe(false);
+    document.querySelectorAll('.tz-field__panel').forEach((node) => node.remove());
   });
 });

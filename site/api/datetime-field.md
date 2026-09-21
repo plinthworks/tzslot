@@ -17,6 +17,7 @@
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `showTime` | `boolean` | `true` | Whether a time is asked for at all. False leaves a field that chooses a day and holds the moment it starts — what a whole-day range needs, with everything else about the field unchanged. |
+| `snapMinutes` | `number \| null` | `null` | Move a typed time to the nearest mark of this grid — 15 for quarter-hour appointments, ties upward. Off by default: a screen that accepts any minute must not have them quietly moved. |
 | `shift` | `DurationLike \| readonly ShiftOption[] \| false` | `false` | Arrows that step the chosen moment, without opening anything: an hour later, a day earlier. `false` — the default — draws none. The step is always explicit here; a single moment has no length of its own to follow, so there is nothing for an 'auto' to mean. It is counted on the zone's clocks, so `{ days: 1 }` on the night they change is 23 or 25 hours, and the time of day survives. A list of `{ step, label }` instead puts a menu between the arrows and lets the reader choose — a quarter of an hour, an hour, a day — on a page that serves all three. An 'auto' entry is ignored here, for the reason just given. |
 | `timeLayout` | `TimeLayout` | `'input'` | How the time is chosen: a compact field, two menus, or the day's times. |
 | `stepMinutes` | `number` | `30` | Minutes between the times offered. |

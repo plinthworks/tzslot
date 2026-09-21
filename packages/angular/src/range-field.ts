@@ -29,7 +29,7 @@ import {
   type RenderCell,
 } from '@tzslot/dom';
 
-import type { Instant, PlainTime, ShiftOption, ShiftStep } from '@tzslot/core';
+import type { DurationLike, Instant, PlainTime, ShiftOption, ShiftStep } from '@tzslot/core';
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
@@ -101,6 +101,17 @@ export class RangeField implements ControlValueAccessor {
    */
   readonly defaultTimes = input<{ start?: PlainTime | string; end?: PlainTime | string }>({});
   readonly stepMinutes = input(30);
+  /**
+   * Move a time typed by hand to the nearest mark of this grid — 15 for
+   * quarter-hour appointments, ties upward. Off by default.
+   */
+  readonly snapMinutes = input<number | null>(null);
+  /**
+   * How long the period may be, and how short — `'30d'`, `{ hours: 2 }`.
+   * Moving one end pushes the other rather than refusing the move.
+   */
+  readonly maxSpan = input<DurationLike | null>(null);
+  readonly minSpan = input<DurationLike | null>(null);
   /** Minutes between the options of the hour menu. Five by default. */
   readonly minuteStep = input(5);
   /** Nothing is reported until Apply is pressed. */
@@ -125,7 +136,12 @@ export class RangeField implements ControlValueAccessor {
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   /** The moment the shortcuts shorter than a day are counted from. The clock by default. */
   readonly now = input<Instant | null>(null);
-  readonly disabled = input(false);
+  /**
+   * The whole field, or one end of it: `{ end: true }` for a period whose end
+   * the screen works out itself. A locked end is read-only rather than
+   * disabled — still readable, still reachable by the keyboard.
+   */
+  readonly disabled = input<boolean | { start?: boolean; end?: boolean }>(false);
   /** A pattern for each end — `yyyy-MM-dd`. */
   readonly format = input<string | undefined>(undefined);
   /**
@@ -168,6 +184,9 @@ export class RangeField implements ControlValueAccessor {
     showTime: this.showTime(),
     defaultTimes: this.defaultTimes(),
     stepMinutes: this.stepMinutes(),
+    snapMinutes: this.snapMinutes(),
+    maxSpan: this.maxSpan(),
+    minSpan: this.minSpan(),
     minuteStep: this.minuteStep(),
     confirm: this.confirm(),
     shift: this.shift(),
@@ -184,7 +203,9 @@ export class RangeField implements ControlValueAccessor {
     renderCell: this.renderCell(),
     today: this.today(),
     now: this.now(),
-    disabled: this.disabled() || this.formDisabled(),
+    // A form disabling the control wins over a per-end lock: it means the
+    // whole thing is out of play, not that one end of it is.
+    disabled: this.formDisabled() ? true : this.disabled(),
     format: this.format(),
     labels: this.labels(),
     fieldIcon: this.fieldIcon(),

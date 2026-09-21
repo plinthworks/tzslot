@@ -82,7 +82,18 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
 
   /** 'input' (default) for a compact time field, 'list' for the day's times. */
+  /**
+   * Whether a time is asked for at all. False leaves a field that chooses a
+   * day and holds the moment it starts.
+   */
+  readonly showTime = input(true);
   readonly timeLayout = input<TimeLayout>('input');
+  /**
+   * Move a typed time to the nearest mark of this grid — 15 for quarter-hour
+   * appointments, ties upward. Off by default: a screen that accepts any
+   * minute must not have them quietly moved.
+   */
+  readonly snapMinutes = input<number | null>(null);
   /**
    * Arrows beside the field that step the chosen moment without opening the
    * panel: `{ hours: 1 }`, `{ days: 1 }`. `false` — the default — draws none.
@@ -152,7 +163,9 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     min: this.min(),
     max: this.max(),
     isDateDisabled: this.isDateDisabled(),
+    showTime: this.showTime(),
     timeLayout: this.timeLayout(),
+    snapMinutes: this.snapMinutes(),
     shift: this.shift(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),

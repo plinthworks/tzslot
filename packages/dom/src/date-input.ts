@@ -223,7 +223,11 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     // Never rewritten under the fingers: the text belongs to whoever is typing.
     if (!beingTyped()) input.value = written();
     input.placeholder = s.placeholder ?? '';
-    input.disabled = s.disabled;
+    // Read-only rather than disabled: a locked end is still something to read,
+    // and a disabled input is skipped by the keyboard and unreadable by a
+    // screen reader that is walking the form.
+    input.readOnly = s.disabled;
+    input.setAttribute('aria-readonly', String(s.disabled));
     // A picture above the field says nothing to a screen reader.
     input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
     // The mark is decoration: a click on it lands in the field, which is what

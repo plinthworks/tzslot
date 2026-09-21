@@ -8,10 +8,12 @@ import {
   parseDuration,
   shiftDayRange,
   shiftInstant,
+  snapTime,
   resolveWallTime,
 } from '@tzslot/core';
 import type {
   DayRange,
+  DurationLike,
   MomentRange,
   Instant,
   PlainDate,
@@ -124,6 +126,24 @@ export interface RangeFieldSettings {
   /** Minutes the hour's arrows step by. */
   stepMinutes: number;
   /**
+   * Move a time typed by hand to the nearest mark of this grid — 15 for
+   * quarter-hour appointments. Ties go up. Off by default: a screen that
+   * accepts any minute must not have them quietly moved.
+   *
+   * A time picked from the menus is already on the grid; this is for the
+   * figures, which anyone can type 10:07 into.
+   */
+  snapMinutes: number | null;
+  /**
+   * How long a period may be, and how short. Either end being moved pushes
+   * the other rather than refusing the move: someone dragging a start forward
+   * meant to move the period, not to be told their end is now illegal.
+   *
+   * A duration, or the short form — `'30d'`, `'2h'`.
+   */
+  maxSpan: DurationLike | null;
+  minSpan: DurationLike | null;
+  /**
    * Minutes between the options of the hour menu. Five by default — sixty
    * entries is a list nobody reads, and a menu always offers the minute it is
    * already showing whether or not it lands on the step.
@@ -167,7 +187,12 @@ export interface RangeFieldSettings {
    * unless a test or a page rendered ahead of time needs it fixed.
    */
   now: Instant | null;
-  disabled: boolean;
+  /**
+   * The whole field, or one end of it: `{ end: true }` for a period whose end
+   * the screen works out itself. A locked end is read-only and cannot be
+   * armed, so a click in the calendar can never reach it.
+   */
+  disabled: boolean | { start?: boolean; end?: boolean };
   /** A pattern for each end — `yyyy-MM-dd`. The locale's own form otherwise. */
   format: string | undefined;
   /**
@@ -266,6 +291,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     showTime: false,
     defaultTimes: {},
     stepMinutes: 30,
+    snapMinutes: null,
+    maxSpan: null,
+    minSpan: null,
     minuteStep: 5,
     confirm: false,
     shift: false,
@@ -400,6 +428,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * not by a switch the reader has to understand before answering.
    */
   const wholeDays = () => !s.showTime;
+
+  /** Whether the whole field is off, or just one of its two ends. */
+  const off = (edge?: Edge): boolean => {
+    if (typeof s.disabled === 'boolean') return s.disabled;
+    if (!edge) return s.disabled.start === true && s.disabled.end === true;
+    return s.disabled[edge] === true;
+  };
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
   const midnight = (day: PlainDate) => day.toZonedDateTime({ timeZone: s.timeZone }).toInstant();
   const at = (day: PlainDate, time: PlainTime) =>
@@ -575,7 +610,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   };
 
   const canShift = () => {
-    if (effectiveStep() === null || s.disabled) return false;
+    if (effectiveStep() === null || off()) return false;
     const { start, end } = days(s.value);
     return start !== null || end !== null;
   };
@@ -652,6 +687,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * are answered in one place for both ends.
    */
   function setEdge(edge: Edge, wall: WallValue): void {
+    if (off(edge)) return;
     // Without showTime there is nowhere to read or change an hour, so a day
     // chosen is a whole day.
     const timed = s.showTime;
@@ -671,12 +707,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       choose(draft);
       return;
     }
+    const wanted = wall.time ?? defaultTime(edge);
+    const onGrid = timed && s.snapMinutes ? snapTime(wanted, s.snapMinutes) : wanted;
     const at_ = timed
-      ? resolveEdge(edge, wall.date, wall.time ?? defaultTime(edge), wall.offset)
+      ? resolveEdge(edge, wall.date, onGrid, wall.offset)
       : edge === 'start'
         ? midnight(wall.date)
         : midnight(wall.date.add({ days: 1 }));
-    draft = { ...draft, [edge]: at_, allDay: !timed } as RangeFieldValue;
+    draft = withinSpan({ ...draft, [edge]: at_, allDay: !timed } as RangeFieldValue, edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
   }
@@ -690,6 +728,45 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (given !== undefined) return given;
     return edge === 'start' ? s.messages.rangeStart : s.messages.rangeEnd;
   }
+
+  /**
+   * A period held to the length the screen allows.
+   *
+   * The end that was *not* just touched is the one that moves: someone
+   * dragging a start forward meant to move the period, not to be told their
+   * end has become illegal. Through the zone, so a span in days survives the
+   * two nights that are not twenty-four hours long.
+   */
+  function withinSpan(value: RangeFieldValue, touched: Edge): RangeFieldValue {
+    const { start, end } = value;
+    if (!start || !end) return value;
+    const other: Edge = touched === 'start' ? 'end' : 'start';
+    if (off(other)) return value; // locked: nothing here may move it
+    const move = (limit: DurationLike, direction: 1 | -1) =>
+      touched === 'start'
+        ? { ...value, end: shiftInstant(start, limit, direction, s.timeZone) }
+        : { ...value, start: shiftInstant(end, limit, -direction as 1 | -1, s.timeZone) };
+
+    if (s.maxSpan) {
+      const longest = Temporal.Duration.from(asDuration(s.maxSpan));
+      const room = zoned(start).until(zoned(end));
+      if (Temporal.Duration.compare(room, longest, { relativeTo: zoned(start) }) > 0) {
+        return move(longest, 1);
+      }
+    }
+    if (s.minSpan) {
+      const shortest = Temporal.Duration.from(asDuration(s.minSpan));
+      const room = zoned(start).until(zoned(end));
+      if (Temporal.Duration.compare(room, shortest, { relativeTo: zoned(start) }) < 0) {
+        return move(shortest, 1);
+      }
+    }
+    return value;
+  }
+
+  /** `'30d'` as well as `{ days: 30 }`, the same words the step takes. */
+  const asDuration = (given: DurationLike): DurationLike =>
+    typeof given === 'string' ? (parseDuration(given) ?? given) : given;
 
   /** The clock face an end already carries, so a click on a day keeps it. */
   function timeOf(edge: Edge): PlainTime | null {
@@ -763,7 +840,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         const on = marks(preset, chosen);
         button.classList.toggle('tz-rangefield__preset--on', on);
         button.setAttribute('aria-pressed', String(on));
-        button.disabled = s.disabled;
+        button.disabled = off();
         button.onclick = () => applyPreset(preset);
         return button;
       }),
@@ -830,7 +907,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       isDateDisabled: s.isDateDisabled,
       renderCell: s.renderCell,
       today: s.today,
-      disabled: s.disabled,
+      disabled: off(),
       messages: s.messages,
     });
     if (inputs) {
@@ -850,7 +927,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           locale: s.locale,
           mask: s.mask,
           clearable: s.openEnded,
-          disabled: s.disabled,
+          disabled: off(edge),
           messages: s.messages,
           label: labelFor(edge),
           ariaLabel: edge === 'start' ? s.messages.rangeStart : s.messages.rangeEnd,
@@ -860,7 +937,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           placeholder: undefined,
         });
         // The ring says which field the next click in the calendar will fill.
-        inputs[edge].host.classList.toggle('tz-dateinput--armed', armed === edge && !s.disabled);
+        inputs[edge].host.classList.toggle('tz-dateinput--armed', armed === edge && !off(edge));
       }
     }
     if (readingBoxes) {
@@ -914,7 +991,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           const picked = current !== null && current.equals(instant);
           button.classList.toggle('tz-datetime__reading--on', picked);
           button.setAttribute('aria-pressed', String(picked));
-          button.disabled = s.disabled;
+          button.disabled = off();
           button.onclick = () => {
             draft = { ...draft, allDay: false, [edge]: instant } as RangeFieldValue;
             choose(draft);
@@ -944,7 +1021,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const current = menu[Math.min(stepIndex, menu.length - 1)];
       stepIndex = Math.min(stepIndex, menu.length - 1);
       stepPicker.textContent = current?.label ?? '';
-      stepPicker.disabled = s.disabled || menu.length < 2;
+      stepPicker.disabled = off() || menu.length < 2;
       const label_ = `${s.messages.stepLabel} : ${current?.label ?? ''}`;
       stepPicker.title = label_;
       stepPicker.setAttribute('aria-label', label_);
@@ -961,8 +1038,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     trigger.classList.toggle('tz-field__trigger--empty', s.value.start === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', s.ariaLabel ?? s.title ?? s.messages.chooseRange);
-    trigger.disabled = s.disabled;
-    if (s.disabled) panel.close({ restoreFocus: false });
+    trigger.disabled = off();
+    if (off()) panel.close({ restoreFocus: false });
     paintPanel();
   }
 
@@ -974,7 +1051,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     label: () => s.ariaLabel ?? s.title ?? s.messages.chooseRange,
     onOpen: () => {
       draft = s.value;
-      armed = 'start';
+      armed = off('start') ? 'end' : 'start';
       armedByHand = false;
       render();
       s.onOpen?.();
@@ -1037,6 +1114,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           clearable: s.openEnded,
           messages: s.messages,
           onFocus: () => {
+            if (off(edge)) return; // locked: it stays where the screen put it
             armed = edge;
             armedByHand = true;
             paintPanel();
@@ -1082,7 +1160,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           // The usual first-then-second flow, kept: a click on the start arms
           // the end. Unless the reader armed a field themselves, in which case
           // they are correcting that one and nothing else.
-          if (!armedByHand && armed === 'start') armed = 'end';
+          if (!armedByHand && armed === 'start' && !off('end')) armed = 'end';
           paintPanel();
         },
       });
@@ -1113,7 +1191,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   });
 
   const openPanel = () => {
-    if (!s.disabled) panel.open();
+    if (!off()) panel.open();
   };
 
   const listening = new AbortController();

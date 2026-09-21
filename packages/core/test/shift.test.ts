@@ -8,6 +8,7 @@ import {
   shiftInstant,
   shiftDate,
   parseDuration,
+  snapTime,
 } from '../src/index.js';
 import type { Instant, PlainDate } from '../src/index.js';
 
@@ -162,5 +163,37 @@ describe('a length written the short way', () => {
     for (const text of ['', 'soon', '0h', '-2d', '2 days', '1.5h', '12x']) {
       expect(read(text)).toBe(null);
     }
+  });
+});
+
+describe('snapping a clock face to a grid', () => {
+  const at = (text: string) => Temporal.PlainTime.from(text);
+  const snap = (text: string, minutes: number) =>
+    snapTime(at(text), minutes).toString({ smallestUnit: 'minute' });
+
+  it('goes to the nearest mark, ties upward', () => {
+    expect(snap('10:00', 15)).toBe('10:00');
+    expect(snap('10:07', 15)).toBe('10:00');
+    expect(snap('10:08', 15)).toBe('10:15');
+    // The tie, which is the one minute anyone will argue about.
+    expect(snap('10:07:30', 15)).toBe('10:15');
+  });
+
+  it('carries into the next hour when it should', () => {
+    expect(snap('10:53', 15)).toBe('11:00');
+    expect(snap('23:53', 15)).toBe('23:45'); // and never into tomorrow
+    expect(snap('23:59', 30)).toBe('23:30');
+  });
+
+  it('works on grids that are not quarters', () => {
+    expect(snap('10:07', 5)).toBe('10:05');
+    expect(snap('10:08', 5)).toBe('10:10');
+    expect(snap('10:29', 60)).toBe('10:00');
+    expect(snap('10:31', 60)).toBe('11:00');
+  });
+
+  it('leaves the time alone when there is no grid to speak of', () => {
+    expect(snap('10:07', 1)).toBe('10:07');
+    expect(snap('10:07', 0)).toBe('10:07');
   });
 });

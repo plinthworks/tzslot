@@ -1,4 +1,4 @@
-import { Temporal, resolveWallTime, shiftInstant } from '@tzslot/core';
+import { Temporal, resolveWallTime, shiftInstant, snapTime } from '@tzslot/core';
 import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, Slot } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
@@ -39,6 +39,12 @@ export interface DateTimeFieldSettings {
    * everything else about the field unchanged.
    */
   showTime: boolean;
+  /**
+   * Move a typed time to the nearest mark of this grid — 15 for quarter-hour
+   * appointments, ties upward. Off by default: a screen that accepts any
+   * minute must not have them quietly moved.
+   */
+  snapMinutes: number | null;
   /**
    * Arrows that step the chosen moment, without opening anything: an hour
    * later, a day earlier. `false` — the default — draws none. The step is
@@ -155,6 +161,7 @@ export function createDateTimeField(
     max: null,
     isDateDisabled: undefined,
     showTime: true,
+    snapMinutes: null,
     shift: false,
     timeLayout: 'input',
     stepMinutes: 30,
@@ -462,11 +469,15 @@ export function createDateTimeField(
   function settle(): void {
     readings = [];
     notice = null;
-    const { date, time } = draft;
-    if (!date || !time) {
+    const { date, time: chosen } = draft;
+    if (!date || !chosen) {
       commit(null);
       return;
     }
+    // Held to the grid here, where every path that settles a moment passes:
+    // typing, the arrows, the menus and the list all end up in this function.
+    const time = s.snapMinutes ? snapTime(chosen, s.snapMinutes) : chosen;
+    if (!time.equals(chosen)) draft = { date, time };
     const found = resolveWallTime(date, time, s.timeZone);
     if (!found.exists) {
       // The clocks skipped this time; the first moment that exists is the

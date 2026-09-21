@@ -217,3 +217,86 @@ describe('a step in minutes', () => {
     field.destroy();
   });
 });
+
+describe('a menu of steps, when the reader chooses', () => {
+  it('appears only for a list, and one press moves by what is picked', () => {
+    make({
+      shift: [
+        { step: { days: 7 }, label: '7 days' },
+        { step: { months: 1 }, label: 'a month' },
+        { step: 'auto', label: 'the period' },
+      ],
+    });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-13T22:00:00Z'), // 14 Sept
+        end: Temporal.Instant.from('2026-09-16T22:00:00Z'), // 16 Sept, whole days
+        allDay: true,
+      },
+    });
+    const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;
+    expect(picker.hidden).toBe(false);
+    expect(picker.textContent).toBe('7 days'); // the current one, always readable
+
+    const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
+    arrows()[1]!.click();
+    expect(shown()).toBe('21/09/2026 – 23/09/2026'); // seven days on
+
+    picker.click(); // one press moves to the next step
+    expect(picker.textContent).toBe('a month');
+    arrows()[1]!.click();
+    expect(shown()).toBe('21/10/2026 – 23/10/2026'); // a month on
+
+    picker.click();
+    expect(picker.textContent).toBe('the period');
+    arrows()[1]!.click();
+    expect(shown()).toBe('24/10/2026 – 26/10/2026'); // its own three days
+  });
+
+  it('a single duration draws no menu at all', () => {
+    make({ shift: { days: 7 } });
+    expect(host.querySelector<HTMLButtonElement>('.tz-field__step')!.hidden).toBe(true);
+  });
+
+  it('a moment gets the same menu, and ignores an entry it cannot use', async () => {
+    const { createDateTimeField } = await import('../src/index.js');
+    const widget = createDateTimeField(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      value: Temporal.Instant.from('2026-09-23T12:30:00Z'),
+      shift: [
+        { step: { minutes: 15 }, label: '15 min' },
+        { step: { days: 1 }, label: 'a day' },
+        { step: 'auto', label: 'nonsense here' },
+      ],
+    });
+    const reads = () => host.querySelector<HTMLInputElement>('.tz-field__trigger')!.value;
+    const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;
+    const next = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[1]!;
+
+    next().click();
+    expect(reads()).toContain('14:45');
+
+    picker.click();
+    next().click();
+    expect(reads()).toContain('24/09/2026 14:45');
+
+    // 'auto' has no meaning for one moment: the arrows go away rather than lie.
+    picker.click();
+    expect(next().hidden).toBe(true);
+    widget.destroy();
+  });
+});
+
+describe('the row that holds a field, its step and its arrows', () => {
+  it('lets the field shrink, so nothing is pushed off the edge or covered', () => {
+    make({ shift: [{ step: { days: 7 }, label: '7 days' }] });
+    const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
+    // A row that cannot wrap puts the forward arrow outside a narrow column,
+    // and a trigger that keeps its minimum width overflows and covers the
+    // step button. Both were seen in a browser; neither is visible to jsdom,
+    // so the rules themselves are what is checked.
+    expect(css).toContain('flex-wrap: wrap');
+    expect(css).toContain('.tz-field--shift .tz-field__trigger,\n.tz-field--shift .tz-field__wrap { min-width: 0; }');
+  });
+});

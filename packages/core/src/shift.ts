@@ -13,6 +13,18 @@ import type { DayRange } from './presets.js';
  */
 export type ShiftStep = 'auto' | DurationLike;
 
+/**
+ * One entry of a menu of steps, when the screen lets the reader choose.
+ *
+ * The label is given rather than derived: only the application knows whether
+ * its users read "15 min", "quarter hour" or "un quart d'heure", and a
+ * machine-made label would be wrong in some language on some screen.
+ */
+export interface ShiftOption {
+  readonly step: ShiftStep;
+  readonly label: string;
+}
+
 /** Whole months in a span, when it is made of whole months; 0 when it is not. */
 function wholeMonths({ start, end }: DayRange): number {
   const lastOfMonth = end.day === end.daysInMonth;

@@ -24,7 +24,7 @@ export { getDailyWindows } from './daily.js';
 export { presetRange, matchesPreset } from './presets.js';
 export type { PresetName, DayRange, PresetOptions } from './presets.js';
 export { shiftDayRange, shiftInstant, shiftDate } from './shift.js';
-export type { ShiftStep } from './shift.js';
+export type { ShiftStep, ShiftOption } from './shift.js';
 export type { DailyWindow, DailyWindowsSummary } from './daily.js';
 export {
   toPlainDate,

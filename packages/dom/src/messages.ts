@@ -64,6 +64,8 @@ export interface TzslotMessages {
   /** The arrows that step a selection to the period before or after it. */
   readonly previousPeriod: string;
   readonly nextPeriod: string;
+  /** The menu between the arrows, when the reader chooses how far one press goes. */
+  readonly stepLabel: string;
   /**
    * A period with one end left open: the three ways to mean it, and the two
    * ways to say a chosen end no longer applies. 'From' and 'Until' are read
@@ -163,6 +165,7 @@ export const EN: TzslotMessages = {
   },
   previousPeriod: 'Previous period',
   nextPeriod: 'Next period',
+  stepLabel: 'Step',
   between: 'Between',
   fromDate: 'From',
   untilDate: 'Until',
@@ -240,6 +243,7 @@ export const FR: TzslotMessages = {
   },
   previousPeriod: 'Période précédente',
   nextPeriod: 'Période suivante',
+  stepLabel: 'Pas',
   between: 'Entre',
   fromDate: 'À partir du',
   untilDate: "Jusqu'au",

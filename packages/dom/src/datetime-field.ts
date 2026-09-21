@@ -1,5 +1,5 @@
 import { Temporal, resolveWallTime, shiftInstant } from '@tzslot/core';
-import type { DurationLike, Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, Slot } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
@@ -46,8 +46,13 @@ export interface DateTimeFieldSettings {
    * so there is nothing for an 'auto' to mean. It is counted on the zone's
    * clocks, so `{ days: 1 }` on the night they change is 23 or 25 hours, and
    * the time of day survives.
+   *
+   * A list of `{ step, label }` instead puts a menu between the arrows and
+   * lets the reader choose — a quarter of an hour, an hour, a day — on a page
+   * that serves all three. An 'auto' entry is ignored here, for the reason
+   * just given.
    */
-  shift: DurationLike | false;
+  shift: DurationLike | readonly ShiftOption[] | false;
   /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
@@ -234,7 +239,41 @@ export function createDateTimeField(
 
   const back = arrow(-1, 'tz-field__shift tz-field__shift--prev');
   const forward = arrow(1, 'tz-field__shift tz-field__shift--next');
-  host.append(back, wrap, forward);
+  /**
+   * The step, as a button that cycles rather than a menu.
+   *
+   * A native select is painted by the operating system, and on a dark page
+   * Chrome draws its closed text from the selected option's colour — which a
+   * palette written in light-dark() resolves against the control's own
+   * scheme, so the label came out invisible. With three or four steps, a
+   * button that advances one each press is plainer anyway: the current step
+   * is always readable, which is the thing that mattered.
+   */
+  const stepPicker = doc.createElement('button');
+  stepPicker.type = 'button';
+  stepPicker.className = 'tz-field__step';
+  stepPicker.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const menu = stepMenu();
+    if (!menu) return;
+    stepIndex = (stepIndex + 1) % menu.length;
+    render();
+  });
+  host.append(back, wrap, stepPicker, forward);
+
+  /** The offered steps, when the reader is given the choice. */
+  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) ? s.shift : null);
+  let stepIndex = 0;
+  const currentStep = (): DurationLike | null => {
+    const menu = stepMenu();
+    if (menu) {
+      const chosen = menu[Math.min(stepIndex, menu.length - 1)]?.step;
+      // 'auto' means "as long as what is selected", and a single moment is
+      // not long. Such an entry cannot drive these arrows.
+      return chosen === undefined || chosen === 'auto' ? null : chosen;
+    }
+    return s.shift === false ? null : (s.shift as DurationLike);
+  };
 
   /**
    * One notch away, on the zone's clocks.
@@ -244,8 +283,9 @@ export function createDateTimeField(
    * the zone rather than adding milliseconds.
    */
   function step(direction: 1 | -1): void {
-    if (s.shift === false || s.disabled || s.value === null) return;
-    commit(shiftInstant(s.value, s.shift, direction, s.timeZone));
+    const by = currentStep();
+    if (by === null || s.disabled || s.value === null) return;
+    commit(shiftInstant(s.value, by, direction, s.timeZone));
   }
 
   /** Which of the two is in the document, and what the panel hangs from. */
@@ -488,12 +528,24 @@ export function createDateTimeField(
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', label());
-    host.classList.toggle('tz-field--shift', s.shift !== false);
+    const menu = stepMenu();
+    const by = currentStep();
+    host.classList.toggle('tz-field--shift', by !== null);
+    stepPicker.hidden = menu === null;
+    if (menu) {
+      const current = menu[Math.min(stepIndex, menu.length - 1)];
+      stepIndex = Math.min(stepIndex, menu.length - 1);
+      stepPicker.textContent = current?.label ?? '';
+      stepPicker.disabled = s.disabled || menu.length < 2;
+      const label_ = `${s.messages.stepLabel} : ${current?.label ?? ''}`;
+      stepPicker.title = label_;
+      stepPicker.setAttribute('aria-label', label_);
+    }
     for (const [node, text_] of [
       [back, s.messages.previousPeriod],
       [forward, s.messages.nextPeriod],
     ] as const) {
-      node.hidden = s.shift === false;
+      node.hidden = by === null;
       node.disabled = s.disabled || s.value === null;
       node.setAttribute('aria-label', text_);
       node.title = text_;
@@ -812,6 +864,7 @@ export function createDateTimeField(
       listening.abort();
       back.remove();
       wrap.remove();
+      stepPicker.remove();
       forward.remove();
       if (addedHostClass) host.classList.remove('tz-field');
     },

@@ -1,5 +1,13 @@
 import { Temporal, presetRange, matchesPreset, shiftDayRange, resolveWallTime } from '@tzslot/core';
-import type { DayRange, Instant, PlainDate, PlainTime, PresetName, ShiftStep } from '@tzslot/core';
+import type {
+  DayRange,
+  Instant,
+  PlainDate,
+  PlainTime,
+  PresetName,
+  ShiftOption,
+  ShiftStep,
+} from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createPanel, type FieldMode } from './panel.js';
@@ -55,8 +63,11 @@ export interface RangeFieldSettings {
    * selected, so a quarter moves by a quarter and seven days by seven days;
    * a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever
    * is selected, for a screen whose window is fixed.
+   *
+   * A list of `{ step, label }` instead puts a menu between the arrows and
+   * lets the reader choose, for a page used to sweep both weeks and quarters.
    */
-  shift: ShiftStep | false;
+  shift: ShiftStep | readonly ShiftOption[] | false;
   /** How many months the panel shows side by side. */
   months: number;
   weekNumbers: boolean;
@@ -193,7 +204,27 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   const back = arrow(-1, 'tz-field__shift tz-field__shift--prev');
   const forward = arrow(1, 'tz-field__shift tz-field__shift--next');
-  host.append(back, trigger, forward);
+  /**
+   * The step, as a button that cycles rather than a menu.
+   *
+   * A native select is painted by the operating system, and on a dark page
+   * Chrome draws its closed text from the selected option's colour — which a
+   * palette written in light-dark() resolves against the control's own
+   * scheme, so the label came out invisible. With three or four steps, a
+   * button that advances one each press is plainer anyway: the current step
+   * is always readable, which is the thing that mattered.
+   */
+  const stepPicker = doc.createElement('button');
+  stepPicker.type = 'button';
+  stepPicker.className = 'tz-field__step';
+  stepPicker.addEventListener('click', (event) => {
+    event.stopPropagation();
+    const menu = stepMenu();
+    if (!menu) return;
+    stepIndex = (stepIndex + 1) % menu.length;
+    render();
+  });
+  host.append(back, trigger, stepPicker, forward);
 
   let range: DateRangeInstance | null = null;
   let fromTime: TimeInputInstance | null = null;
@@ -326,14 +357,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     else paintPanel();
   }
 
+  /** The offered steps, when the reader is given the choice. */
+  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) ? s.shift : null);
+  /** Which of them is chosen. Kept by position, so a relabelled menu is harmless. */
+  let stepIndex = 0;
+  const currentStep = (): ShiftStep | null => {
+    const menu = stepMenu();
+    if (menu) return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
+    return s.shift === false ? null : (s.shift as ShiftStep);
+  };
+
   /** True when there is a whole period to move, and something to move it by. */
   const canShift = () => {
-    if (s.shift === false || s.disabled) return false;
+    const step_ = currentStep();
+    if (step_ === null || s.disabled) return false;
     const { start, end } = days(s.value);
     if (start !== null && end !== null) return true;
     // A period open at one end has no length of its own, so only an imposed
     // step can move it.
-    return s.shift !== 'auto' && (start !== null || end !== null);
+    return step_ !== 'auto' && (start !== null || end !== null);
   };
 
   /**
@@ -345,17 +387,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * number of hours, which is the truth of it.
    */
   function step(direction: 1 | -1): void {
-    if (!canShift() || s.shift === false) return;
+    const by = currentStep();
+    if (!canShift() || by === null) return;
     const shown = days(s.value);
     if (!shown.start || !shown.end) {
       // One end only. There is no length to follow, so an imposed step moves
       // the end that exists and 'auto' does nothing — which is why canShift
       // says no to it.
-      if (s.shift === 'auto') return;
+      if (by === 'auto') return;
       draft = s.value;
       const moved = shiftDayRange(
         { start: shown.start ?? shown.end!, end: shown.start ?? shown.end! },
-        s.shift,
+        by,
         direction,
       );
       const next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
@@ -363,7 +406,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       else commit(next);
       return;
     }
-    const moved = shiftDayRange({ start: shown.start, end: shown.end }, s.shift, direction);
+    const moved = shiftDayRange({ start: shown.start, end: shown.end }, by, direction);
     draft = s.value; // so the times carry over into fromDays
     const next = fromDays({ start: moved.start, end: moved.end });
     if (panel.isOpen) choose(next);
@@ -570,12 +613,23 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       stylesPending = false;
     }
     text.textContent = display() || s.placeholder || s.messages.chooseRange;
-    host.classList.toggle('tz-field--shift', s.shift !== false);
+    const menu = stepMenu();
+    host.classList.toggle('tz-field--shift', currentStep() !== null);
+    stepPicker.hidden = menu === null;
+    if (menu) {
+      const current = menu[Math.min(stepIndex, menu.length - 1)];
+      stepIndex = Math.min(stepIndex, menu.length - 1);
+      stepPicker.textContent = current?.label ?? '';
+      stepPicker.disabled = s.disabled || menu.length < 2;
+      const label_ = `${s.messages.stepLabel} : ${current?.label ?? ''}`;
+      stepPicker.title = label_;
+      stepPicker.setAttribute('aria-label', label_);
+    }
     for (const [button, label] of [
       [back, s.messages.previousPeriod],
       [forward, s.messages.nextPeriod],
     ] as const) {
-      button.hidden = s.shift === false;
+      button.hidden = currentStep() === null;
       button.disabled = !canShift();
       button.setAttribute('aria-label', label);
       button.title = label;
@@ -621,7 +675,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'time', TIME_CSS);
       ensureStyles(node, 'datetime', DATETIME_CSS);
 
-      if (s.shift !== false) {
+      if (currentStep() !== null) {
         const row = el('div', 'tz-rangefield__shift');
         const label = el('span', 'tz-rangefield__shift-label');
         const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
@@ -814,6 +868,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       listening.abort();
       back.remove();
       trigger.remove();
+      stepPicker.remove();
       forward.remove();
       if (addedHostClass) host.classList.remove('tz-field');
     },

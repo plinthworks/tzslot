@@ -179,12 +179,39 @@ every press. A period made of whole months moves by months instead, so a
 quarter stays a quarter and a month keeps its own last day. Anything else
 moves by its length, where nothing can drift.
 
-A fixed step is a duration: `shift: { months: 3 }`, `{ days: 7 }`. And on a
-single moment — `createDateTimeField` — the step is always explicit, because
-one moment has no length of its own to follow:
+A fixed step is a duration: `shift: { months: 3 }`, `{ days: 7 }`. Give a list
+instead and the reader chooses: a button between the arrows shows the current
+step and advances to the next each press.
 
 ```js
-createDateTimeField(element, { timeZone: 'Europe/Paris', shift: { hours: 1 } });
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  shift: [
+    { step: 'auto', label: 'the period' },
+    { step: { days: 7 }, label: '7 days' },
+    { step: { months: 3 }, label: 'a quarter' },
+  ],
+});
+```
+
+The label is yours to write: only the application knows whether its readers
+say "15 min", "quarter hour" or "un quart d'heure".
+
+On a single moment — `createDateTimeField` — the step is always explicit,
+because one moment has no length of its own to follow:
+
+```js
+createDateTimeField(element, { timeZone: 'Europe/Paris', shift: { minutes: 15 } });
+
+// or let the reader pick
+createDateTimeField(element, {
+  timeZone: 'Europe/Paris',
+  shift: [
+    { step: { minutes: 15 }, label: '15 min' },
+    { step: { hours: 1 }, label: '1 h' },
+    { step: { days: 1 }, label: '1 day' },
+  ],
+});
 ```
 
 It is counted on the zone's clocks, not in milliseconds: an hour after the

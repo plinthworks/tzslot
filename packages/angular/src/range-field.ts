@@ -29,7 +29,7 @@ import {
   type RenderCell,
 } from '@tzslot/dom';
 
-import type { ShiftStep } from '@tzslot/core';
+import type { ShiftOption, ShiftStep } from '@tzslot/core';
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
@@ -90,7 +90,7 @@ export class RangeField implements ControlValueAccessor {
    * the default — draws none. `'auto'` moves by what is selected; a duration
    * such as `{ months: 3 }` imposes the step.
    */
-  readonly shift = input<ShiftStep | false>(false);
+  readonly shift = input<ShiftStep | readonly ShiftOption[] | false>(false);
   readonly months = input(2);
   readonly weekNumbers = input(false);
   readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);

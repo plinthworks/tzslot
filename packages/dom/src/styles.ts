@@ -160,7 +160,23 @@ export const FIELD_CSS = `
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
-.tz-field--shift { display: inline-flex; align-items: stretch; gap: 0.25rem; }
+/* The field, its step menu and its two arrows on one line — but a narrow
+   column is not a reason to push the forward arrow off the edge, so the row
+   wraps and the trigger gives up its minimum width rather than the arrows
+   giving up their place. */
+.tz-field--shift {
+  display: inline-flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  max-width: 100%;
+}
+.tz-field--shift > .tz-field__trigger,
+.tz-field--shift > .tz-field__wrap { flex: 1 1 8rem; }
+/* The trigger's own minimum has to go too, or it overflows the box it was
+   just told to shrink and covers the buttons beside it. */
+.tz-field--shift .tz-field__trigger,
+.tz-field--shift .tz-field__wrap { min-width: 0; }
 .tz-field__shift {
   border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
   border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
@@ -172,6 +188,22 @@ export const FIELD_CSS = `
   line-height: 1;
 }
 .tz-field__shift:disabled { opacity: 0.4; cursor: not-allowed; }
+.tz-field__step[hidden] { display: none; }
+.tz-field__step[hidden] { display: none; }
+.tz-field__step {
+  border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
+  background: var(--tz-field-bg, var(--tz-bg, transparent));
+  color: var(--tz-field-fg, var(--tz-fg, inherit));
+  font: var(--tz-font, inherit);
+  font-size: 0.85em;
+  padding: 0 0.6rem;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.tz-field__step:hover:not(:disabled) { background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent)); }
+.tz-field__step:disabled { opacity: 0.5; cursor: not-allowed; }
+.tz-field__step:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-field__wrap { display: inline-flex; align-items: stretch; position: relative; }
 .tz-field__trigger--editable {
   min-width: var(--tz-field-width, 12rem);

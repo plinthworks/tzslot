@@ -16,7 +16,7 @@ import {
   type DateTimeRangeValue,
 } from '@tzslot/angular';
 import { Temporal, usingPolyfill } from '@tzslot/core';
-import type { DurationLike, Instant, PlainDate, PlainTime, ShiftStep } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, ShiftStep } from '@tzslot/core';
 
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {
@@ -556,14 +556,22 @@ export class Demo {
   }
 
   /** What one press of the arrows moves the chosen moment by. */
-  protected readonly momentShifts: { label: string; value: DurationLike | false }[] = [
+  protected readonly momentShifts: { label: string; value: DurationLike | readonly ShiftOption[] | false }[] = [
     { label: 'aucune', value: false },
     { label: '15 min', value: { minutes: 15 } },
     { label: '30 min', value: { minutes: 30 } },
     { label: '1 h', value: { hours: 1 } },
     { label: '1 jour', value: { days: 1 } },
+    {
+      label: 'au choix (menu)',
+      value: [
+        { step: { minutes: 15 }, label: '15 min' },
+        { step: { hours: 1 }, label: '1 h' },
+        { step: { days: 1 }, label: '1 jour' },
+      ],
+    },
   ];
-  protected readonly momentShift = signal<DurationLike | false>({ minutes: 15 });
+  protected readonly momentShift = signal<DurationLike | readonly ShiftOption[] | false>({ minutes: 15 });
   protected momentShiftLabel(): string {
     const current = this.momentShift();
     return this.momentShifts.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;

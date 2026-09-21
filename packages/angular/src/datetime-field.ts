@@ -22,6 +22,7 @@ import { TZSLOT_DEFAULTS } from './defaults.js';
 import { Temporal, toInstant, fromInstant } from '@tzslot/core';
 import type {
   DurationLike,
+  ShiftOption,
   Instant,
   InstantLike,
   PlainDate,
@@ -87,7 +88,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
    * panel: `{ hours: 1 }`, `{ days: 1 }`. `false` — the default — draws none.
    * Counted on the zone's clocks, so a day is 23 or 25 hours when they change.
    */
-  readonly shift = input<DurationLike | false>(false);
+  readonly shift = input<DurationLike | readonly ShiftOption[] | false>(false);
   readonly stepMinutes = input(30);
   /** With timeLayout 'select': minutes between the options. Every minute by default. */
   readonly minuteStep = input(1);

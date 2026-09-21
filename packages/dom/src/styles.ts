@@ -799,6 +799,8 @@ export const RANGEFIELD_CSS = `
 }
 .tz-rangefield__pair { display: flex; gap: 1rem; }
 .tz-rangefield__time[hidden] { display: none; }
+.tz-rangefield__readings[hidden] { display: none; }
+.tz-rangefield__readings { margin-left: 0.25rem; }
 .tz-rangefield__time { display: flex; align-items: center; gap: 0.4rem; }
 .tz-rangefield__time-label { font-size: 0.8125em; opacity: 0.7; }
 .tz-rangefield__footer {

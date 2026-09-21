@@ -1,12 +1,13 @@
-import { Temporal, presetRange, matchesPreset, shiftDayRange } from '@tzslot/core';
+import { Temporal, presetRange, matchesPreset, shiftDayRange, resolveWallTime } from '@tzslot/core';
 import type { DayRange, Instant, PlainDate, PlainTime, PresetName, ShiftStep } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, patternFor } from './format.js';
+import { summerFirst, zoneName } from './zone-names.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { FIELD_CSS, RANGEFIELD_CSS, RANGE_CSS, TIME_CSS, ensureStyles } from './styles.js';
+import { DATETIME_CSS, FIELD_CSS, RANGEFIELD_CSS, RANGE_CSS, TIME_CSS, ensureStyles } from './styles.js';
 
 /** What the field holds: two moments, and whether they are whole days. */
 export interface RangeFieldValue {
@@ -202,6 +203,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let panelShift: { row: HTMLElement; label: HTMLElement; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
     null;
   let timeColumns: { start: HTMLElement; end: HTMLElement } | null = null;
+  /**
+   * The two readings of a repeated hour, per end, while the choice is open.
+   * An end is only ever in here when its wall time happens twice that day.
+   */
+  type Reading = { instant: Instant; name: string; full: string };
+  let readings: { start: Reading[]; end: Reading[] } = { start: [], end: [] };
+  let readingBoxes: { start: HTMLElement; end: HTMLElement } | null = null;
   let boundsRow: {
     modes: { name: Bounds; button: HTMLButtonElement }[];
     ends: { edge: 'start' | 'end'; chip: HTMLElement; text: HTMLElement; clear: HTMLButtonElement }[];
@@ -232,19 +240,51 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       start: draft.start && !allDay ? zoned(draft.start).toPlainTime() : null,
       end: draft.end && !allDay ? zoned(draft.end).toPlainTime() : null,
     };
+    if (allDay) {
+      readings = { start: [], end: [] };
+      return {
+        start: range_.start ? midnight(range_.start) : null,
+        end: range_.end ? midnight(range_.end.add({ days: 1 })) : null,
+        allDay,
+      };
+    }
+    const midday = Temporal.PlainTime.from('00:00');
     return {
-      start: range_.start
-        ? allDay
-          ? midnight(range_.start)
-          : at(range_.start, times.start ?? Temporal.PlainTime.from('00:00'))
-        : null,
-      end: range_.end
-        ? allDay
-          ? midnight(range_.end.add({ days: 1 }))
-          : at(range_.end, times.end ?? Temporal.PlainTime.from('00:00'))
-        : null,
+      start: range_.start ? resolveEdge('start', range_.start, times.start ?? midday) : null,
+      end: range_.end ? resolveEdge('end', range_.end, times.end ?? midday) : null,
       allDay,
     };
+  }
+
+  /** Summer and winter, in whichever order the offsets put them. */
+  const seasonNames = (offsets: readonly string[]): [string, string] =>
+    summerFirst(offsets)
+      ? [s.messages.summerTime, s.messages.winterTime]
+      : [s.messages.winterTime, s.messages.summerTime];
+
+  /**
+   * A day and a wall time become a moment — and on two days a year that is a
+   * question, not a conversion. The hour the clocks skip has no moment at all;
+   * the hour they repeat has two, and picking one silently is how a booking
+   * ends up an hour out with nothing on screen to explain it.
+   */
+  function resolveEdge(edge: 'start' | 'end', day: PlainDate, time: PlainTime): Instant {
+    const found = resolveWallTime(day, time, s.timeZone);
+    if (!found.exists) {
+      readings[edge] = [];
+      return day.toPlainDateTime(time).toZonedDateTime(s.timeZone, { disambiguation: 'later' }).toInstant();
+    }
+    if (found.ambiguous) {
+      const names = seasonNames(found.offsets);
+      readings[edge] = found.instants.map((instant, i) => ({
+        instant,
+        name: names[i] ?? '',
+        full: zoneName(instant, s.timeZone, s.locale),
+      }));
+      return found.instants[0]!;
+    }
+    readings[edge] = [];
+    return found.instants[0]!;
   }
 
   const pattern = () => s.format ?? patternFor(s.locale, { time: false });
@@ -477,6 +517,40 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       timeColumns.start.hidden = bounds === 'until';
       timeColumns.end.hidden = bounds === 'from';
     }
+    if (readingBoxes) {
+      for (const edge of ['start', 'end'] as const) {
+        const box = readingBoxes[edge];
+        const offered = readings[edge];
+        box.hidden = offered.length === 0;
+        if (offered.length === 0) {
+          box.replaceChildren();
+          continue;
+        }
+        const current = draft[edge];
+        // Repainted rather than rebuilt: a button replaced under a finger in
+        // mid-click swallows the click, which cost an afternoon once already.
+        const buttons = [...box.children] as HTMLButtonElement[];
+        offered.forEach(({ instant, name, full }, index) => {
+          let button = buttons[index];
+          if (!button) {
+            button = el('button', 'tz-datetime__reading');
+            button.type = 'button';
+            box.append(button);
+          }
+          button.textContent = name;
+          button.title = full;
+          const picked = current !== null && current.equals(instant);
+          button.classList.toggle('tz-datetime__reading--on', picked);
+          button.setAttribute('aria-pressed', String(picked));
+          button.disabled = s.disabled;
+          button.onclick = () => {
+            draft = { ...draft, allDay: false, [edge]: instant } as RangeFieldValue;
+            choose(draft);
+          };
+        });
+        for (const extra of buttons.slice(offered.length)) extra.remove();
+      }
+    }
     if (allDayBox) {
       allDayBox.setAttribute('aria-checked', String(wholeDays()));
       allDayBox.classList.toggle('tz-dtr__allday-box--on', wholeDays());
@@ -535,6 +609,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       panelShift = null;
       boundsRow = null;
       timeColumns = null;
+      readingBoxes = null;
       render();
       s.onClose?.();
     },
@@ -544,6 +619,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
       ensureStyles(node, 'range', RANGE_CSS);
       ensureStyles(node, 'time', TIME_CSS);
+      ensureStyles(node, 'datetime', DATETIME_CSS);
 
       if (s.shift !== false) {
         const row = el('div', 'tz-rangefield__shift');
@@ -645,13 +721,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
         const pair = el('div', 'tz-rangefield__pair');
         const columns: Partial<Record<'start' | 'end', HTMLElement>> = {};
+        const boxes: Partial<Record<'start' | 'end', HTMLElement>> = {};
         for (const edge of ['start', 'end'] as const) {
           const column = el('div', 'tz-rangefield__time');
           columns[edge] = column;
           const label = el('span', 'tz-rangefield__time-label');
           label.textContent = edge === 'start' ? s.messages.timeFrom : s.messages.timeTo;
           const timeHost = doc.createElement('div');
-          column.append(label, timeHost);
+          const box = el('div', 'tz-datetime__readings tz-rangefield__readings');
+          column.append(label, timeHost, box);
+          boxes[edge] = box;
           pair.append(column);
           const input = createTimeInput(timeHost, {
             injectStyles: false,
@@ -659,7 +738,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
               const shown = days(draft);
               const day = edge === 'start' ? shown.start : shown.end;
               if (!day || !time) return;
-              draft = { ...draft, allDay: false, [edge]: at(day, time) } as RangeFieldValue;
+              draft = { ...draft, allDay: false, [edge]: resolveEdge(edge, day, time) } as RangeFieldValue;
               choose(draft);
             },
           });
@@ -667,6 +746,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           else toTime = input;
         }
         timeColumns = { start: columns.start!, end: columns.end! };
+        readingBoxes = { start: boxes.start!, end: boxes.end! };
         times.append(allDayRow, pair);
         node.append(times);
       }

@@ -16,7 +16,7 @@ import {
   type DateTimeRangeValue,
 } from '@tzslot/angular';
 import { Temporal, usingPolyfill } from '@tzslot/core';
-import type { Instant, PlainDate, PlainTime } from '@tzslot/core';
+import type { Instant, PlainDate, PlainTime, ShiftStep } from '@tzslot/core';
 
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {
@@ -269,8 +269,15 @@ function parisAt(iso: string): Instant {
           Les raccourcis à droite font le travail en un clic ; sinon, deux clics dans deux mois
           affichés côte à côte.
         </p>
+        <div class="row">
+          <span class="note">Flèches ‹ ›</span>
+          @for (s of shiftChoices; track s.label) {
+            <button type="button" class="chip" [class.on]="shiftLabelOf() === s.label"
+                    (click)="periodShift.set(s.value)">{{ s.label }}</button>
+          }
+        </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
-                        [showTime]="true" [weekNumbers]="true" [shift]="'auto'"
+                        [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
                         [presets]="['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth', 'lastMonth']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
@@ -513,6 +520,19 @@ export class Demo {
     if (!start || !end) return 'rien choisi';
     const hours = start.until(end).total({ unit: 'hour' });
     return `${start.toString()} → ${end.toString()} · ${hours} h · ${allDay ? 'journées entières' : 'avec heures'}`;
+  }
+
+  /** Whether the arrows are drawn at all, and what one press moves. */
+  protected readonly shiftChoices: { label: string; value: ShiftStep | false }[] = [
+    { label: 'aucune', value: false },
+    { label: 'auto', value: 'auto' },
+    { label: 'un trimestre', value: { months: 3 } },
+    { label: '7 jours', value: { days: 7 } },
+  ];
+  protected readonly periodShift = signal<ShiftStep | false>('auto');
+  protected shiftLabelOf(): string {
+    const current = this.periodShift();
+    return this.shiftChoices.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;
   }
 
   protected readonly fieldLayout = signal<TimeLayout>('input');

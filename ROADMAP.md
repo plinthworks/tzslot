@@ -1,7 +1,7 @@
 # Where tzslot is
 
-Updated 18 September 2026. 15 commits, 137 tests, 1 992 lines of source and
-1 866 of tests.
+Updated 21 September 2026. 59 commits, 436 tests, 8 912 lines of source and
+5 654 of tests.
 
 ## Done
 
@@ -15,6 +15,8 @@ Updated 18 September 2026. 15 commits, 137 tests, 1 992 lines of source and
 | `getMonthGrid` | six weeks, always |
 | `getDecadeYears` | twelve years for a decade view |
 | `getWeekdayOrder` | weekday order for a chosen first day |
+| `presetRange` | the named ranges a search screen offers, quarters included |
+| `shiftDayRange` / `shiftInstant` | a selection one notch away — by what is selected, or by an imposed step |
 
 Measured: 0.40 ms for a day of half-hour slots, 650 bytes a slot, nothing
 retained across five thousand discarded calls.

@@ -16,10 +16,10 @@ when the clocks move during it.
 ### The widgets
 
 `createCalendar` · `createMultiDate` · `createDateField` · `createDateTimeField`
-· `createDateRange` · `createTimeSlots` · `createDateTimeRange` ·
-`createDailyRange` · `createTimeInput` · `createTimeSelect` — all in plain DOM,
-each with an Angular component over it (`<tz-calendar>` … `<tz-daily-range>`),
-every one a `ControlValueAccessor`.
+· `createDateRange` · `createRangeField` · `createTimeSlots` ·
+`createDateTimeRange` · `createDailyRange` · `createTimeInput` ·
+`createTimeSelect` — all in plain DOM, each with an Angular component over it
+(`<tz-calendar>` … `<tz-range-field>`), every one a `ControlValueAccessor`.
 
 - A time is asked for in the way that suits: a compact field with arrows, two
   menus down to the minute, or the day's bookable slots — in the date-and-time
@@ -28,6 +28,15 @@ every one a `ControlValueAccessor`.
   locale's own form or a pattern of your own.
 - `renderCell` puts a price, places left or a class of your own on any day;
   `buttons` adds Today and Clear.
+- A period fits in one field: named ranges — the quarters included — beside
+  two months shown side by side, whole days or times, and Apply/Cancel when a
+  search costs something.
+- Arrows step a whole period or a single moment without opening anything, off
+  unless asked for. `'auto'` follows what is selected, so a quarter moves by a
+  quarter rather than by ninety-two days, which would drift.
+- `provideTzslot` settles the zone, the locale, the words and the shape values
+  leave in for a whole application; `valueAs: 'utc'` hands out an instant
+  whatever the widget, a date-only field included.
 - Words come from one bundle, English and French included.
 
 ### The theme

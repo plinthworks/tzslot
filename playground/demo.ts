@@ -291,9 +291,10 @@ function parisAt(iso: string): Instant {
                         [presets]="['thisQuarterHour', 'thisHour', 'thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
-          Les flèches ‹ › décalent la période entière d'un cran, et c'est le raccourci choisi
-          qui donne le pas : le quart d'heure courant se décale de quinze minutes, un trimestre
-          de trimestre en trimestre. Elles n'apparaissent que si on les demande.
+          Les flèches ‹ › décalent la période entière d'un cran. En « auto », c'est le raccourci
+          choisi qui donne le pas. Un pas explicite l'impose quelle que soit la sélection :
+          18/09 10:00 – 21/09 05:00 se décale de quinze minutes en quinze minutes, les deux bornes
+          ensemble. « au choix » laisse le lecteur changer de pas d'un clic.
         </p>
       </section>
 
@@ -543,13 +544,24 @@ export class Demo {
   }
 
   /** Whether the arrows are drawn at all, and what one press moves. */
-  protected readonly shiftChoices: { label: string; value: ShiftStep | false }[] = [
+  protected readonly shiftChoices: { label: string; value: ShiftStep | readonly ShiftOption[] | false }[] = [
     { label: 'aucune', value: false },
     { label: 'auto', value: 'auto' },
-    { label: 'un trimestre', value: { months: 3 } },
+    { label: '15 min', value: { minutes: 15 } },
+    { label: '1 h', value: { hours: 1 } },
     { label: '7 jours', value: { days: 7 } },
+    { label: 'un trimestre', value: { months: 3 } },
+    {
+      label: 'au choix (menu)',
+      value: [
+        { step: 'auto', label: 'la période' },
+        { step: { minutes: 15 }, label: '15 min' },
+        { step: { hours: 1 }, label: '1 h' },
+        { step: { days: 1 }, label: '1 jour' },
+      ],
+    },
   ];
-  protected readonly periodShift = signal<ShiftStep | false>('auto');
+  protected readonly periodShift = signal<ShiftStep | readonly ShiftOption[] | false>('auto');
   protected readonly openEnded = signal(false);
   protected shiftLabelOf(): string {
     const current = this.periodShift();

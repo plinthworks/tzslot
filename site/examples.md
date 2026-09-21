@@ -213,8 +213,22 @@ leaves behind:
 }
 ```
 
-A fixed step is a duration: `shift: { months: 3 }`, `{ days: 7 }`. Give a list
-instead and the reader chooses: a button between the arrows shows the current
+A fixed step is a duration, and it wins over whatever is selected — which is
+the way to step a period by something smaller than itself:
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  shift: { minutes: 15 },
+});
+```
+
+18/09 10:00 to 21/09 05:00 then moves to 10:15 and 05:15, both ends together:
+the distance between them never changes, and three days apart is no reason not
+to move by a quarter of an hour.
+
+Give a list instead and the reader chooses: a button between the arrows shows the current
 step and advances to the next each press.
 
 ```js

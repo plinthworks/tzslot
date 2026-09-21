@@ -160,3 +160,54 @@ describe('going back from a short range to a long one', () => {
     expect(clock(field.value.start)).toBe('00:00');
   });
 });
+
+describe('a range chosen by hand, moved by a quarter of an hour', () => {
+  it('moves both ends by fifteen minutes, days apart though they are', () => {
+    // The case from the screen: 18/09 10:00 to 21/09 05:00, stepped by 15 min.
+    make({
+      showTime: true,
+      shift: { minutes: 15 },
+      presets: [],
+      value: {
+        start: Temporal.Instant.from('2026-09-18T08:00:00Z'), // 10:00 Paris
+        end: Temporal.Instant.from('2026-09-21T03:00:00Z'), // 05:00 Paris
+        allDay: false,
+      },
+    });
+    expect(shown()).toBe('18/09/2026 10:00 – 21/09/2026 05:00');
+
+    arrows()[1]!.click();
+    expect(shown()).toBe('18/09/2026 10:15 – 21/09/2026 05:15');
+    arrows()[0]!.click();
+    arrows()[0]!.click();
+    expect(shown()).toBe('18/09/2026 09:45 – 21/09/2026 04:45');
+    // The distance between the two ends never changes.
+    const { start, end } = field.value;
+    expect(start!.until(end!).total({ unit: 'hour' })).toBe(67);
+  });
+
+  it('and the menu lets the reader swap that step for a day', () => {
+    make({
+      showTime: true,
+      presets: [],
+      shift: [
+        { step: { minutes: 15 }, label: '15 min' },
+        { step: { days: 1 }, label: '1 day' },
+      ],
+      value: {
+        start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
+        end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
+        allDay: false,
+      },
+    });
+    const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;
+    expect(picker.textContent).toBe('15 min');
+    arrows()[1]!.click();
+    expect(shown()).toBe('18/09/2026 10:15 – 21/09/2026 05:15');
+
+    picker.click();
+    expect(picker.textContent).toBe('1 day');
+    arrows()[1]!.click();
+    expect(shown()).toBe('19/09/2026 10:15 – 22/09/2026 05:15');
+  });
+});

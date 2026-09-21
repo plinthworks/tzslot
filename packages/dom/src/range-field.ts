@@ -90,11 +90,10 @@ export interface RangeFieldSettings {
   /**
    * What a typed length does.
    *
-   * `'period'` gives the period that length, filling the end from the start —
-   * which is what someone measuring a window wants. `'step'` leaves the dates
-   * alone and only tells the arrows how far to move, for a screen that walks
-   * a single date forward a quarter of an hour at a time. Either way the
-   * arrows end up moving by it.
+   * `'period'` fills a *missing* end from the start — what someone measuring
+   * a window wants. `'step'` never touches the dates at all. Neither ever
+   * rewrites an end that is already there: with both dates chosen, a length
+   * is a step and nothing else. Either way the arrows end up moving by it.
    */
   lengthMeans: 'period' | 'step';
   /**
@@ -105,8 +104,10 @@ export interface RangeFieldSettings {
    */
   title: string | undefined;
   /**
-   * How an hour is asked for inside the two fields: `'input'` for figures with
-   * arrows, `'select'` for an hour menu and a minute menu.
+   * How an hour is asked for inside the two fields. `'select'` — an hour menu
+   * and a minute menu — is the default, because most of the time an hour is
+   * chosen outright and a menu is two clicks. `'input'` puts an arrow above
+   * and below the figures, which suits nudging a time already close to right.
    */
   timeLayout: 'input' | 'select';
   /**
@@ -245,7 +246,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     lengthBox: false,
     lengthMeans: 'period',
     title: undefined,
-    timeLayout: 'input',
+    timeLayout: 'select',
     openEnded: false,
     showTime: false,
     stepMinutes: 30,
@@ -640,9 +641,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const length = parseDuration(text);
     if (!length) return false;
     presetShift = length;
-    if (s.lengthMeans === 'step') {
-      // The dates are the reader's; the length only says how far the arrows
-      // move. A period left with one end keeps that end.
+    // A length never rewrites an end that exists. Someone with both dates
+    // chosen who then asks for a step of fifteen minutes means the arrows,
+    // not "throw away my end and make the period fifteen minutes long" —
+    // which is what this did, and it destroyed the period it was given.
+    if (s.lengthMeans === 'step' || (draft.start !== null && draft.end !== null)) {
       render();
       return true;
     }

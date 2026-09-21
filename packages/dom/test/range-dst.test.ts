@@ -59,6 +59,7 @@ const make = (day: string, options = {}) => {
     timeZone: paris,
     locale: 'en-GB',
     showTime: true,
+    timeLayout: 'input', // these drive the figures and their arrows
     today: Temporal.PlainDate.from(day),
     ...options,
   });

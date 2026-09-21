@@ -107,8 +107,8 @@ describe('asking for one end only', () => {
     expect(shown()).toBe('From 14/09/2026 09:00');
     field.open();
     expect(input(0).value).toBe('14/09/2026');
-    const hour = panel().querySelector<HTMLInputElement>('.tz-dateinput .tz-time__input[data-part="hour"]')!;
-    expect(hour.value).toBe('09'); // the hour has its own field beside the day
+    const hour = panel().querySelector<HTMLSelectElement>('.tz-dateinput .tz-timeselect__menu')!;
+    expect(hour.selectedOptions[0]!.textContent).toBe('09'); // its own control beside the day
   });
 
   it('an imposed step moves the single end, and “auto” falls back to a day', () => {

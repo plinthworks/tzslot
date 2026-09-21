@@ -96,8 +96,8 @@ export class RangeField implements ControlValueAccessor {
   readonly lengthMeans = input<'period' | 'step'>('period');
   /** A word or two saying what is being chosen — "Travel dates". */
   readonly title = input<string | undefined>(undefined);
-  /** How an hour is asked for: figures with arrows, or two menus. */
-  readonly timeLayout = input<'input' | 'select'>('input');
+  /** How an hour is asked for: two menus (default), or figures with arrows. */
+  readonly timeLayout = input<'input' | 'select'>('select');
   /** Times as well as days, with a switch back to whole days. */
   readonly showTime = input(false);
   readonly stepMinutes = input(30);

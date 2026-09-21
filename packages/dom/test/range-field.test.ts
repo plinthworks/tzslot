@@ -109,7 +109,7 @@ describe('with times', () => {
 
   it('a time typed into a field turns the range into moments', () => {
     const onChange = vi.fn();
-    mount({ showTime: true, onChange });
+    mount({ showTime: true, timeLayout: 'input', onChange });
     field.open();
     day('2026-09-21').click();
     day('2026-09-22').click();
@@ -193,7 +193,7 @@ describe('the panel reads as two halves', () => {
   });
 
   it('the hour sits inside its field, framed by it and not by itself', () => {
-    mount({ showTime: true });
+    mount({ showTime: true, timeLayout: 'input' });
     field.open();
     day('2026-09-21').click();
     panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();

@@ -39,10 +39,10 @@ answer.
 
 **The hour lives inside the field,** to the right of the day. It appears when
 `showTime` is on and the whole-day switch is off, and `timeLayout` says how it
-is asked for: `'input'` puts an arrow above and below the figures, which suits
-nudging a time already close to right; `'select'` gives an hour menu and a
-minute menu, which is the shorter road when the answer is simply one of a few
-dozen.
+is asked for. `'select'` — an hour menu and a minute menu — is the default,
+because most of the time an hour is chosen outright and a menu is two clicks.
+`'input'` puts an arrow above and below the figures, which suits nudging a
+time already close to right.
 
 **The shortcuts, shortest first.** Ordered by the length of what they mean,
 ending at *This quarter*, so a reader scanning the column can stop as soon as
@@ -121,17 +121,18 @@ want before it opens.
 `m` is minutes and never months: `mo` says months, and a screen that read `6m`
 as six months would be wrong by a factor of forty-odd thousand.
 
-What it does with that length is the screen's to decide:
+A length **never rewrites an end that is already there**. Someone with both
+dates chosen who asks for fifteen minutes means the arrows — not "throw away
+my end and make this fifteen minutes long".
 
-| `lengthMeans` | |
-|---|---|
-| `'period'` (default) | the period is given that length — the end is filled from the start, or from now backwards if there is no start |
-| `'step'` | the dates are left exactly as they are; the length only tells the arrows how far to move |
+| `lengthMeans` | with an end missing | with both dates chosen |
+|---|---|---|
+| `'period'` (default) | fills it from the start, or from now backwards | nothing but the step |
+| `'step'` | nothing but the step | nothing but the step |
 
-Either way the arrows end up moving by it. `'step'` is for a screen that walks
-a single date forward a quarter of an hour at a time and has no second date to
-fill — and emptying an end never forgets the step, so a period can be opened
-at one end and go on being stepped by it.
+Either way the arrows end up moving by it, and emptying an end never forgets
+the step — so a period can be opened at one end and go on being stepped by
+what was typed.
 
 ## The arrows
 

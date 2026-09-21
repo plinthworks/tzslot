@@ -174,7 +174,13 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       if (chosen !== null && max && chosen === max.hour && m > max.minute) break;
       out.push(m);
     }
-    return out;
+    // The minute it already holds, wherever it came from. A menu built on a
+    // step of five has nothing to offer a time sitting at 00:15 — it would
+    // show a blank, and picking anything at all would move a time the reader
+    // never asked to move.
+    const held = s.value?.minute;
+    if (held !== undefined && !out.includes(held)) out.push(held);
+    return out.sort((a, b) => a - b);
   }
 
   /** Options that carry more than a figure: an hour and the reading it stands for. */

@@ -23,6 +23,7 @@ const make = (options = {}) => {
   });
 };
 const panel = () => document.querySelector('.tz-field__panel')!;
+const day = (iso: string) => panel().querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 const shown = () => host.querySelector('.tz-field__text')!.textContent;
 const enter = (text: string) => {
   const node = panel().querySelector<HTMLInputElement>('.tz-rangefield__length-input')!;
@@ -196,5 +197,48 @@ describe('the hour menu always has the hour it is showing', () => {
       .querySelector('.tz-dateinput')!
       .querySelectorAll<HTMLSelectElement>('.tz-dateinput__time .tz-timeselect__menu')[1]!;
     expect(minutes.selectedOptions[0]!.textContent).toBe('15');
+  });
+});
+
+describe('no switch to classify the answer', () => {
+  it('a named range of days keeps its last day, even on a screen showing hours', () => {
+    make({ showTime: true, presets: ['thisQuarter'] });
+    field.open();
+    [...panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__preset')]
+      .find((b) => b.textContent === 'This quarter')!
+      .click();
+
+    // Built from the hours on screen it would have ended at 30 September
+    // 00:00 and dropped the last day of the quarter.
+    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+    expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
+    expect(field.value.allDay).toBe(true);
+  });
+
+  it('and touching one hour turns the pair into moments without moving a day', () => {
+    make({ showTime: true, presets: ['thisQuarter'], timeLayout: 'input' });
+    field.open();
+    [...panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__preset')]
+      .find((b) => b.textContent === 'This quarter')!
+      .click();
+    field.open();
+
+    const hour = panel().querySelectorAll<HTMLInputElement>('.tz-dateinput .tz-time__input[data-part="hour"]')[0]!;
+    hour.focus();
+    hour.value = '09';
+    hour.dispatchEvent(new Event('input', { bubbles: true }));
+    hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
+    // The end was the midnight after 30 September; as an interval it must read
+    // as the 30th, not as 1 October.
+    expect(shown()).toBe('01/07/2026 09:00 – 30/09/2026 00:00');
+  });
+
+  it('a day chosen takes the hours the screen named', () => {
+    make({ showTime: true, defaultTimes: { start: '09:00', end: '18:00' } });
+    field.open();
+    day('2026-09-14').click();
+    day('2026-09-16').click();
+    expect(shown()).toBe('14/09/2026 09:00 – 16/09/2026 18:00');
   });
 });

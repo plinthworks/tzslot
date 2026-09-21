@@ -226,19 +226,18 @@ describe('the hours live in the two fields now', () => {
     expect(input(1).value).toBe('');
     // No separate row of hours any more: one field says the whole thing.
     expect(panel().querySelector('.tz-rangefield__times')).toBe(null);
+    expect(panel().querySelector('.tz-dtr__allday')).toBe(null);
   });
 
-  it('the hour appears in both when whole days are turned off', () => {
+  it('both fields carry an hour as soon as the screen asks for one', () => {
     make({ showTime: true });
     field.open();
     day('2026-09-14').click();
     day('2026-09-20').click();
-    expect(input(0).value).toBe('14/09/2026'); // whole days to start with
-
-    panel().querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
-    expect(input(0).value).toBe('14/09/2026'); // the day stays where it was
+    expect(input(0).value).toBe('14/09/2026'); // the day, in the text
     const hours = [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__time')];
-    expect(hours.map((h) => h.hidden)).toEqual([false, false]); // and both hours appear
+    expect(hours.map((h) => h.hidden)).toEqual([false, false]); // the hour, beside it
+    expect(field.value.allDay).toBe(false);
   });
 });
 

@@ -29,7 +29,7 @@ import {
   type RenderCell,
 } from '@tzslot/dom';
 
-import type { Instant, ShiftOption, ShiftStep } from '@tzslot/core';
+import type { Instant, PlainTime, ShiftOption, ShiftStep } from '@tzslot/core';
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
@@ -98,11 +98,21 @@ export class RangeField implements ControlValueAccessor {
   readonly title = input<string | undefined>(undefined);
   /** How an hour is asked for: two menus (default), or figures with arrows. */
   readonly timeLayout = input<'input' | 'select'>('select');
-  /** Times as well as days, with a switch back to whole days. */
+  /**
+   * Whether the period carries times as well as days — the screen's decision,
+   * not the reader's. There is no "all day" switch: on, every chosen day
+   * starts at `defaultTimes`.
+   */
   readonly showTime = input(false);
+  /**
+   * The hours a newly chosen day is given: midnight unless the screen knows
+   * better — `{ start: '09:00', end: '18:00' }` for a working day. A value
+   * handed to the field keeps its own hours.
+   */
+  readonly defaultTimes = input<{ start?: PlainTime | string; end?: PlainTime | string }>({});
   readonly stepMinutes = input(30);
-  /** Minutes between the options of the hour menu. Every minute by default. */
-  readonly minuteStep = input(1);
+  /** Minutes between the options of the hour menu. Five by default. */
+  readonly minuteStep = input(5);
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
   /**
@@ -162,6 +172,7 @@ export class RangeField implements ControlValueAccessor {
     title: this.title(),
     timeLayout: this.timeLayout(),
     showTime: this.showTime(),
+    defaultTimes: this.defaultTimes(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
     confirm: this.confirm(),

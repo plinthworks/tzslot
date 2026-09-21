@@ -308,6 +308,7 @@ function parisAt(iso: string): Instant {
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
                         [openEnded]="openEnded()" [labels]="rangeLabels()" [lengthBox]="true"
                         [lengthMeans]="lengthMeans()" [timeLayout]="periodTimeLayout()"
+                        [defaultTimes]="{ start: '09:00', end: '18:00' }"
                         [title]="'Dates de voyage'"
                         [presets]="['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour', 'yesterday', 'today', 'tomorrow', 'last7Days', 'thisMonth', 'thisQuarter']" />
         <p class="note">{{ periodText() }}</p>

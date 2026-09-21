@@ -97,13 +97,13 @@ describe('one field for a period', () => {
 });
 
 describe('with times', () => {
-  it('two fields, and the switch that decides whether they carry an hour', () => {
+  it('two fields, each carrying its own hour, and no switch to classify them', () => {
     mount({ showTime: true });
     field.open();
-    const fields = panel()!.querySelectorAll<HTMLInputElement>('.tz-dateinput__input');
-    expect(fields.length).toBe(2); // one per end, the hour inside it
-    expect(panel()!.querySelector('.tz-dtr__allday-box')!.getAttribute('aria-checked')).toBe('true');
-    // The hour lives inside each field now, not on a row of its own.
+    expect(panel()!.querySelectorAll('.tz-dateinput__input').length).toBe(2);
+    // A switch marked "all day" asked the reader to classify their answer
+    // before giving it. The screen decides that, through showTime.
+    expect(panel()!.querySelector('.tz-dtr__allday')).toBeNull();
     expect(panel()!.querySelectorAll('.tz-rangefield__times').length).toBe(0);
   });
 
@@ -113,7 +113,6 @@ describe('with times', () => {
     field.open();
     day('2026-09-21').click();
     day('2026-09-22').click();
-    panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
 
     const hour = panel()!.querySelector<HTMLInputElement>('.tz-dateinput .tz-time__input[data-part="hour"]')!;
     hour.focus();
@@ -183,7 +182,6 @@ describe('the panel reads as two halves', () => {
     const head = panel()!.querySelector('.tz-rangefield__head')!;
     // Both fields and the whole-day switch belong to the first half…
     expect(head.querySelectorAll('.tz-dateinput').length).toBe(2);
-    expect(head.querySelector('.tz-dtr__allday')).not.toBeNull();
     // …and the calendar and its shortcuts to the second.
     expect(head.querySelector('.tz-range__grid')).toBeNull();
     expect(head.querySelector('.tz-rangefield__presets')).toBeNull();
@@ -196,7 +194,6 @@ describe('the panel reads as two halves', () => {
     mount({ showTime: true, timeLayout: 'input' });
     field.open();
     day('2026-09-21').click();
-    panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
     const inside = panel()!.querySelector('.tz-dateinput__row .tz-dateinput__time.tz-time .tz-time__field');
     expect(inside).not.toBeNull(); // the hour is in the field, not on a row below
     const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');

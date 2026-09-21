@@ -10,6 +10,12 @@ import { DATEINPUT_CSS, ensureStyles } from './styles.js';
 export interface WallValue {
   readonly date: PlainDate | null;
   readonly time: PlainTime | null;
+  /**
+   * Which reading of a repeated hour, when the control could say. The menus
+   * name both in the list itself — "02 — winter" — and that choice would be
+   * lost if only the clock face came back.
+   */
+  readonly offset?: string | null;
 }
 
 export interface DateInputSettings {
@@ -144,7 +150,10 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   function settle(value: WallValue): void {
     const same =
       (value.date?.toString() ?? null) === (s.value.date?.toString() ?? null) &&
-      (value.time?.toString() ?? null) === (s.value.time?.toString() ?? null);
+      (value.time?.toString() ?? null) === (s.value.time?.toString() ?? null) &&
+      // The two readings of a repeated hour share a clock face: without this,
+      // moving from winter back to summer looked like no change at all.
+      (value.offset ?? null) === (s.value.offset ?? null);
     s.value = value;
     if (!same) s.onChange?.(value);
   }
@@ -175,6 +184,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     input.classList.remove('tz-dateinput__input--invalid');
     input.removeAttribute('aria-invalid');
     settle({
+      offset: null,
       date: parsed.date,
       // A day typed where an hour is expected starts at midnight, and an hour
       // already chosen is not thrown away by retyping the day under it.
@@ -202,11 +212,17 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     if (s.withTime && mounted !== s.timeLayout) {
       time?.destroy();
       timeHost.replaceChildren();
-      const onChange = (picked: PlainTime | null) => settle({ date: s.value.date, time: picked });
       time =
         s.timeLayout === 'select'
-          ? createTimeSelect(timeHost, { injectStyles: false, onChange })
-          : createTimeInput(timeHost, { injectStyles: false, variant: 'bare', onChange });
+          ? createTimeSelect(timeHost, {
+              injectStyles: false,
+              onChange: (picked, offset) => settle({ date: s.value.date, time: picked, offset }),
+            })
+          : createTimeInput(timeHost, {
+              injectStyles: false,
+              variant: 'bare',
+              onChange: (picked) => settle({ date: s.value.date, time: picked }),
+            });
       mounted = s.timeLayout;
     }
     time?.update({

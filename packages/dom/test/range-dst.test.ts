@@ -183,3 +183,51 @@ describe('once the panel is closed', () => {
     expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026');
   });
 });
+
+describe('the menus name both readings themselves', () => {
+  const menu = (edge: 0 | 1) =>
+    panel().querySelectorAll('.tz-dateinput')[edge]!.querySelector<HTMLSelectElement>('.tz-timeselect__menu')!;
+  const pick = (select: HTMLSelectElement, label: string) => {
+    select.selectedIndex = [...select.options].findIndex((o) => o.textContent === label);
+    select.dispatchEvent(new Event('change', { bubbles: true }));
+  };
+
+  it('so the buttons underneath would say the same thing twice', () => {
+    make('2026-10-25', {
+      timeLayout: 'select',
+      messages: FR,
+      locale: 'fr-FR',
+      value: {
+        start: Temporal.Instant.from('2026-10-25T00:00:00Z'), // 02:00 summer
+        end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
+        allDay: false,
+      },
+    });
+    field.open();
+    expect([...menu(0).options].map((o) => o.textContent)).toContain('02 — été');
+    expect([...menu(0).options].map((o) => o.textContent)).toContain('02 — hiver');
+    expect(panel().querySelectorAll('.tz-dateinput__extra button').length).toBe(0);
+  });
+
+  it('and choosing one in the list reaches the value, both ways', () => {
+    make('2026-10-25', {
+      timeLayout: 'select',
+      messages: FR,
+      locale: 'fr-FR',
+      value: {
+        start: Temporal.Instant.from('2026-10-25T00:00:00Z'), // 02:00 summer
+        end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
+        allDay: false,
+      },
+    });
+    field.open();
+    const at = () => field.value.start!.toZonedDateTimeISO(paris).offset;
+
+    pick(menu(0), '02 — hiver');
+    expect(at()).toBe('+01:00');
+    // Back again: the two share a clock face, so nothing but the reading
+    // changes — and that used to read as no change at all.
+    pick(menu(0), '02 — été');
+    expect(at()).toBe('+02:00');
+  });
+});

@@ -1,0 +1,196 @@
+import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { createRangeField, type RangeFieldInstance, type RangeFieldValue } from '../src/index.js';
+import { FR } from '../src/messages.js';
+import { Temporal } from '@tzslot/core';
+
+/**
+ * The arrows that step a period.
+ *
+ * A filter screen is read by comparing: this quarter against the last, this
+ * week against the one before. The arrows make that one click instead of
+ * four, and they are off by default because a field that means one chosen day
+ * has nothing to step through.
+ */
+const paris = 'Europe/Paris';
+const today = Temporal.PlainDate.from('2026-09-21');
+let host: HTMLElement;
+let field: RangeFieldInstance;
+let reported: RangeFieldValue[];
+
+const make = (options = {}) => {
+  reported = [];
+  field = createRangeField(host, {
+    timeZone: paris,
+    locale: 'en-GB',
+    today,
+    onChange: (value) => reported.push(value),
+    ...options,
+  });
+};
+const shown = () => host.querySelector('.tz-field__text')!.textContent;
+const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
+const panel = () => document.querySelector('.tz-field__panel')!;
+
+beforeEach(() => {
+  host = document.createElement('div');
+  document.body.append(host);
+});
+afterEach(() => {
+  field?.destroy();
+  host.remove();
+  document.querySelectorAll('.tz-field__panel').forEach((node) => node.remove());
+});
+
+describe('by default', () => {
+  it('there are no arrows at all', () => {
+    make();
+    expect([...arrows()].every((a) => a.hidden)).toBe(true);
+  });
+});
+
+describe('with shift on', () => {
+  it('a quarter steps to the quarter before, and back', () => {
+    make({ shift: 'auto', presets: ['thisQuarter', 'lastQuarter'] });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-06-30T22:00:00Z'), // 1 July, Paris
+        end: Temporal.Instant.from('2026-09-30T22:00:00Z'), // midnight after 30 Sept
+        allDay: true,
+      },
+    });
+    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+
+    arrows()[0]!.click();
+    expect(shown()).toBe('01/04/2026 – 30/06/2026');
+    arrows()[1]!.click();
+    expect(shown()).toBe('01/07/2026 – 30/09/2026'); // exactly where it started
+    expect(reported).toHaveLength(2);
+  });
+
+  it('reports whole days, still ending at the midnight after the last one', () => {
+    make({ shift: 'auto' });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
+        end: Temporal.Instant.from('2026-09-20T22:00:00Z'),
+        allDay: true,
+      },
+    });
+    arrows()[1]!.click();
+    const value = reported.at(-1)!;
+    expect(value.allDay).toBe(true);
+    expect(value.start!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-21');
+    expect(value.end!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('00:00');
+  });
+
+  it('a week that crosses the clocks change keeps its days and gains an hour', () => {
+    make({ shift: 'auto' });
+    // 12–18 October, then one step forward: 19–25 October, the week the clocks
+    // go back in Paris. Still seven whole days — and 169 hours, not 168.
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-10-11T22:00:00Z'),
+        end: Temporal.Instant.from('2026-10-18T22:00:00Z'),
+        allDay: true,
+      },
+    });
+    arrows()[1]!.click();
+    const value = reported.at(-1)!;
+    expect(shown()).toBe('19/10/2026 – 25/10/2026');
+    expect(value.end!.epochMilliseconds - value.start!.epochMilliseconds).toBe(169 * 3600_000);
+  });
+
+  it('an imposed step ignores what is selected', () => {
+    make({ shift: { months: 1 } });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-13T22:00:00Z'), // 14 Sept
+        end: Temporal.Instant.from('2026-09-16T22:00:00Z'), // 15 Sept inclusive
+        allDay: true,
+      },
+    });
+    arrows()[0]!.click();
+    expect(shown()).toBe('14/08/2026 – 16/08/2026'); // three days, a month earlier
+  });
+
+  it('keeps the hours when the period has them', () => {
+    make({ shift: 'auto', showTime: true });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-14T07:00:00Z'), // 09:00 Paris
+        end: Temporal.Instant.from('2026-09-15T15:00:00Z'), // 17:00 Paris
+        allDay: false,
+      },
+    });
+    arrows()[1]!.click();
+    const value = reported.at(-1)!;
+    expect(value.allDay).toBe(false);
+    expect(value.start!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('09:00');
+    expect(value.end!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('17:00');
+    expect(shown()).toBe('16/09/2026 09:00 – 17/09/2026 17:00');
+  });
+
+  it('is dead while there is nothing to move', () => {
+    make({ shift: 'auto' });
+    expect([...arrows()].every((a) => a.disabled)).toBe(true);
+    arrows()[0]!.click();
+    expect(reported).toHaveLength(0);
+  });
+
+  it('is in the panel too, labelled with the period it would move', () => {
+    make({ shift: 'auto', messages: FR, locale: 'fr-FR' });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-06-30T22:00:00Z'),
+        end: Temporal.Instant.from('2026-09-30T22:00:00Z'),
+        allDay: true,
+      },
+    });
+    field.open();
+    expect(panel().querySelector('.tz-rangefield__shift-label')!.textContent).toBe('01/07/2026 – 30/09/2026');
+    panel().querySelector<HTMLButtonElement>('.tz-rangefield__shift-arrow')!.click();
+    expect(panel().querySelector('.tz-rangefield__shift-label')!.textContent).toBe('01/04/2026 – 30/06/2026');
+    expect(field.isOpen).toBe(true); // stepping is not choosing: the panel stays
+  });
+
+  it('the quarter presets are offered, and tick when they match', () => {
+    make({ shift: 'auto', presets: ['lastQuarter', 'thisQuarter', 'nextQuarter'], messages: FR });
+    field.open();
+    const labels = [...panel().querySelectorAll('.tz-rangefield__preset')].map((b) => b.textContent);
+    expect(labels).toEqual(['Le trimestre dernier', 'Ce trimestre', 'Le trimestre prochain']);
+    panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__preset')[1]!.click();
+    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+  });
+});
+
+describe('a single moment steps too', () => {
+  it('by the step the screen imposes, on the zone’s clocks', async () => {
+    const { createDateTimeField } = await import('../src/index.js');
+    const moments: (unknown | null)[] = [];
+    const field = createDateTimeField(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      shift: { hours: 1 },
+      value: Temporal.Instant.from('2026-10-25T00:30:00Z'), // the first 02:30 in Paris
+      onChange: (value) => moments.push(value),
+    });
+    const arrow = (index: number) => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')[index]!;
+
+    arrow(1).click();
+    // An hour later is the *second* 02:30, not 03:30: the clocks went back.
+    expect(host.querySelector<HTMLInputElement>('.tz-field__trigger')!.value).toContain('02:30');
+    expect(field.value!.toString()).toBe('2026-10-25T01:30:00Z');
+
+    arrow(1).click();
+    expect(host.querySelector<HTMLInputElement>('.tz-field__trigger')!.value).toContain('03:30');
+    expect(moments).toHaveLength(2);
+    field.destroy();
+  });
+
+  it('has no arrows unless a step is given', async () => {
+    const { createDateTimeField } = await import('../src/index.js');
+    const field = createDateTimeField(host, { timeZone: paris, locale: 'en-GB' });
+    expect([...host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')].every((a) => a.hidden)).toBe(true);
+    field.destroy();
+  });
+});

@@ -160,6 +160,18 @@ export const FIELD_CSS = `
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
+.tz-field--shift { display: inline-flex; align-items: stretch; gap: 0.25rem; }
+.tz-field__shift {
+  border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
+  background: var(--tz-field-bg, var(--tz-bg, transparent));
+  color: inherit;
+  font: var(--tz-font, inherit);
+  padding: 0 0.6rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.tz-field__shift:disabled { opacity: 0.4; cursor: not-allowed; }
 .tz-field__wrap { display: inline-flex; align-items: stretch; position: relative; }
 .tz-field__trigger--editable {
   min-width: var(--tz-field-width, 12rem);
@@ -658,6 +670,25 @@ export const TIMESELECT_CSS = `
 /** The range field's panel: the calendar, the named ranges beside it, a footer. */
 export const RANGEFIELD_CSS = `
 .tz-rangefield__panel { display: grid; gap: 0.75rem; }
+.tz-rangefield__shift {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.tz-rangefield__shift-label { font-size: 0.9em; font-weight: 600; }
+.tz-rangefield__shift-arrow {
+  border: 0;
+  border-radius: var(--tz-radius, 0.375rem);
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-size: 1.1em;
+  padding: 0.15rem 0.5rem;
+  cursor: pointer;
+}
+.tz-rangefield__shift-arrow:hover:not(:disabled) { background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent)); }
+.tz-rangefield__shift-arrow:disabled { opacity: 0.4; cursor: not-allowed; }
 .tz-rangefield__body {
   display: flex;
   align-items: flex-start;

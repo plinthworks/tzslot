@@ -17,6 +17,7 @@
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `showTime` | `boolean` | `true` | Whether a time is asked for at all. False leaves a field that chooses a day and holds the moment it starts — what a whole-day range needs, with everything else about the field unchanged. |
+| `shift` | `DurationLike \| false` | `false` | Arrows that step the chosen moment, without opening anything: an hour later, a day earlier. `false` — the default — draws none. The step is always explicit here; a single moment has no length of its own to follow, so there is nothing for an 'auto' to mean. It is counted on the zone's clocks, so `{ days: 1 }` on the night they change is 23 or 25 hours, and the time of day survives. |
 | `timeLayout` | `TimeLayout` | `'input'` | How the time is chosen: a compact field, two menus, or the day's times. |
 | `stepMinutes` | `number` | `30` | Minutes between the times offered. |
 | `minuteStep` | `number` | `1` | With 'select': minutes between the options. Every minute by default. |

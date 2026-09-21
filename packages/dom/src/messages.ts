@@ -61,6 +61,9 @@ export interface TzslotMessages {
   readonly cancel: string;
   /** The named ranges offered beside the calendar. */
   readonly presets: Record<PresetName, string>;
+  /** The arrows that step a selection to the period before or after it. */
+  readonly previousPeriod: string;
+  readonly nextPeriod: string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -141,8 +144,15 @@ export const EN: TzslotMessages = {
     lastWeek: 'Last week',
     thisMonth: 'This month',
     lastMonth: 'Last month',
+    thisQuarter: 'This quarter',
+    lastQuarter: 'Last quarter',
+    nextQuarter: 'Next quarter',
+    next7Days: 'Next 7 days',
+    next30Days: 'Next 30 days',
     thisYear: 'This year',
   },
+  previousPeriod: 'Previous period',
+  nextPeriod: 'Next period',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -206,8 +216,15 @@ export const FR: TzslotMessages = {
     lastWeek: 'La semaine dernière',
     thisMonth: 'Ce mois-ci',
     lastMonth: 'Le mois dernier',
+    thisQuarter: 'Ce trimestre',
+    lastQuarter: 'Le trimestre dernier',
+    nextQuarter: 'Le trimestre prochain',
+    next7Days: '7 prochains jours',
+    next30Days: '30 prochains jours',
     thisYear: 'Cette année',
   },
+  previousPeriod: 'Période précédente',
+  nextPeriod: 'Période suivante',
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

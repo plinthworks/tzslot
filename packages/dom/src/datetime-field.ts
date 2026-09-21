@@ -1,5 +1,5 @@
-import { Temporal, resolveWallTime } from '@tzslot/core';
-import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
+import { Temporal, resolveWallTime, shiftInstant } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
@@ -39,6 +39,15 @@ export interface DateTimeFieldSettings {
    * everything else about the field unchanged.
    */
   showTime: boolean;
+  /**
+   * Arrows that step the chosen moment, without opening anything: an hour
+   * later, a day earlier. `false` — the default — draws none. The step is
+   * always explicit here; a single moment has no length of its own to follow,
+   * so there is nothing for an 'auto' to mean. It is counted on the zone's
+   * clocks, so `{ days: 1 }` on the night they change is 23 or 25 hours, and
+   * the time of day survives.
+   */
+  shift: DurationLike | false;
   /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
@@ -141,6 +150,7 @@ export function createDateTimeField(
     max: null,
     isDateDisabled: undefined,
     showTime: true,
+    shift: false,
     timeLayout: 'input',
     stepMinutes: 30,
     minuteStep: 1,
@@ -209,7 +219,34 @@ export function createDateTimeField(
   const iconButton = doc.createElement('button');
   iconButton.type = 'button';
   iconButton.className = 'tz-field__icon-button';
-  host.append(wrap);
+  /** One of the two arrows that step the moment. */
+  function arrow(direction: 1 | -1, className: string): HTMLButtonElement {
+    const node = doc.createElement('button');
+    node.type = 'button';
+    node.className = className;
+    node.textContent = direction === -1 ? '‹' : '›';
+    node.addEventListener('click', (event) => {
+      event.stopPropagation();
+      step(direction);
+    });
+    return node;
+  }
+
+  const back = arrow(-1, 'tz-field__shift tz-field__shift--prev');
+  const forward = arrow(1, 'tz-field__shift tz-field__shift--next');
+  host.append(back, wrap, forward);
+
+  /**
+   * One notch away, on the zone's clocks.
+   *
+   * A moment that does not exist cannot be landed on: the hour the clocks
+   * skip is stepped over by Temporal itself, which is why this goes through
+   * the zone rather than adding milliseconds.
+   */
+  function step(direction: 1 | -1): void {
+    if (s.shift === false || s.disabled || s.value === null) return;
+    commit(shiftInstant(s.value, s.shift, direction, s.timeZone));
+  }
 
   /** Which of the two is in the document, and what the panel hangs from. */
   let trigger: HTMLElement = button;
@@ -451,6 +488,16 @@ export function createDateTimeField(
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', label());
+    host.classList.toggle('tz-field--shift', s.shift !== false);
+    for (const [node, text_] of [
+      [back, s.messages.previousPeriod],
+      [forward, s.messages.nextPeriod],
+    ] as const) {
+      node.hidden = s.shift === false;
+      node.disabled = s.disabled || s.value === null;
+      node.setAttribute('aria-label', text_);
+      node.title = text_;
+    }
     if (s.disabled) panel.close({ restoreFocus: false });
     paintPanel();
   }
@@ -763,7 +810,9 @@ export function createDateTimeField(
     destroy() {
       panel.close({ restoreFocus: false });
       listening.abort();
-      trigger.remove();
+      back.remove();
+      wrap.remove();
+      forward.remove();
       if (addedHostClass) host.classList.remove('tz-field');
     },
   };

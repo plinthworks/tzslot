@@ -1,5 +1,5 @@
-import { Temporal, presetRange, matchesPreset } from '@tzslot/core';
-import type { DayRange, Instant, PlainDate, PlainTime, PresetName } from '@tzslot/core';
+import { Temporal, presetRange, matchesPreset, shiftDayRange } from '@tzslot/core';
+import type { DayRange, Instant, PlainDate, PlainTime, PresetName, ShiftStep } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createPanel, type FieldMode } from './panel.js';
@@ -39,6 +39,15 @@ export interface RangeFieldSettings {
   stepMinutes: number;
   /** Nothing is reported until Apply is pressed. For searches that cost. */
   confirm: boolean;
+  /**
+   * Arrows that step the whole selection one period at a time, without
+   * opening anything. `false` — the default — draws none: a filter that means
+   * one chosen day has nothing to step through. `'auto'` moves by what is
+   * selected, so a quarter moves by a quarter and seven days by seven days;
+   * a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever
+   * is selected, for a screen whose window is fixed.
+   */
+  shift: ShiftStep | false;
   /** How many months the panel shows side by side. */
   months: number;
   weekNumbers: boolean;
@@ -103,6 +112,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     showTime: false,
     stepMinutes: 30,
     confirm: false,
+    shift: false,
     months: 2,
     weekNumbers: false,
     firstDayOfWeek: 1,
@@ -147,13 +157,31 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   iconSlot.setAttribute('aria-hidden', 'true');
   iconSlot.append(icon ?? '▾');
   trigger.append(text, iconSlot);
-  host.append(trigger);
+
+  /** One of the two arrows that step the selection. */
+  function arrow(direction: 1 | -1, className: string): HTMLButtonElement {
+    const button = doc.createElement('button');
+    button.type = 'button';
+    button.className = className;
+    button.textContent = direction === -1 ? '‹' : '›';
+    button.addEventListener('click', (event) => {
+      event.stopPropagation(); // on the field the arrows sit beside a trigger
+      step(direction);
+    });
+    return button;
+  }
+
+  const back = arrow(-1, 'tz-field__shift tz-field__shift--prev');
+  const forward = arrow(1, 'tz-field__shift tz-field__shift--next');
+  host.append(back, trigger, forward);
 
   let range: DateRangeInstance | null = null;
   let fromTime: TimeInputInstance | null = null;
   let toTime: TimeInputInstance | null = null;
   let presetList: HTMLElement | null = null;
   let allDayBox: HTMLButtonElement | null = null;
+  let panelShift: { row: HTMLElement; label: HTMLElement; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
+    null;
 
   const wholeDays = () => draft.allDay !== false;
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
@@ -197,18 +225,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   const pattern = () => s.format ?? patternFor(s.locale, { time: false });
 
-  /** What the closed field says. */
-  function display(): string {
-    if (s.displayWith) return s.displayWith(s.value, s.timeZone);
-    const { start, end } = days(s.value);
+  /** What the field says about a value — the chosen one, or the pending draft. */
+  function display(value: RangeFieldValue = s.value): string {
+    if (s.displayWith) return s.displayWith(value, s.timeZone);
+    const { start, end } = days(value);
     if (!start && !end) return '';
     const shape = pattern();
-    const time = (value: Instant | null) =>
-      s.value.allDay === false && value
-        ? ` ${formatWith('HH:mm', { time: zoned(value).toPlainTime() }, s.locale)}`
+    const time = (at_: Instant | null) =>
+      value.allDay === false && at_
+        ? ` ${formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale)}`
         : '';
-    const first = start ? formatWith(shape, { date: start }, s.locale) + time(s.value.start) : '…';
-    const last = end ? formatWith(shape, { date: end }, s.locale) + time(s.value.end) : '…';
+    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : '…';
+    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end) : '…';
     return first === last ? first : `${first} – ${last}`;
   }
 
@@ -228,6 +256,32 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     commit(next);
     if (close) panel.close();
     else paintPanel();
+  }
+
+  /** True when there is a whole period to move, and something to move it by. */
+  const canShift = () => {
+    if (s.shift === false || s.disabled) return false;
+    const { start, end } = days(s.value);
+    return start !== null && end !== null;
+  };
+
+  /**
+   * One notch, in either direction.
+   *
+   * The step moves the days and the times follow: an interval from 09:00 to
+   * 17:00 shifted a week on is still 09:00 to 17:00, which is what someone
+   * comparing two weeks means — and, across a change of clocks, not the same
+   * number of hours, which is the truth of it.
+   */
+  function step(direction: 1 | -1): void {
+    if (!canShift() || s.shift === false) return;
+    const shown = days(s.value);
+    if (!shown.start || !shown.end) return;
+    const moved = shiftDayRange({ start: shown.start, end: shown.end }, s.shift, direction);
+    draft = s.value; // so the times carry over into fromDays
+    const next = fromDays({ start: moved.start, end: moved.end });
+    if (panel.isOpen) choose(next);
+    else commit(next);
   }
 
   const presets = (): RangePreset[] =>
@@ -275,6 +329,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     'last14Days',
     'thisWeek',
     'lastWeek',
+    'thisQuarter',
+    'lastQuarter',
+    'nextQuarter',
+    'next7Days',
+    'next30Days',
     'thisYear',
   ].includes(name);
   const sameRange = (a: DayRange, b: { start: PlainDate; end: PlainDate }) =>
@@ -322,6 +381,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       allDayBox.setAttribute('aria-checked', String(wholeDays()));
       allDayBox.classList.toggle('tz-dtr__allday-box--on', wholeDays());
     }
+    if (panelShift) {
+      panelShift.label.textContent = display(draft) || s.messages.chooseRange;
+      for (const button of [panelShift.back, panelShift.forward]) button.disabled = !canShift();
+    }
     paintPresets();
     panel.place();
   }
@@ -332,6 +395,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       stylesPending = false;
     }
     text.textContent = display() || s.placeholder || s.messages.chooseRange;
+    host.classList.toggle('tz-field--shift', s.shift !== false);
+    for (const [button, label] of [
+      [back, s.messages.previousPeriod],
+      [forward, s.messages.nextPeriod],
+    ] as const) {
+      button.hidden = s.shift === false;
+      button.disabled = !canShift();
+      button.setAttribute('aria-label', label);
+      button.title = label;
+    }
     trigger.classList.toggle('tz-field__trigger--empty', s.value.start === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', s.ariaLabel ?? s.messages.chooseRange);
@@ -357,6 +430,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       toTime = null;
       presetList = null;
       allDayBox = null;
+      panelShift = null;
       render();
       s.onClose?.();
     },
@@ -366,6 +440,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
       ensureStyles(node, 'range', RANGE_CSS);
       ensureStyles(node, 'time', TIME_CSS);
+
+      if (s.shift !== false) {
+        const row = el('div', 'tz-rangefield__shift');
+        const label = el('span', 'tz-rangefield__shift-label');
+        const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
+        const forwardButton = arrow(1, 'tz-rangefield__shift-arrow');
+        backButton.setAttribute('aria-label', s.messages.previousPeriod);
+        forwardButton.setAttribute('aria-label', s.messages.nextPeriod);
+        row.append(backButton, label, forwardButton);
+        node.append(row);
+        panelShift = { row, label, back: backButton, forward: forwardButton };
+      }
 
       const body = el('div', 'tz-rangefield__body');
       const rangeHost = doc.createElement('div');
@@ -487,7 +573,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     destroy() {
       panel.close({ restoreFocus: false });
       listening.abort();
+      back.remove();
       trigger.remove();
+      forward.remove();
       if (addedHostClass) host.classList.remove('tz-field');
     },
   };

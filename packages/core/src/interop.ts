@@ -15,7 +15,7 @@ import type { Instant, PlainDate } from './temporal.js';
  */
 
 /** What a component hands out, and accepts back. */
-export type ValueShape = 'temporal' | 'date' | 'iso';
+export type ValueShape = 'temporal' | 'date' | 'iso' | 'utc';
 
 /** Whatever a caller might reasonably pass for a calendar day. */
 export type DateLike = PlainDate | Date | string;
@@ -61,6 +61,11 @@ export function fromPlainDate(date: PlainDate | null, shape: ValueShape, timeZon
       // holder. Any other hour would silently move the day for readers further
       // east or west.
       return new Date(date.toZonedDateTime({ timeZone }).epochMilliseconds);
+    case 'utc':
+      // The same midnight, written as the instant it is: 2026-09-14 in Paris
+      // leaves as 2026-09-13T22:00:00Z. A back end that stores instants gets
+      // one from a date-only widget too, and never has to guess a zone.
+      return date.toZonedDateTime({ timeZone }).toInstant().toString();
   }
 }
 
@@ -80,6 +85,9 @@ export function fromInstant(instant: Instant | null, shape: ValueShape): unknown
       return instant.toString();
     case 'date':
       return new Date(instant.epochMilliseconds);
+    case 'utc':
+      // Instant.toString() is already UTC and already ends in Z.
+      return instant.toString();
   }
 }
 

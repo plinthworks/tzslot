@@ -12,6 +12,7 @@
 | `showTime` | `boolean` | `false` | Times as well as days, with a switch back to whole days. |
 | `stepMinutes` | `number` | `30` | Minutes the time fields step by. |
 | `confirm` | `boolean` | `false` | Nothing is reported until Apply is pressed. For searches that cost. |
+| `shift` | `ShiftStep \| false` | `false` | Arrows that step the whole selection one period at a time, without opening anything. `false` — the default — draws none: a filter that means one chosen day has nothing to step through. `'auto'` moves by what is selected, so a quarter moves by a quarter and seven days by seven days; a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever is selected, for a screen whose window is fixed. |
 | `months` | `number` | `2` | How many months the panel shows side by side. |
 | `weekNumbers` | `boolean` | `false` |  |
 | `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7` | `1` | Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday. |

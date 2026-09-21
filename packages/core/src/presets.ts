@@ -13,6 +13,11 @@ export type PresetName =
   | 'lastWeek'
   | 'thisMonth'
   | 'lastMonth'
+  | 'thisQuarter'
+  | 'lastQuarter'
+  | 'nextQuarter'
+  | 'next7Days'
+  | 'next30Days'
   | 'thisYear';
 
 /** Two days, both included — what a calendar highlights. */
@@ -38,6 +43,18 @@ export interface PresetOptions {
  * it knows the zone.
  */
 export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: PresetOptions): DayRange {
+  /**
+   * Calendar quarters, counted from January. A fiscal year that starts in
+   * April is a different thing and would need its own option; naming this one
+   * 'quarter' and quietly meaning something else is how a report ends up off
+   * by three months.
+   */
+  const quarter = (from: PlainDate, away: number): DayRange => {
+    const first = from
+      .with({ day: 1, month: from.month - ((from.month - 1) % 3) })
+      .add({ months: away * 3 });
+    return { start: first, end: first.add({ months: 3 }).subtract({ days: 1 }) };
+  };
   const back = (days: number) => today.subtract({ days });
   const startOfWeek = (from: PlainDate) =>
     from.subtract({ days: (from.dayOfWeek - firstDayOfWeek + 7) % 7 });
@@ -69,6 +86,16 @@ export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: Pre
       const first = today.with({ day: 1 }).subtract({ months: 1 });
       return { start: first, end: first.add({ months: 1 }).subtract({ days: 1 }) };
     }
+    case 'thisQuarter':
+      return quarter(today, 0);
+    case 'lastQuarter':
+      return quarter(today, -1);
+    case 'nextQuarter':
+      return quarter(today, 1);
+    case 'next7Days':
+      return { start: today, end: today.add({ days: 6 }) };
+    case 'next30Days':
+      return { start: today, end: today.add({ days: 29 }) };
     case 'thisYear': {
       const first = Temporal.PlainDate.from({ year: today.year, month: 1, day: 1 });
       return { start: first, end: Temporal.PlainDate.from({ year: today.year, month: 12, day: 31 }) };

@@ -14,6 +14,7 @@ export type {
   ZonedDateTime,
   Instant,
   Duration,
+  DurationLike,
 } from './temporal.js';
 export { getDaySlots, resolve as resolveWallTime } from './slots.js';
 export type { Slot, DaySlotsOptions, ResolvedTime } from './slots.js';
@@ -22,6 +23,8 @@ export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
 export { getDailyWindows } from './daily.js';
 export { presetRange, matchesPreset } from './presets.js';
 export type { PresetName, DayRange, PresetOptions } from './presets.js';
+export { shiftDayRange, shiftInstant, shiftDate } from './shift.js';
+export type { ShiftStep } from './shift.js';
 export type { DailyWindow, DailyWindowsSummary } from './daily.js';
 export {
   toPlainDate,

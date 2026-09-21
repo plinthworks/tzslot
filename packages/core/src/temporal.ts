@@ -33,6 +33,8 @@ export type PlainDateTime = Polyfill.PlainDateTime;
 export type ZonedDateTime = Polyfill.ZonedDateTime;
 export type Instant = Polyfill.Instant;
 export type Duration = Polyfill.Duration;
+/** What can be written where a length of time is expected: { days: 7 }, { months: 3 }, 'PT1H'. */
+export type DurationLike = Polyfill.DurationLike | string;
 
 const globalTemporal = (globalThis as { Temporal?: TemporalNamespace }).Temporal;
 

@@ -263,49 +263,86 @@ function parisAt(iso: string): Instant {
         <tz-date-field [(value)]="pricedDate" [locale]="locale" [buttons]="['today', 'clear']" />
       </section>
 
-      <section class="block">
+      <section class="block block--wide block--feature">
         <h2>A period, in one field</h2>
-        <p class="note">
-          Les raccourcis à droite font le travail en un clic ; sinon, deux clics dans deux mois
-          affichés côte à côte.
+        <p class="lede">
+          Un champ pour toute une période. Le panneau tient deux champs — un par borne — et un
+          calendrier : un clic remplit celui qui porte l'anneau, donc corriger la fin ne jette
+          pas le début.
         </p>
-        <div class="row">
-          <span class="note">Flèches ‹ ›</span>
-          @for (s of shiftChoices; track s.label) {
-            <button type="button" class="chip" [class.on]="shiftLabelOf() === s.label"
-                    (click)="periodShift.set(s.value)">{{ s.label }}</button>
-          }
-        </div>
-        <div class="row">
-          <span class="note">Heure</span>
-          @for (l of ['input', 'select']; track l) {
-            <button type="button" class="chip" [class.on]="periodTimeLayout() === l"
-                    (click)="periodTimeLayout.set($any(l))">{{ l }}</button>
-          }
-        </div>
-        <div class="row">
-          <span class="note">Libellés</span>
-          <button type="button" class="chip" [class.on]="labelStyle() === 'words'"
-                  (click)="labelStyle.set('words')">Du / Au</button>
-          <button type="button" class="chip" [class.on]="labelStyle() === 'arrow'"
-                  (click)="labelStyle.set('arrow')">» entre les deux</button>
-        </div>
-        <div class="row">
-          <span class="note">Bornes</span>
-          <button type="button" class="chip" [class.on]="!openEnded()" (click)="openEnded.set(false)">
-            deux bornes
-          </button>
-          <button type="button" class="chip" [class.on]="openEnded()" (click)="openEnded.set(true)">
-            une borne possible
-          </button>
-        </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
                         [openEnded]="openEnded()" [labels]="rangeLabels()" [timeLayout]="periodTimeLayout()"
                         [defaultTimes]="{ start: '09:00', end: '18:00' }"
                         [title]="'Dates de voyage'"
                         [presets]="['thisQuarterHour', 'lastHour', 'thisHour', 'nextHour', 'yesterday', 'today', 'tomorrow', 'last7Days', 'thisMonth', 'thisQuarter']" />
-        <p class="note">{{ periodText() }}</p>
+        <p class="out">{{ periodText() }}</p>
+
+        <div class="settings">
+          <div class="setting">
+            <div class="setting__head"><code>shift</code><span>ce qu'un clic sur ‹ › déplace</span></div>
+            <div class="row">
+              @for (s of shiftChoices; track s.label) {
+                <button type="button" class="chip" [class.on]="shiftLabelOf() === s.label"
+                        (click)="periodShift.set(s.value)">{{ s.label }}</button>
+              }
+            </div>
+            <p class="setting__why">
+              En <code>'auto'</code>, c'est le raccourci choisi qui donne le pas : un trimestre se
+              décale de trimestre en trimestre. Un pas explicite l'impose quelle que soit la
+              sélection — et peut s'écrire court, <code>'15mn'</code>. Une liste fait apparaître un
+              bouton entre les flèches, et le lecteur choisit lui-même.
+            </p>
+          </div>
+
+          <div class="setting">
+            <div class="setting__head"><code>timeLayout</code><span>comment on demande l'heure</span></div>
+            <div class="row">
+              @for (l of ['select', 'input']; track l) {
+                <button type="button" class="chip" [class.on]="periodTimeLayout() === l"
+                        (click)="periodTimeLayout.set($any(l))">{{ l }}</button>
+              }
+            </div>
+            <p class="setting__why">
+              <code>select</code> : un menu d'heures, un de minutes — deux clics quand on choisit
+              une heure. <code>input</code> : des chiffres avec une flèche au-dessus et une en
+              dessous, pour ajuster une heure déjà presque juste. Le 25 octobre, le menu propose
+              <code>02</code> et <code>02*</code> — la ligne sous le champ nomme la lecture retenue.
+            </p>
+          </div>
+
+          <div class="setting">
+            <div class="setting__head"><code>labels</code><span>ce qui est écrit au-dessus des champs</span></div>
+            <div class="row">
+              <button type="button" class="chip" [class.on]="labelStyle() === 'words'"
+                      (click)="labelStyle.set('words')">Du / Au</button>
+              <button type="button" class="chip" [class.on]="labelStyle() === 'arrow'"
+                      (click)="labelStyle.set('arrow')">» entre les deux</button>
+            </div>
+            <p class="setting__why">
+              Des mots, un signe entre les deux champs, ou rien. N'importe quel nœud DOM fait
+              l'affaire — le mot reste lu par un lecteur d'écran, quel que soit le dessin.
+            </p>
+          </div>
+
+          <div class="setting">
+            <div class="setting__head"><code>openEnded</code><span>une période peut-elle s'arrêter d'un seul côté</span></div>
+            <div class="row">
+              <button type="button" class="chip" [class.on]="!openEnded()" (click)="openEnded.set(false)">
+                deux bornes
+              </button>
+              <button type="button" class="chip" [class.on]="openEnded()" (click)="openEnded.set(true)">
+                une borne possible
+              </button>
+            </div>
+            <p class="setting__why">
+              Le <code>&gt;=</code> sans <code>&lt;</code> que sont la plupart des recherches. Une croix
+              apparaît alors dans chaque champ : vider « Du » veut dire « jusqu'au ». Éteint par
+              défaut — un formulaire de réservation ne doit pas accepter un séjour sans fin.
+            </p>
+          </div>
+        </div>
+
         <p class="note">
           Les flèches ‹ › décalent la période entière d'un cran. En « auto », c'est le raccourci
           choisi qui donne le pas. Un pas explicite l'impose quelle que soit la sélection :
@@ -411,6 +448,9 @@ function parisAt(iso: string): Instant {
     .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(19rem, 1fr));
             gap: 1.5rem; }
     .grid .block { margin: 0; }
+    /* The widest widget gets the whole row: four settings side by side need it,
+       and squeezing it into a column made every explanation a narrow ribbon. */
+    .grid .block--wide { grid-column: 1 / -1; }
     .row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center;
            margin-bottom: 1rem; }
     .chip { border: 1px solid var(--tz-border); background: var(--tz-bg); border-radius: 999px;
@@ -424,6 +464,22 @@ function parisAt(iso: string): Instant {
     dt { opacity: 0.55; }
     code { background: var(--tz-bg-raised); padding: 0.1rem 0.35rem; border-radius: 0.25rem; }
     .note { font-size: 0.8125rem; opacity: 0.7; margin: 0.75rem 0 0; }
+    /* What the widget answered, in the shape an application receives. */
+    .out { font-size: 0.8125rem; margin: 0.75rem 0 0; padding: 0.5rem 0.7rem;
+           border-radius: 0.375rem; background: var(--tz-bg-raised);
+           font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    /* One card per setting: its name, what it decides, the control, and why it
+       is there. A row of chips with a word beside it said none of that. */
+    .settings { display: grid; grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+                gap: 0.75rem; margin-top: 1.5rem; }
+    .setting { border: 1px solid var(--tz-border); border-radius: 0.5rem; padding: 0.85rem; }
+    .setting__head { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.5rem;
+                     margin-bottom: 0.6rem; }
+    .setting__head code { font-size: 0.8125rem; font-weight: 600; }
+    .setting__head span { font-size: 0.8125rem; opacity: 0.65; }
+    .setting .row { margin-bottom: 0.6rem; }
+    .setting__why { margin: 0; font-size: 0.78rem; line-height: 1.5; opacity: 0.7; }
+    .setting__why code { font-size: 0.72rem; }
   `,
 })
 export class Demo {

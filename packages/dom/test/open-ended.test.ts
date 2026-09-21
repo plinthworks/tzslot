@@ -241,3 +241,19 @@ describe('moving a period that is open at one end', () => {
     expect(shown()).toBe('Until 20/10/2026 17:00');
   });
 });
+
+describe('the interval’s sentence, on the morning an hour repeats', () => {
+  it('says which reading it means', async () => {
+    const { createDateTimeRange } = await import('../src/index.js');
+    const widget = createDateTimeRange(host, {
+      timeZone: paris,
+      locale: 'en-GB',
+      openEnded: true,
+      value: { start: Temporal.Instant.from('2026-10-25T00:30:00Z'), end: null, allDay: false },
+    });
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('From 25 Oct 2026, 02:30 (summer)');
+    widget.update({ value: { start: Temporal.Instant.from('2026-10-25T01:30:00Z'), end: null, allDay: false } });
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('From 25 Oct 2026, 02:30 (winter)');
+    widget.destroy();
+  });
+});

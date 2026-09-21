@@ -1,4 +1,6 @@
+import { resolveWallTime } from '@tzslot/core';
 import type { Instant } from '@tzslot/core';
+import type { TzslotMessages } from './messages.js';
 
 /**
  * What a zone calls itself at a given moment — "heure d'été d'Europe
@@ -32,4 +34,39 @@ export function summerFirst(offsets: readonly string[]): boolean {
     return (match[1] === '-' ? -1 : 1) * (Number(match[2]) * 60 + Number(match[3]));
   };
   return minutes(offsets[0] ?? '') >= minutes(offsets[1] ?? '');
+}
+
+/**
+ * Summer and winter, in whichever order this pair of offsets puts them.
+ *
+ * Named, not numbered: "heure d'été" is something a person can answer,
+ * "+02:00" is something they have to work out.
+ */
+export function seasonNames(
+  offsets: readonly string[],
+  messages: TzslotMessages,
+): [string, string] {
+  return summerFirst(offsets)
+    ? [messages.summerTime, messages.winterTime]
+    : [messages.winterTime, messages.summerTime];
+}
+
+/**
+ * What to call a moment whose clock face happens twice that day — and null on
+ * the other three hundred and sixty-three.
+ *
+ * Every widget that writes a time out has to be able to say this, or a field
+ * reads 02:30 for two different moments and the reader cannot tell which they
+ * chose.
+ */
+export function readingName(
+  instant: Instant,
+  timeZone: string,
+  messages: TzslotMessages,
+): string | null {
+  const here = instant.toZonedDateTimeISO(timeZone);
+  const found = resolveWallTime(here.toPlainDate(), here.toPlainTime(), timeZone);
+  if (!found.exists || !found.ambiguous) return null;
+  const index = found.offsets.indexOf(here.offset);
+  return seasonNames(found.offsets, messages)[index < 0 ? 0 : index] ?? null;
 }

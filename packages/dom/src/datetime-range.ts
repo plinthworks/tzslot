@@ -4,6 +4,7 @@ import { createDateTimeField, type DateTimeFieldInstance } from './datetime-fiel
 import type { TimeLayout } from './daily-range.js';
 import type { CalendarButton } from './calendar.js';
 import type { RenderCell } from './cells.js';
+import { readingName } from './zone-names.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DTR_CSS, ensureStyles } from './styles.js';
 
@@ -277,7 +278,14 @@ export function createDateTimeRange(
         timeStyle: wholeDays() ? undefined : 'short',
         timeZone: s.timeZone,
       }).format(new Date(one.epochMilliseconds));
-      return { summary: `${word} ${when}`, warning: null, problem: null };
+      // The same clock face happens twice on one morning a year, and this
+      // sentence would read the same for both moments without saying so.
+      const reading = wholeDays() ? null : readingName(one, s.timeZone, s.messages);
+      return {
+        summary: reading ? `${word} ${when} (${reading})` : `${word} ${when}`,
+        warning: null,
+        problem: null,
+      };
     }
     const info = getRangeInfo(start, end, s.timeZone);
     if (isRangeProblem(info)) {

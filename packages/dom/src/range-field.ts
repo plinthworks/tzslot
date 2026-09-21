@@ -23,7 +23,11 @@ import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, patternFor } from './format.js';
-import { summerFirst, zoneName } from './zone-names.js';
+import {
+  seasonNames as namesFor,
+  readingName as nameOfReading,
+  zoneName,
+} from './zone-names.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DATETIME_CSS, FIELD_CSS, RANGEFIELD_CSS, RANGE_CSS, TIME_CSS, ensureStyles } from './styles.js';
@@ -324,23 +328,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     };
   }
 
-  /**
-   * The name of the reading a moment is, when its clock face happens twice
-   * that day. Null on the other three hundred and sixty-three days.
-   */
-  function readingName(at_: Instant): string | null {
-    const here = zoned(at_);
-    const found = resolveWallTime(here.toPlainDate(), here.toPlainTime(), s.timeZone);
-    if (!found.exists || !found.ambiguous) return null;
-    const index = found.offsets.indexOf(here.offset);
-    return seasonNames(found.offsets)[index < 0 ? 0 : index] ?? null;
-  }
-
-  /** Summer and winter, in whichever order the offsets put them. */
-  const seasonNames = (offsets: readonly string[]): [string, string] =>
-    summerFirst(offsets)
-      ? [s.messages.summerTime, s.messages.winterTime]
-      : [s.messages.winterTime, s.messages.summerTime];
+  const seasonNames = (offsets: readonly string[]) => namesFor(offsets, s.messages);
 
   /**
    * A day and a wall time become a moment — and on two days a year that is a
@@ -381,7 +369,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // Which 02:30 was chosen is visible in the panel and nowhere else once
       // it closes, and a field that reads 02:30 twice over is a field the
       // reader cannot check. The name rides along in brackets.
-      const reading = readingName(at_);
+      const reading = nameOfReading(at_, s.timeZone, s.messages);
       return reading ? ` ${written} (${reading})` : ` ${written}`;
     };
     const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : null;

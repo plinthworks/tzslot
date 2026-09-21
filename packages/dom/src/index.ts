@@ -57,6 +57,13 @@ export { createTimeInput } from './time-input.js';
 export type { TimeInputInstance, TimeInputOptions, TimeInputSettings } from './time-input.js';
 export { createMultiDate } from './multi-date.js';
 export type { MultiDateInstance, MultiDateOptions, MultiDateSettings } from './multi-date.js';
+export { createDateInput } from './date-input.js';
+export type {
+  DateInputOptions,
+  DateInputSettings,
+  DateInputInstance,
+  WallValue,
+} from './date-input.js';
 export { createRangeField } from './range-field.js';
 export type {
   RangeFieldInstance,

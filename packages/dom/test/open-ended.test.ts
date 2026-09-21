@@ -29,8 +29,19 @@ const make = (options = {}) => {
 };
 const shown = () => host.querySelector('.tz-field__text')!.textContent;
 const panel = () => document.querySelector('.tz-field__panel')!;
-const mode = (label: string) =>
-  [...panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__bound')].find((b) => b.textContent === label)!;
+const input = (edge: 0 | 1) =>
+  panel().querySelectorAll<HTMLInputElement>('.tz-dateinput__input')[edge]!;
+const cross = (edge: 0 | 1) =>
+  panel().querySelectorAll<HTMLButtonElement>('.tz-dateinput__clear')[edge]!;
+const armed = () =>
+  [...panel().querySelectorAll('.tz-dateinput')].findIndex((n) => n.classList.contains('tz-dateinput--armed'));
+const type = (edge: 0 | 1, text: string) => {
+  const node = input(edge);
+  node.focus();
+  node.value = text;
+  node.dispatchEvent(new Event('input', { bubbles: true }));
+  node.dispatchEvent(new Event('blur'));
+};
 const day = (iso: string) => panel().querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 const paris_ = (value: RangeFieldValue) => ({
   start: value.start?.toZonedDateTimeISO(paris).toPlainDateTime().toString({ smallestUnit: 'minute' }) ?? null,
@@ -48,84 +59,54 @@ afterEach(() => {
 });
 
 describe('asking for one end only', () => {
-  it('“From” takes one click and leaves the end null', () => {
+  it('a start alone is a period, once the end is emptied', () => {
     make();
     field.open();
-    mode('From').click();
     day('2026-09-14').click();
+    cross(1).click(); // no end
 
     expect(paris_(field.value)).toEqual({ start: '2026-09-14T00:00', end: null });
     expect(shown()).toBe('From 14/09/2026');
   });
 
-  it('“Until” fills the end and leaves the start null — still the midnight after', () => {
+  it('an end alone keeps the midnight after, so the day itself is included', () => {
     make();
     field.open();
-    mode('Until').click();
+    input(1).focus(); // arm the end
     day('2026-09-20').click();
+    cross(0).click(); // no start
 
-    // The 21st at 00:00, so `at < :end` includes everything on the 20th.
     expect(paris_(field.value)).toEqual({ start: null, end: '2026-09-21T00:00' });
     expect(shown()).toBe('Until 20/09/2026');
   });
 
-  it('keeps the end that still makes sense when the mode changes', () => {
+  it('emptying one end leaves the other alone', () => {
     make();
     field.open();
     day('2026-09-14').click();
     day('2026-09-20').click();
     expect(shown()).toBe('14/09/2026 – 20/09/2026');
-    expect(field.isOpen).toBe(false); // a finished range closes the panel
-    field.open();
 
-    mode('From').click();
-    expect(shown()).toBe('From 14/09/2026'); // the start is kept, not asked for again
-    mode('Between').click();
-    expect(shown()).toBe('From 14/09/2026'); // and still there, waiting for the other end
-    day('2026-09-25').click();
-    expect(shown()).toBe('14/09/2026 – 25/09/2026');
+    cross(0).click();
+    expect(shown()).toBe('Until 20/09/2026'); // the end is untouched
+    expect(input(1).value).toBe('20/09/2026');
   });
 
-  it('the cross on an end drops it, which is the same as opening that side', () => {
+  it('the cross says what it empties', () => {
     make({ messages: FR, locale: 'fr-FR' });
     field.open();
-    day('2026-09-14').click();
-    day('2026-09-20').click();
-    field.open();
-    const crosses = panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__end-clear');
-    expect(crosses[0]!.getAttribute('aria-label')).toBe('Sans début');
-
-    crosses[0]!.click(); // no start
-    expect(shown()).toBe("Jusqu'au 20/09/2026");
-    expect(paris_(field.value)).toEqual({ start: null, end: '2026-09-21T00:00' });
-    expect(panel().querySelector('.tz-rangefield__bound--on')!.textContent).toBe("Jusqu'au");
-  });
-
-  it('shows a chip only for an end there is', () => {
-    make();
-    field.open();
-    mode('From').click();
-    day('2026-09-14').click();
-    expect(field.isOpen).toBe(false); // one click is the whole answer
-    field.open();
-    const chips = [...panel().querySelectorAll<HTMLElement>('.tz-rangefield__end')];
-    expect(chips.map((c) => c.hidden)).toEqual([false, true]);
-    expect(chips[0]!.textContent).toContain('14/09/2026');
-    // …and hidden has to win over the chip's own display, or an empty chip
-    // with a cross in it sits there being clickable.
-    const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
-    expect(css).toContain('.tz-rangefield__end[hidden] { display: none; }');
+    expect(cross(0).getAttribute('aria-label')).toBe('Vider ce champ');
+    expect([...panel().querySelectorAll('.tz-dateinput__label')].map((n) => n.textContent)).toEqual(['Du', 'Au']);
   });
 
   it('carries the hours when there are any', () => {
     make({ showTime: true });
-    field.open();
-    mode('From').click();
-    day('2026-09-14').click();
     field.update({
       value: { start: Temporal.Instant.from('2026-09-14T07:00:00Z'), end: null, allDay: false },
     });
     expect(shown()).toBe('From 14/09/2026 09:00');
+    field.open();
+    expect(input(0).value).toBe('14/09/2026 09:00');
   });
 
   it('an imposed step moves the single end, and “auto” falls back to a day', () => {
@@ -147,11 +128,58 @@ describe('asking for one end only', () => {
   });
 });
 
+describe('the two fields decide which end a click is about', () => {
+  it('the first click fills the start and arms the end', () => {
+    make();
+    field.open();
+    expect(armed()).toBe(0);
+    day('2026-09-14').click();
+    expect(armed()).toBe(1);
+    day('2026-09-20').click();
+    expect(shown()).toBe('14/09/2026 – 20/09/2026');
+  });
+
+  it('and correcting one date leaves the other where it was', () => {
+    make();
+    field.open();
+    day('2026-09-14').click();
+    day('2026-09-20').click();
+
+    input(0).focus(); // arm the start again
+    day('2026-09-16').click();
+    expect(shown()).toBe('16/09/2026 – 20/09/2026'); // the end survived
+    expect(armed()).toBe(0); // and the end was not armed behind our back
+  });
+
+  it('survives the value being handed straight back, as a framework does', () => {
+    make();
+    field.open();
+    day('2026-09-14').click();
+    expect(armed()).toBe(1);
+    // Angular writes the reported value back into the widget after every
+    // change. That used to re-arm the start, and both clicks landed on it.
+    field.update({ value: field.value });
+    expect(armed()).toBe(1);
+    day('2026-09-20').click();
+    expect(shown()).toBe('14/09/2026 – 20/09/2026');
+  });
+
+  it('a date typed reaches the value, months away', () => {
+    make();
+    field.open();
+    day('2026-09-14').click();
+    type(1, '03/02/2028');
+    expect(shown()).toBe('14/09/2026 – 03/02/2028');
+    // and the calendar went there, so the next click is in the right month
+    expect(panel().querySelector('.tz-range__month-title')!.textContent).toContain('February');
+  });
+});
+
 describe('without openEnded', () => {
   it('there are no modes, and a half-made selection still reads as one', () => {
     make({ openEnded: false });
     field.open();
-    expect(panel().querySelector('.tz-rangefield__bounds')).toBe(null);
+    expect(panel().querySelector<HTMLButtonElement>('.tz-dateinput__clear')!.hidden).toBe(true); // no way to empty one
     day('2026-09-14').click();
     expect(shown()).toBe('14/09/2026 – …'); // unfinished, and it looks unfinished
   });
@@ -185,19 +213,29 @@ describe('the interval, open at one end', () => {
   });
 });
 
-describe('the panel drops what cannot apply', () => {
-  it('hides the hour of an end the period does not have', () => {
+describe('the hours live in the two fields now', () => {
+  it('so an end that does not exist has no hour to show either', () => {
     make({ showTime: true });
     field.open();
-    const columns = () => [...panel().querySelectorAll<HTMLElement>('.tz-rangefield__time')].map((c) => c.hidden);
-    expect(columns()).toEqual([false, false]);
+    day('2026-09-14').click();
+    cross(1).click();
 
-    mode('From').click();
-    expect(columns()).toEqual([false, true]);
-    mode('Until').click();
-    expect(columns()).toEqual([true, false]);
-    mode('Between').click();
-    expect(columns()).toEqual([false, false]);
+    expect(input(0).value).toBe('14/09/2026');
+    expect(input(1).value).toBe('');
+    // No separate row of hours any more: one field says the whole thing.
+    expect(panel().querySelector('.tz-rangefield__times')).toBe(null);
+  });
+
+  it('the hour appears in both when whole days are turned off', () => {
+    make({ showTime: true });
+    field.open();
+    day('2026-09-14').click();
+    day('2026-09-20').click();
+    expect(input(0).value).toBe('14/09/2026'); // whole days to start with
+
+    panel().querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
+    expect(input(0).value).toBe('14/09/2026 00:00');
+    expect(input(1).value).toBe('20/09/2026 00:00');
   });
 });
 

@@ -1,4 +1,4 @@
-import { Component, signal } from '@angular/core';
+import { Component, computed, signal } from '@angular/core';
 import {
   Calendar,
   DateField,
@@ -277,6 +277,13 @@ function parisAt(iso: string): Instant {
           }
         </div>
         <div class="row">
+          <span class="note">Libellés</span>
+          <button type="button" class="chip" [class.on]="labelStyle() === 'words'"
+                  (click)="labelStyle.set('words')">Du / Au</button>
+          <button type="button" class="chip" [class.on]="labelStyle() === 'arrow'"
+                  (click)="labelStyle.set('arrow')">» entre les deux</button>
+        </div>
+        <div class="row">
           <span class="note">Bornes</span>
           <button type="button" class="chip" [class.on]="!openEnded()" (click)="openEnded.set(false)">
             deux bornes
@@ -287,7 +294,7 @@ function parisAt(iso: string): Instant {
         </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
-                        [openEnded]="openEnded()"
+                        [openEnded]="openEnded()" [labels]="rangeLabels()"
                         [presets]="['thisQuarterHour', 'thisHour', 'thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
@@ -563,6 +570,11 @@ export class Demo {
   ];
   protected readonly periodShift = signal<ShiftStep | readonly ShiftOption[] | false>('auto');
   protected readonly openEnded = signal(false);
+  /** Words above the two fields, or a mark between them — the screen decides. */
+  protected readonly labelStyle = signal<'words' | 'arrow'>('words');
+  protected readonly rangeLabels = computed(() =>
+    this.labelStyle() === 'words' ? {} : { start: null, end: null, between: '»' },
+  );
   protected shiftLabelOf(): string {
     const current = this.periodShift();
     return this.shiftChoices.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;

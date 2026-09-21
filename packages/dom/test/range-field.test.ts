@@ -97,29 +97,43 @@ describe('one field for a period', () => {
 });
 
 describe('with times', () => {
-  it('offers them, and the switch back to whole days', () => {
+  it('two fields, and the switch that decides whether they carry an hour', () => {
     mount({ showTime: true });
     field.open();
-    expect(panel()!.querySelectorAll('.tz-time__input').length).toBe(4); // two fields, hour and minute
+    const fields = panel()!.querySelectorAll<HTMLInputElement>('.tz-dateinput__input');
+    expect(fields.length).toBe(2); // one per end, the hour inside it
     expect(panel()!.querySelector('.tz-dtr__allday-box')!.getAttribute('aria-checked')).toBe('true');
+    expect(panel()!.querySelectorAll('.tz-time__input').length).toBe(0); // no separate row any more
   });
 
-  it('setting a time turns the range into moments', () => {
+  it('a time typed into a field turns the range into moments', () => {
     const onChange = vi.fn();
     mount({ showTime: true, onChange });
     field.open();
     day('2026-09-21').click();
     day('2026-09-22').click();
+    panel()!.querySelector<HTMLButtonElement>('.tz-dtr__allday-box')!.click();
 
-    const hour = panel()!.querySelector<HTMLInputElement>('.tz-rangefield__time .tz-time__input')!;
-    hour.focus();
-    hour.value = '09';
-    hour.dispatchEvent(new Event('input', { bubbles: true }));
-    hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    const from = panel()!.querySelector<HTMLInputElement>('.tz-dateinput__input')!;
+    from.focus();
+    from.value = '21/09/2026 09:00';
+    from.dispatchEvent(new Event('input', { bubbles: true }));
+    from.dispatchEvent(new Event('blur'));
 
     const value = onChange.mock.calls.at(-1)![0];
     expect(value.allDay).toBe(false);
     expect(value.start.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('09:00:00');
+  });
+
+  it('the label above each field can be an icon, or nothing', () => {
+    const arrow = document.createElement('span');
+    arrow.textContent = '»';
+    mount({ labels: { start: null, end: null, between: arrow } });
+    field.open();
+    expect([...panel()!.querySelectorAll('.tz-dateinput__label')].every((n) => (n as HTMLElement).hidden)).toBe(true);
+    expect(panel()!.querySelector('.tz-rangefield__between')!.textContent).toBe('»');
+    // The word is still read out, whatever is drawn.
+    expect(panel()!.querySelector('.tz-dateinput__input')!.getAttribute('aria-label')).toBe('From');
   });
 });
 

@@ -1,0 +1,249 @@
+import { Temporal } from '@tzslot/core';
+import type { PlainDate, PlainTime } from '@tzslot/core';
+import { formatWith, maskWith, parseWith, patternFor } from './format.js';
+import { EN, type TzslotMessages } from './messages.js';
+import { DATEINPUT_CSS, ensureStyles } from './styles.js';
+
+/** A day and, when asked for, a time — the two halves a clock face can say. */
+export interface WallValue {
+  readonly date: PlainDate | null;
+  readonly time: PlainTime | null;
+}
+
+export interface DateInputSettings {
+  value: WallValue;
+  /** Whether a time is part of it. False leaves a date alone. */
+  withTime: boolean;
+  /** A pattern of your own. The locale's numeric form otherwise. */
+  format: string | undefined;
+  locale: string | undefined;
+  /** Separators appear as figures are typed, never while deleting. */
+  mask: boolean;
+  /**
+   * What goes above the field: a word, an icon, or nothing at all. A node is
+   * taken as it is, so an application can put its own mark there.
+   */
+  label: Node | string | null | undefined;
+  /** Read out for the field itself, when the label is a picture or absent. */
+  ariaLabel: string | undefined;
+  placeholder: string | undefined;
+  disabled: boolean;
+  /** A cross that empties it, for a period allowed to stop at one end. */
+  clearable: boolean;
+  messages: TzslotMessages;
+  /** Every settled reading of the text. Null when it has been emptied. */
+  onChange: ((value: WallValue) => void) | undefined;
+  /** The field was reached — the panel around it uses this to arm it. */
+  onFocus: (() => void) | undefined;
+}
+
+export interface DateInputOptions extends Partial<DateInputSettings> {
+  injectStyles?: boolean;
+}
+
+export interface DateInputInstance {
+  readonly value: WallValue;
+  /** The element it was built in, for a caller that marks it armed. */
+  readonly host: HTMLElement;
+  /** Where the readings of a repeated hour, or anything else, can be hung. */
+  readonly extra: HTMLElement;
+  update(settings: Partial<DateInputSettings>): void;
+  focus(): void;
+  destroy(): void;
+}
+
+const EMPTY: WallValue = { date: null, time: null };
+
+/**
+ * A date, typed or written into, with no panel of its own.
+ *
+ * The fields carry a panel around with them everywhere else in this library,
+ * which is right when one of them is the whole control. Inside a panel it is
+ * not: a calendar is already open, and what is wanted there is somewhere to
+ * type — so that a period ending eighteen months out is a line of text rather
+ * than eighteen presses of an arrow.
+ */
+export function createDateInput(host: HTMLElement, options: DateInputOptions = {}): DateInputInstance {
+  const doc = host.ownerDocument;
+  const { injectStyles = true, ...initial } = options;
+
+  const s: DateInputSettings = {
+    value: EMPTY,
+    withTime: false,
+    format: undefined,
+    locale: undefined,
+    mask: true,
+    label: undefined,
+    ariaLabel: undefined,
+    placeholder: undefined,
+    disabled: false,
+    clearable: false,
+    messages: EN,
+    onChange: undefined,
+    onFocus: undefined,
+    ...initial,
+  };
+
+  let stylesPending = injectStyles;
+  const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string) => {
+    const node = doc.createElement(tag);
+    node.className = className;
+    return node;
+  };
+
+  const addedHostClass = !host.classList.contains('tz-dateinput');
+  host.classList.add('tz-dateinput');
+
+  const caption = el('span', 'tz-dateinput__label');
+  const row = el('div', 'tz-dateinput__row');
+  const input = doc.createElement('input');
+  input.type = 'text';
+  input.className = 'tz-dateinput__input';
+  input.autocomplete = 'off';
+  const clear = doc.createElement('button');
+  clear.type = 'button';
+  clear.className = 'tz-dateinput__clear';
+  clear.textContent = '×';
+  const extra = el('div', 'tz-dateinput__extra');
+  row.append(input, clear);
+  host.append(caption, row, extra);
+
+  const pattern = () => s.format ?? patternFor(s.locale, { time: s.withTime });
+  const written = () =>
+    s.value.date || s.value.time ? formatWith(pattern(), { date: s.value.date, time: s.value.time }, s.locale) : '';
+  const beingTyped = () => doc.activeElement === input;
+
+  function settle(value: WallValue): void {
+    const same =
+      (value.date?.toString() ?? null) === (s.value.date?.toString() ?? null) &&
+      (value.time?.toString() ?? null) === (s.value.time?.toString() ?? null);
+    s.value = value;
+    if (!same) s.onChange?.(value);
+  }
+
+  /**
+   * What the text says, if it says anything whole.
+   *
+   * Reported as it is typed, so the calendar beside it can follow along — but
+   * a half-typed year is not a date, and nothing is reported until the text
+   * parses. `commit` is the stricter pass, when the field is left or Enter is
+   * pressed: there, text that cannot be read is marked rather than ignored.
+   */
+  function read(commit: boolean): boolean {
+    const text = input.value.trim();
+    if (text === '') {
+      input.classList.remove('tz-dateinput__input--invalid');
+      settle(EMPTY);
+      return true;
+    }
+    const parsed = parseWith(pattern(), text);
+    if (!parsed || (!parsed.date && !parsed.time)) {
+      if (commit) {
+        input.classList.add('tz-dateinput__input--invalid');
+        input.setAttribute('aria-invalid', 'true');
+      }
+      return false;
+    }
+    input.classList.remove('tz-dateinput__input--invalid');
+    input.removeAttribute('aria-invalid');
+    settle({
+      date: parsed.date,
+      time: s.withTime ? (parsed.time ?? Temporal.PlainTime.from('00:00')) : null,
+    });
+    return true;
+  }
+
+  function render(): void {
+    if (stylesPending && host.isConnected) {
+      ensureStyles(host, 'dateinput', DATEINPUT_CSS);
+      stylesPending = false;
+    }
+    if (s.label === null || s.label === undefined) caption.replaceChildren();
+    else if (typeof s.label === 'string') caption.textContent = s.label;
+    else if (caption.firstChild !== s.label) caption.replaceChildren(s.label);
+    caption.hidden = caption.childNodes.length === 0;
+    // Never rewritten under the fingers: the text belongs to whoever is typing.
+    if (!beingTyped()) input.value = written();
+    input.placeholder = s.placeholder ?? '';
+    input.disabled = s.disabled;
+    // A picture above the field says nothing to a screen reader.
+    input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
+    clear.hidden = !s.clearable;
+    clear.disabled = s.disabled || (s.value.date === null && s.value.time === null);
+    clear.setAttribute('aria-label', s.messages.clearField);
+    clear.title = s.messages.clearField;
+  }
+
+  const listening = new AbortController();
+  const on = { signal: listening.signal };
+
+  input.addEventListener('focus', () => s.onFocus?.(), on);
+  input.addEventListener(
+    'input',
+    (event) => {
+      const shape = pattern();
+      const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
+      const atEnd = input.selectionStart === input.value.length;
+      if (s.mask && shape && !deleting && atEnd) {
+        const helped = maskWith(shape, input.value);
+        if (helped !== input.value) {
+          input.value = helped;
+          input.setSelectionRange(helped.length, helped.length);
+        }
+      }
+      read(false);
+    },
+    on,
+  );
+  input.addEventListener(
+    'keydown',
+    (event) => {
+      if (event.key !== 'Enter') return;
+      event.preventDefault();
+      if (read(true)) input.value = written();
+    },
+    on,
+  );
+  input.addEventListener(
+    'blur',
+    () => {
+      if (read(true)) input.value = written();
+    },
+    on,
+  );
+  clear.addEventListener(
+    'click',
+    () => {
+      input.value = '';
+      settle(EMPTY);
+      render();
+      input.focus();
+    },
+    on,
+  );
+
+  render();
+
+  return {
+    get value() {
+      return s.value;
+    },
+    extra,
+    host,
+    update(settings) {
+      Object.assign(s, settings);
+      render();
+    },
+    focus() {
+      input.focus();
+      input.select();
+    },
+    destroy() {
+      listening.abort();
+      caption.remove();
+      row.remove();
+      extra.remove();
+      if (addedHostClass) host.classList.remove('tz-dateinput');
+    },
+  };
+}

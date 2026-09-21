@@ -76,6 +76,11 @@ export interface TzslotMessages {
   readonly untilDate: string;
   readonly clearStart: string;
   readonly clearEnd: string;
+  /** The cross that empties one of the two fields in a period. */
+  readonly clearField: string;
+  /** Above the two fields of a period: the day it runs from, the day it runs to. */
+  readonly rangeStart: string;
+  readonly rangeEnd: string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -173,6 +178,9 @@ export const EN: TzslotMessages = {
   untilDate: 'Until',
   clearStart: 'No start',
   clearEnd: 'No end',
+  clearField: 'Empty this field',
+  rangeStart: 'From',
+  rangeEnd: 'To',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -253,6 +261,9 @@ export const FR: TzslotMessages = {
   untilDate: "Jusqu'au",
   clearStart: 'Sans début',
   clearEnd: 'Sans fin',
+  clearField: 'Vider ce champ',
+  rangeStart: 'Du',
+  rangeEnd: 'Au',
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

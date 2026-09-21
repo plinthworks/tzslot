@@ -108,6 +108,18 @@ export class RangeField implements ControlValueAccessor {
   readonly disabled = input(false);
   /** A pattern for each end — `yyyy-MM-dd`. */
   readonly format = input<string | undefined>(undefined);
+  /**
+   * What is written above the panel's two fields, and between them. Words by
+   * default; `{ start: null, end: null, between: '»' }` for a screen that
+   * prefers a mark. A DOM node is taken as it is.
+   */
+  readonly labels = input<{
+    start?: Node | string | null;
+    end?: Node | string | null;
+    between?: Node | string | null;
+  }>({});
+  /** Separators appear as figures are typed in those fields. */
+  readonly mask = input(true);
   readonly displayWith = input<((value: RangeFieldValue, timeZone: string) => string) | undefined>(undefined);
 
   readonly opened = output<void>();
@@ -144,6 +156,8 @@ export class RangeField implements ControlValueAccessor {
     now: this.now(),
     disabled: this.disabled() || this.formDisabled(),
     format: this.format(),
+    labels: this.labels(),
+    mask: this.mask(),
     displayWith: this.displayWith(),
     messages: this.messages,
   }));

@@ -717,8 +717,83 @@ export const TIMESELECT_CSS = `
 `;
 
 /** The range field's panel: the calendar, the named ranges beside it, a footer. */
+export const DATEINPUT_CSS = `
+.tz-dateinput { display: inline-flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+.tz-dateinput__label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.tz-dateinput__label[hidden] { display: none; }
+.tz-dateinput__row {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
+  border-radius: var(--tz-field-radius, var(--tz-radius, 0.375rem));
+  background: var(--tz-field-bg, var(--tz-bg, transparent));
+  min-width: 0;
+}
+.tz-dateinput__input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 9rem;
+  border: 0;
+  background: transparent;
+  color: var(--tz-field-fg, var(--tz-fg, inherit));
+  font: var(--tz-font, inherit);
+  padding: 0.4rem 0.55rem;
+}
+.tz-dateinput__input:focus { outline: none; }
+.tz-dateinput__input:disabled { opacity: 0.5; cursor: not-allowed; }
+.tz-dateinput__input--invalid { color: var(--tz-danger, currentColor); }
+.tz-dateinput__clear[hidden] { display: none; }
+.tz-dateinput__clear {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  line-height: 1;
+  padding: 0.2rem 0.45rem;
+  opacity: 0.55;
+  cursor: pointer;
+}
+.tz-dateinput__clear:hover:not(:disabled) { opacity: 1; }
+.tz-dateinput__clear:disabled { opacity: 0.2; cursor: default; }
+/* The field the next click in the calendar will fill. Said with a ring rather
+   than a colour alone, so it survives a palette and a colour-blind reader. */
+.tz-dateinput--armed .tz-dateinput__row {
+  border-color: var(--tz-accent, currentColor);
+  box-shadow: 0 0 0 2px var(--tz-ring, color-mix(in srgb, var(--tz-accent, currentColor) 35%, transparent));
+}
+.tz-dateinput__extra:empty { display: none; }
+.tz-dateinput__extra { display: flex; gap: 0.375rem; margin-top: 0.15rem; }
+`;
+
 export const RANGEFIELD_CSS = `
 .tz-rangefield__panel { display: grid; gap: 0.75rem; }
+.tz-rangefield__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.75rem 1rem;
+}
+/* The two fields sit side by side, with whatever separates them between
+   them — a word, an arrow, nothing. They drop onto two lines only when the
+   panel is too narrow to hold them. */
+.tz-rangefield__inputs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem 0.75rem;
+  min-width: 0;
+}
+.tz-rangefield__between {
+  align-self: center;
+  padding-bottom: 0.45rem;
+  opacity: 0.6;
+  font-size: 1.1em;
+}
 .tz-rangefield__bounds {
   display: flex;
   flex-wrap: wrap;

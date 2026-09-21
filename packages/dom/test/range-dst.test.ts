@@ -16,10 +16,18 @@ let host: HTMLElement;
 let field: RangeFieldInstance;
 
 const panel = () => document.querySelector('.tz-field__panel')!;
-const hourUp = (index: number) =>
-  panel().querySelectorAll<HTMLButtonElement>('.tz-time__arrow--up[data-part="hour"]')[index]!;
+const input = (edge: 0 | 1) =>
+  panel().querySelectorAll<HTMLInputElement>('.tz-dateinput__input')[edge]!;
+/** Typing into one of the two fields, the way a reader does. */
+const type = (edge: 0 | 1, text: string) => {
+  const node = input(edge);
+  node.focus();
+  node.value = text;
+  node.dispatchEvent(new Event('input', { bubbles: true }));
+  node.dispatchEvent(new Event('blur'));
+};
 const readings = () =>
-  [...panel().querySelectorAll<HTMLElement>('.tz-rangefield__readings')].map((box) =>
+  [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__extra')].map((box) =>
     box.hidden ? [] : [...box.querySelectorAll('button')].map((b) => b.textContent),
   );
 const startAt = () =>
@@ -58,17 +66,17 @@ describe('the morning an hour happens twice', () => {
     field.open();
     expect(readings()[0]).toEqual([]); // 00:00 happens once
 
-    hourUp(0).click(); // 01:00
+    type(0, '25/10/2026 01:00');
     expect(readings()[0]).toEqual([]);
-    hourUp(0).click(); // 02:00 — and there are two of them
+    type(0, '25/10/2026 02:00'); // and there are two of those
     expect(readings()[0]).toEqual(['été', 'hiver']);
     expect(startAt()).toBe('2026-10-25T02:00+02:00[Europe/Paris]'); // summer, offered first
 
-    panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__readings button')[1]!.click();
+    panel().querySelectorAll<HTMLButtonElement>('.tz-dateinput__extra button')[1]!.click();
     expect(startAt()).toBe('2026-10-25T02:00+01:00[Europe/Paris]'); // winter, chosen
     expect(readings()[0]).toEqual(['été', 'hiver']); // and the choice stays on screen
 
-    hourUp(0).click(); // 03:00, ordinary again
+    type(0, '25/10/2026 03:00'); // ordinary again
     expect(readings()[0]).toEqual([]);
   });
 
@@ -81,19 +89,14 @@ describe('the morning an hour happens twice', () => {
       },
     });
     field.open();
-    hourUp(0).click();
-    hourUp(0).click(); // back round to 02:00 via 03:00… whatever the path, ask again
     const before = field.value.start!.epochMilliseconds;
-    const both = panel().querySelectorAll<HTMLButtonElement>('.tz-rangefield__readings button');
-    if (both.length === 2) {
-      both[1]!.click();
-      expect(field.value.start!.epochMilliseconds - before).toBe(3600_000);
-    }
+    panel().querySelectorAll<HTMLButtonElement>('.tz-dateinput__extra button')[1]!.click();
+    expect(field.value.start!.epochMilliseconds - before).toBe(3600_000);
   });
 });
 
 describe('the morning an hour does not happen', () => {
-  it('cannot land on it, and says the later time instead', () => {
+  it('cannot land on it: the later time is what is stored', () => {
     make('2026-03-29', {
       value: {
         start: Temporal.Instant.from('2026-03-29T00:00:00Z'), // 01:00 Paris
@@ -103,8 +106,8 @@ describe('the morning an hour does not happen', () => {
     });
     field.open();
     expect(startAt()).toBe('2026-03-29T01:00+01:00[Europe/Paris]');
-    hourUp(0).click();
-    // 02:00 never happens that morning: the step goes over it.
+
+    type(0, '29/03/2026 02:00'); // never happens that morning
     expect(startAt()).toBe('2026-03-29T03:00+02:00[Europe/Paris]');
     expect(readings()[0]).toEqual([]);
   });

@@ -27,6 +27,12 @@ export interface DateTimeRangeValue {
 export interface DateTimeRangeSettings {
   /** The two moments. Either may be unset while the interval is being built. */
   value: DateTimeRangeValue;
+  /**
+   * Lets the interval stop at one end: "from 14 September", "until the 20th".
+   * A search means that; a booking does not. Without it, one end on its own
+   * is an unfinished selection and nothing is said about it.
+   */
+  openEnded: boolean;
   /** An IANA identifier. Both ends are read on this zone's clocks. */
   timeZone: string;
   /**
@@ -132,6 +138,7 @@ export function createDateTimeRange(
     defaultTime: '00:00',
     editable: true,
     mask: true,
+    openEnded: false,
     format: undefined,
     min: null,
     max: null,
@@ -257,7 +264,21 @@ export function createDateTimeRange(
    */
   function describe(): { summary: string | null; warning: string | null; problem: string | null } {
     const { start, end } = s.value;
-    if (!start || !end) return { summary: null, warning: null, problem: null };
+    if (!start || !end) {
+      // One end on its own is either a half-finished selection or a deliberate
+      // open interval, and only the screen knows which. When it has said so,
+      // the line says what the interval means instead of going blank — a blank
+      // line reads as nothing chosen.
+      const one = start ?? end;
+      if (!s.openEnded || !one) return { summary: null, warning: null, problem: null };
+      const word = start ? s.messages.fromDate : s.messages.untilDate;
+      const when = new Intl.DateTimeFormat(s.locale, {
+        dateStyle: 'medium',
+        timeStyle: wholeDays() ? undefined : 'short',
+        timeZone: s.timeZone,
+      }).format(new Date(one.epochMilliseconds));
+      return { summary: `${word} ${when}`, warning: null, problem: null };
+    }
     const info = getRangeInfo(start, end, s.timeZone);
     if (isRangeProblem(info)) {
       return {

@@ -7,6 +7,7 @@
 | Option | Type | Default | |
 |---|---|---|---|
 | `value` | `DateTimeRangeValue` | `EMPTY` | The two moments. Either may be unset while the interval is being built. |
+| `openEnded` | `boolean` | `false` | Lets the interval stop at one end: "from 14 September", "until the 20th". A search means that; a booking does not. Without it, one end on its own is an unfinished selection and nothing is said about it. |
 | `timeZone` | `string` | `'UTC'` | An IANA identifier. Both ends are read on this zone's clocks. |
 | `allDay` | `boolean` | `false` | Whole days rather than moments: midnight to midnight, no times shown. Two-way — the switch inside the widget sets it, and so can you. |
 | `allDaySwitch` | `boolean` | `true` | Whether that switch is offered at all. |

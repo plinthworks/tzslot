@@ -687,6 +687,59 @@ export const TIMESELECT_CSS = `
 /** The range field's panel: the calendar, the named ranges beside it, a footer. */
 export const RANGEFIELD_CSS = `
 .tz-rangefield__panel { display: grid; gap: 0.75rem; }
+.tz-rangefield__bounds {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+.tz-rangefield__bound-group {
+  display: inline-flex;
+  border: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
+  border-radius: var(--tz-radius, 0.375rem);
+  overflow: hidden;
+}
+.tz-rangefield__bound {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-size: 0.85em;
+  padding: 0.3rem 0.65rem;
+  cursor: pointer;
+}
+.tz-rangefield__bound + .tz-rangefield__bound {
+  border-left: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
+}
+.tz-rangefield__bound--on {
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+}
+.tz-rangefield__ends { display: flex; gap: 0.35rem; }
+/* display on the element itself beats [hidden]'s display:none, so it has to be
+   said again — the chip for an end that is not there must really go. */
+.tz-rangefield__end[hidden] { display: none; }
+.tz-rangefield__end {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.2rem 0.2rem 0.2rem 0.5rem;
+  font-size: 0.85em;
+}
+.tz-rangefield__end-clear {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  opacity: 0.6;
+  cursor: pointer;
+}
+.tz-rangefield__end-clear:hover:not(:disabled) { opacity: 1; }
 .tz-rangefield__shift {
   display: flex;
   align-items: center;
@@ -745,6 +798,7 @@ export const RANGEFIELD_CSS = `
   border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
 }
 .tz-rangefield__pair { display: flex; gap: 1rem; }
+.tz-rangefield__time[hidden] { display: none; }
 .tz-rangefield__time { display: flex; align-items: center; gap: 0.4rem; }
 .tz-rangefield__time-label { font-size: 0.8125em; opacity: 0.7; }
 .tz-rangefield__footer {

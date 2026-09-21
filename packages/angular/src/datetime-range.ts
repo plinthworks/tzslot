@@ -68,6 +68,12 @@ export class DateTimeRange implements ControlValueAccessor {
 
   /** Whether that switch is shown at all. */
   readonly allDaySwitch = input(true);
+  /**
+   * Lets the interval stop at one end. The summary then says what it means —
+   * "From 14 Sept 2026, 09:00" — instead of going blank, which reads as
+   * nothing chosen. Off by default.
+   */
+  readonly openEnded = input(false);
 
   /** How each end asks for its time: 'input', 'select' or 'list'. */
   readonly timeLayout = input<TimeLayout>('input');
@@ -109,6 +115,7 @@ export class DateTimeRange implements ControlValueAccessor {
     timeZone: this.timeZone(),
     allDay: this.allDay(),
     allDaySwitch: this.allDaySwitch(),
+    openEnded: this.openEnded(),
     timeLayout: this.timeLayout(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),

@@ -59,6 +59,49 @@ moments chosen, and the same query still works.
 Both are shown on the same field: the switch inside the panel turns the times
 on and off, and `allDay` follows it.
 
+## One end only
+
+A search often has one bound and not the other: everything since a date,
+everything up to one. In SQL that is a `>=` with no `<`, and the picker has to
+be able to say it — otherwise the screen grows a second control, or a checkbox
+called "no end", to work around the field.
+
+`openEnded: true` turns it on, on `createRangeField` and `createDateTimeRange`.
+It is asked for rather than assumed, because a booking form must not accept a
+stay that never ends.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', openEnded: true });
+```
+
+The panel then offers three ways to mean a period, and each chosen end carries
+a cross that drops it:
+
+| | The value | The query |
+|---|---|---|
+| Between | `{ start, end }` | `at >= :start AND at < :end` |
+| From | `{ start, end: null }` | `at >= :start` |
+| Until | `{ start: null, end }` | `at < :end` |
+
+`end` stays exclusive, so **Until 20 September** is the midnight that opens the
+21st and the whole of the 20th is included — the same rule as everywhere else,
+which is the point of keeping it.
+
+Both ends null means nothing has been chosen yet. That is the one case a
+screen still has to tell apart, and it is the obvious one.
+
+```ts
+const { start, end } = value;
+if (!start && !end) return everything;
+if (!end) return rows.filter((r) => r.at >= start);
+if (!start) return rows.filter((r) => r.at < end);
+return rows.filter((r) => r.at >= start && r.at < end);
+```
+
+Without `openEnded`, a single chosen end is still what it always was: a
+selection half made. The field says so — `14/09/2026 – …` — rather than
+pretending to be an answer.
+
 ## The convention: leave in UTC, read in a zone
 
 The habit worth adopting is to hold **one** shape everywhere: an instant, in

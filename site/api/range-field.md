@@ -9,6 +9,7 @@
 | `value` | `RangeFieldValue` | `EMPTY` |  |
 | `timeZone` | `string` | `Temporal.Now.timeZoneId()` | An IANA identifier. Days become moments on this zone's clocks. |
 | `presets` | `readonly (PresetName \| RangePreset)[]` | `BUILT_IN` | Named ranges beside the calendar. The ten built-in names, or your own. |
+| `openEnded` | `boolean` | `false` | Lets a period stop at one end: "from 14 September", "until 20 September". A search means that — `WHERE at >= :start` with no upper bound — and a booking form does not, which is why it is asked for rather than assumed. The panel then offers Between / From / Until, and each chosen end can be dropped with the cross beside it. |
 | `showTime` | `boolean` | `false` | Times as well as days, with a switch back to whole days. |
 | `stepMinutes` | `number` | `30` | Minutes the time fields step by. |
 | `confirm` | `boolean` | `false` | Nothing is reported until Apply is pressed. For searches that cost. |

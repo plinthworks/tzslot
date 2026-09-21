@@ -133,6 +133,27 @@ hours, not 168, because one of those days had twenty-five.
 costs something. `presets: []` removes the column, and your own are
 `{ name, label, range: (today) => ({ start, end }) }`.
 
+## A period open at one end
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  locale: 'en-GB',
+  openEnded: true,
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, openEnded: true, showTime: true }" />
+
+"Everything since the 14th" is an ordinary search and a `>=` with no upper
+bound. **Between / From / Until** says which of the three is meant, and the
+cross on a chosen end drops it. The end stays exclusive either way, so *Until
+20 September* is the midnight that opens the 21st.
+
+It is off by default: a booking form must not take a stay that never ends.
+[What you get back](./guide/values#one-end-only) has the shapes and the query
+that goes with each.
+
 ## Stepping a period
 
 ```js

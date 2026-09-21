@@ -33,6 +33,14 @@ export interface RangeFieldSettings {
   timeZone: string;
   /** Named ranges beside the calendar. The ten built-in names, or your own. */
   presets: readonly (PresetName | RangePreset)[];
+  /**
+   * Lets a period stop at one end: "from 14 September", "until 20 September".
+   * A search means that — `WHERE at >= :start` with no upper bound — and a
+   * booking form does not, which is why it is asked for rather than assumed.
+   * The panel then offers Between / From / Until, and each chosen end can be
+   * dropped with the cross beside it.
+   */
+  openEnded: boolean;
   /** Times as well as days, with a switch back to whole days. */
   showTime: boolean;
   /** Minutes the time fields step by. */
@@ -109,6 +117,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     value: EMPTY,
     timeZone: Temporal.Now.timeZoneId(),
     presets: BUILT_IN,
+    openEnded: false,
     showTime: false,
     stepMinutes: 30,
     confirm: false,
@@ -138,6 +147,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let stylesPending = injectStyles;
   /** What the panel is showing. The same as the value unless Apply is awaited. */
   let draft: RangeFieldValue = s.value;
+
+  /** Which ends a period is being given. Only ever anything but 'between' when openEnded. */
+  type Bounds = 'between' | 'from' | 'until';
+  const boundsOf = (value: RangeFieldValue): Bounds =>
+    value.start !== null && value.end === null
+      ? 'from'
+      : value.start === null && value.end !== null
+        ? 'until'
+        : 'between';
+  let bounds: Bounds = boundsOf(s.value);
 
   const el = <K extends keyof HTMLElementTagNameMap>(tag: K, className: string) => {
     const node = doc.createElement(tag);
@@ -182,6 +201,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let allDayBox: HTMLButtonElement | null = null;
   let panelShift: { row: HTMLElement; label: HTMLElement; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
     null;
+  let timeColumns: { start: HTMLElement; end: HTMLElement } | null = null;
+  let boundsRow: {
+    modes: { name: Bounds; button: HTMLButtonElement }[];
+    ends: { edge: 'start' | 'end'; chip: HTMLElement; text: HTMLElement; clear: HTMLButtonElement }[];
+  } | null = null;
 
   const wholeDays = () => draft.allDay !== false;
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
@@ -235,9 +259,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       value.allDay === false && at_
         ? ` ${formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale)}`
         : '';
-    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : '…';
-    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end) : '…';
-    return first === last ? first : `${first} – ${last}`;
+    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : null;
+    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end) : null;
+    // An open end is a statement, not an unfinished sentence: "From 14/09/2026",
+    // not "14/09/2026 – …". The reader has to be able to tell the two apart.
+    if (first && !last) return s.openEnded ? `${s.messages.fromDate} ${first}` : `${first} – …`;
+    if (!first && last) return `${s.messages.untilDate} ${last}`;
+    return first === last ? first! : `${first} – ${last}`;
   }
 
   function commit(next: RangeFieldValue): void {
@@ -262,7 +290,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const canShift = () => {
     if (s.shift === false || s.disabled) return false;
     const { start, end } = days(s.value);
-    return start !== null && end !== null;
+    if (start !== null && end !== null) return true;
+    // A period open at one end has no length of its own, so only an imposed
+    // step can move it.
+    return s.shift !== 'auto' && (start !== null || end !== null);
   };
 
   /**
@@ -276,12 +307,72 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function step(direction: 1 | -1): void {
     if (!canShift() || s.shift === false) return;
     const shown = days(s.value);
-    if (!shown.start || !shown.end) return;
+    if (!shown.start || !shown.end) {
+      // One end only. There is no length to follow, so an imposed step moves
+      // the end that exists and 'auto' does nothing — which is why canShift
+      // says no to it.
+      if (s.shift === 'auto') return;
+      draft = s.value;
+      const moved = shiftDayRange(
+        { start: shown.start ?? shown.end!, end: shown.start ?? shown.end! },
+        s.shift,
+        direction,
+      );
+      const next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
+      if (panel.isOpen) choose(next);
+      else commit(next);
+      return;
+    }
     const moved = shiftDayRange({ start: shown.start, end: shown.end }, s.shift, direction);
     draft = s.value; // so the times carry over into fromDays
     const next = fromDays({ start: moved.start, end: moved.end });
     if (panel.isOpen) choose(next);
     else commit(next);
+  }
+
+  /**
+   * Moving between Between / From / Until.
+   *
+   * The end that still makes sense is kept: asking for "from" when 14–20 is
+   * chosen means from the 14th, and nobody wants to pick it again.
+   */
+  function setBounds(next: Bounds): void {
+    bounds = next;
+    const shown = days(draft);
+    const kept =
+      next === 'from'
+        ? { start: shown.start ?? shown.end, end: null }
+        : next === 'until'
+          ? { start: null, end: shown.end ?? shown.start }
+          : { start: shown.start, end: shown.end };
+    choose(fromDays(kept));
+  }
+
+  /** Dropping one end, which is the same as saying the period is open on that side. */
+  function clearEdge(edge: 'start' | 'end'): void {
+    setBounds(edge === 'start' ? 'until' : 'from');
+  }
+
+  function paintBounds(): void {
+    if (!boundsRow) return;
+    for (const { name, button } of boundsRow.modes) {
+      const on = bounds === name;
+      button.classList.toggle('tz-rangefield__bound--on', on);
+      button.setAttribute('aria-pressed', String(on));
+      button.disabled = s.disabled;
+    }
+    const shown = days(draft);
+    const shape = pattern();
+    for (const { edge, chip, text: label, clear } of boundsRow.ends) {
+      const date = edge === 'start' ? shown.start : shown.end;
+      // The chip for an end this period does not have would be a cross with
+      // nothing behind it.
+      chip.hidden = date === null;
+      if (date) label.textContent = formatWith(shape, { date }, s.locale);
+      clear.disabled = s.disabled;
+      clear.setAttribute('aria-label', edge === 'start' ? s.messages.clearStart : s.messages.clearEnd);
+      clear.title = clear.getAttribute('aria-label')!;
+    }
   }
 
   const presets = (): RangePreset[] =>
@@ -341,8 +432,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   function paintPanel(): void {
     const shown = days(draft);
+    // With one end open there is a single day to mark; the grid draws it as a
+    // range of one, which is exactly how it looks.
+    const only = bounds === 'between' ? null : (shown.start ?? shown.end);
     range?.update({
-      value: { start: shown.start, end: shown.end },
+      value: only ? { start: only, end: only } : { start: shown.start, end: shown.end },
       months: s.months,
       weekNumbers: s.weekNumbers,
       firstDayOfWeek: s.firstDayOfWeek,
@@ -377,6 +471,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         timeZone: s.timeZone,
       });
     }
+    if (timeColumns) {
+      // An hour for an end this period does not have is a field that cannot
+      // mean anything; greying it would still leave it there to be read.
+      timeColumns.start.hidden = bounds === 'until';
+      timeColumns.end.hidden = bounds === 'from';
+    }
     if (allDayBox) {
       allDayBox.setAttribute('aria-checked', String(wholeDays()));
       allDayBox.classList.toggle('tz-dtr__allday-box--on', wholeDays());
@@ -385,6 +485,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       panelShift.label.textContent = display(draft) || s.messages.chooseRange;
       for (const button of [panelShift.back, panelShift.forward]) button.disabled = !canShift();
     }
+    paintBounds();
     paintPresets();
     panel.place();
   }
@@ -421,6 +522,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     label: () => s.ariaLabel ?? s.messages.chooseRange,
     onOpen: () => {
       draft = s.value;
+      bounds = s.openEnded ? boundsOf(s.value) : 'between';
       render();
       s.onOpen?.();
     },
@@ -431,6 +533,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       presetList = null;
       allDayBox = null;
       panelShift = null;
+      boundsRow = null;
+      timeColumns = null;
       render();
       s.onClose?.();
     },
@@ -453,6 +557,43 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         panelShift = { row, label, back: backButton, forward: forwardButton };
       }
 
+      if (s.openEnded) {
+        const row = el('div', 'tz-rangefield__bounds');
+        const modes = ([
+          ['between', s.messages.between],
+          ['from', s.messages.fromDate],
+          ['until', s.messages.untilDate],
+        ] as const).map(([name, label]) => {
+          const button = doc.createElement('button');
+          button.type = 'button';
+          button.className = 'tz-rangefield__bound';
+          button.textContent = label;
+          button.onclick = () => setBounds(name);
+          return { name: name as Bounds, button };
+        });
+        const group = el('div', 'tz-rangefield__bound-group');
+        group.setAttribute('role', 'group');
+        group.append(...modes.map((m) => m.button));
+
+        const ends = (['start', 'end'] as const).map((edge) => {
+          const chip = el('span', 'tz-rangefield__end');
+          const label = el('span', 'tz-rangefield__end-text');
+          const clear = doc.createElement('button');
+          clear.type = 'button';
+          clear.className = 'tz-rangefield__end-clear';
+          clear.textContent = '×';
+          clear.onclick = () => clearEdge(edge);
+          chip.append(label, clear);
+          return { edge, chip, text: label, clear };
+        });
+        const chips = el('div', 'tz-rangefield__ends');
+        chips.append(...ends.map((e) => e.chip));
+
+        row.append(group, chips);
+        node.append(row);
+        boundsRow = { modes, ends };
+      }
+
       const body = el('div', 'tz-rangefield__body');
       const rangeHost = doc.createElement('div');
       body.append(rangeHost);
@@ -465,6 +606,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       range = createDateRange(rangeHost, {
         injectStyles: false,
         onChange: ({ start, end }) => {
+          if (bounds !== 'between') {
+            // One end only: every click is a fresh answer, and the one just
+            // pressed is whichever of the two the calendar reports as new.
+            const clicked = end ?? start;
+            const picked = clicked
+              ? bounds === 'from'
+                ? { start: clicked, end: null }
+                : { start: null, end: clicked }
+              : { start: null, end: null };
+            choose(fromDays(picked), { close: clicked !== null && !s.showTime });
+            return;
+          }
           // A first click starts a range; the second finishes it, and a
           // finished range is the answer — so the panel can step out of the way.
           choose(fromDays({ start, end }), { close: end !== null && !s.showTime });
@@ -491,8 +644,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         allDayText.addEventListener('click', toggle);
 
         const pair = el('div', 'tz-rangefield__pair');
+        const columns: Partial<Record<'start' | 'end', HTMLElement>> = {};
         for (const edge of ['start', 'end'] as const) {
           const column = el('div', 'tz-rangefield__time');
+          columns[edge] = column;
           const label = el('span', 'tz-rangefield__time-label');
           label.textContent = edge === 'start' ? s.messages.timeFrom : s.messages.timeTo;
           const timeHost = doc.createElement('div');
@@ -511,6 +666,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           if (edge === 'start') fromTime = input;
           else toTime = input;
         }
+        timeColumns = { start: columns.start!, end: columns.end! };
         times.append(allDayRow, pair);
         node.append(times);
       }
@@ -560,7 +716,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     },
     update(settings) {
       Object.assign(s, settings);
-      if ('value' in settings) draft = s.value;
+      if ('value' in settings) {
+        draft = s.value;
+        bounds = s.openEnded ? boundsOf(s.value) : 'between';
+      }
       render();
     },
     open: openPanel,

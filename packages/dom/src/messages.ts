@@ -64,6 +64,16 @@ export interface TzslotMessages {
   /** The arrows that step a selection to the period before or after it. */
   readonly previousPeriod: string;
   readonly nextPeriod: string;
+  /**
+   * A period with one end left open: the three ways to mean it, and the two
+   * ways to say a chosen end no longer applies. 'From' and 'Until' are read
+   * before a date — "From 14/09/2026" — so they carry no trailing colon.
+   */
+  readonly between: string;
+  readonly fromDate: string;
+  readonly untilDate: string;
+  readonly clearStart: string;
+  readonly clearEnd: string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -153,6 +163,11 @@ export const EN: TzslotMessages = {
   },
   previousPeriod: 'Previous period',
   nextPeriod: 'Next period',
+  between: 'Between',
+  fromDate: 'From',
+  untilDate: 'Until',
+  clearStart: 'No start',
+  clearEnd: 'No end',
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -225,6 +240,11 @@ export const FR: TzslotMessages = {
   },
   previousPeriod: 'Période précédente',
   nextPeriod: 'Période suivante',
+  between: 'Entre',
+  fromDate: 'À partir du',
+  untilDate: "Jusqu'au",
+  clearStart: 'Sans début',
+  clearEnd: 'Sans fin',
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

@@ -276,8 +276,18 @@ function parisAt(iso: string): Instant {
                     (click)="periodShift.set(s.value)">{{ s.label }}</button>
           }
         </div>
+        <div class="row">
+          <span class="note">Bornes</span>
+          <button type="button" class="chip" [class.on]="!openEnded()" (click)="openEnded.set(false)">
+            deux bornes
+          </button>
+          <button type="button" class="chip" [class.on]="openEnded()" (click)="openEnded.set(true)">
+            une borne possible
+          </button>
+        </div>
         <tz-range-field [(value)]="period" [timeZone]="'Europe/Paris'" [locale]="locale"
                         [showTime]="true" [weekNumbers]="true" [shift]="periodShift()"
+                        [openEnded]="openEnded()"
                         [presets]="['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth', 'lastMonth']" />
         <p class="note">{{ periodText() }}</p>
         <p class="note">
@@ -517,7 +527,9 @@ export class Demo {
   protected readonly period = signal<RangeFieldValue>({ start: null, end: null, allDay: true });
   protected periodText(): string {
     const { start, end, allDay } = this.period();
-    if (!start || !end) return 'rien choisi';
+    if (!start && !end) return 'rien choisi';
+    if (!end) return `à partir de ${start!.toString()} · pas de fin`;
+    if (!start) return `jusqu'à ${end.toString()} · pas de début`;
     const hours = start.until(end).total({ unit: 'hour' });
     return `${start.toString()} → ${end.toString()} · ${hours} h · ${allDay ? 'journées entières' : 'avec heures'}`;
   }
@@ -530,6 +542,7 @@ export class Demo {
     { label: '7 jours', value: { days: 7 } },
   ];
   protected readonly periodShift = signal<ShiftStep | false>('auto');
+  protected readonly openEnded = signal(false);
   protected shiftLabelOf(): string {
     const current = this.periodShift();
     return this.shiftChoices.find((s) => JSON.stringify(s.value) === JSON.stringify(current))!.label;

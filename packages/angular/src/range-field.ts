@@ -73,6 +73,13 @@ export class RangeField implements ControlValueAccessor {
     'lastMonth',
   ]);
 
+  /**
+   * Lets a period stop at one end — "from 14 September", "until the 20th".
+   * The panel then offers Between / From / Until, and each chosen end can be
+   * dropped with the cross beside it. Off by default: a booking form must not
+   * accept a period with no end.
+   */
+  readonly openEnded = input(false);
   /** Times as well as days, with a switch back to whole days. */
   readonly showTime = input(false);
   readonly stepMinutes = input(30);
@@ -115,6 +122,7 @@ export class RangeField implements ControlValueAccessor {
     value: this.value(),
     timeZone: this.timeZone(),
     presets: this.presets(),
+    openEnded: this.openEnded(),
     showTime: this.showTime(),
     stepMinutes: this.stepMinutes(),
     confirm: this.confirm(),

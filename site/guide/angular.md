@@ -49,7 +49,7 @@ standalone.
 | `<tz-time-slots>` | a moment among the day's bookable times |
 | `<tz-datetime-range>` | an interval: two date-and-time fields |
 | `<tz-daily-range>` | a range of days with the same hours on each |
-| `<tz-range-field>` | a period — presets, two months, whole days or times, in one field |
+| `<tz-range-field>` | a period, in one field — [its own page](./period) |
 
 ## Starting from a value
 

@@ -74,14 +74,14 @@ stay that never ends.
 createRangeField(element, { timeZone: 'Europe/Paris', openEnded: true });
 ```
 
-The panel then offers three ways to mean a period, and each chosen end carries
-a cross that drops it:
+Each of the panel's two fields then carries a cross that empties it, and an
+emptied field is what says the period is open on that side:
 
 | | The value | The query |
 |---|---|---|
-| Between | `{ start, end }` | `at >= :start AND at < :end` |
-| From | `{ start, end: null }` | `at >= :start` |
-| Until | `{ start: null, end }` | `at < :end` |
+| both filled | `{ start, end }` | `at >= :start AND at < :end` |
+| *To* emptied | `{ start, end: null }` | `at >= :start` |
+| *From* emptied | `{ start: null, end }` | `at < :end` |
 
 `end` stays exclusive, so **Until 20 September** is the midnight that opens the
 21st and the whole of the 20th is included — the same rule as everywhere else,

@@ -59,4 +59,6 @@ year.
 
 - [Angular](./angular) — the components, forms included.
 - [Without a framework](./vanilla) — `create…`, `update`, `destroy`.
+- [Choosing a period](./period) — the richest of the widgets, in detail.
+- [What you get back](./values) — instants, whole days, and the exclusive end.
 - [Examples](../examples) — every widget, running on the page.

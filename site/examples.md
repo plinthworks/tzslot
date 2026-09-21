@@ -113,68 +113,24 @@ fact, and it says so rather than leaving you to notice.
 createRangeField(element, {
   timeZone: 'Europe/Paris',
   locale: 'en-GB',
-  presets: ['today', 'yesterday', 'last7Days', 'last30Days', 'thisMonth', 'lastMonth'],
+  showTime: true,
+  openEnded: true,
+  lengthBox: true,
   months: 2,
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, weekNumbers: true, showTime: true }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, weekNumbers: true, showTime: true, openEnded: true, lengthBox: true }" />
 
-One field, and most of the time one click: the named ranges are what people
-actually ask for. Two months side by side, so a range across a month boundary
-is two clicks rather than a navigation in the middle of choosing.
+Two fields in the panel, one per end: a click fills the armed one, so
+correcting the end does not throw the start away. Both are typed into, which
+is what a period ending in February 2028 really needs. The shortcuts run
+shortest to longest, and `openEnded` lets a field be emptied — *from the 18th*
+with no end is what most searches mean.
 
-The named ranges are counted in the zone, which is the part other pickers get
-wrong: ask for the last 7 days on 27 October in Paris and the answer is 169
-hours, not 168, because one of those days had twenty-five.
-
-`showTime` adds the two times and the switch back to whole days;
-`confirm: true` holds everything until **Apply** is pressed, for a search that
-costs something. `presets: []` removes the column, and your own are
-`{ name, label, range: (today) => ({ start, end }) }`.
-
-## A period open at one end
-
-```js
-createRangeField(element, {
-  timeZone: 'Europe/Paris',
-  locale: 'en-GB',
-  openEnded: true,
-});
-```
-
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, openEnded: true, showTime: true }" />
-
-"Everything since the 14th" is an ordinary search and a `>=` with no upper
-bound. **Between / From / Until** says which of the three is meant, and the
-cross on a chosen end drops it. The end stays exclusive either way, so *Until
-20 September* is the midnight that opens the 21st.
-
-It is off by default: a booking form must not take a stay that never ends.
-
-### A length, typed
-
-```js
-createRangeField(element, { timeZone: 'Europe/Paris', lengthBox: true });
-```
-
-No column of shortcuts holds every length anyone might want, and the people
-who read a filter screen all day know what they want before it opens. A box
-above the shortcuts takes one: **25mn**, **1h**, **3d**, **2w**, **6mo** — a
-bare number is minutes, and `m` is minutes too, because `mo` says months and
-a screen that read `6m` as six months would be wrong by a factor of forty-odd
-thousand.
-
-What is typed becomes the length of the period, measured from the start if
-there is one and ending now if there is not, and the arrows then move by it —
-exactly as a shortcut does.
-
-Whatever the period, a time that happens twice is named in the field as well
-as in the panel — `25/10/2026 02:30 (winter)` — because once the panel closes
-the choice is invisible, and two identical clock faces make a field nobody can
-check.
-[What you get back](./guide/values#one-end-only) has the shapes and the query
-that goes with each.
+The whole of it is in [Choosing a period](./guide/period): the shortcuts, the
+arrows, the words above the fields, and the two mornings a year when an hour
+is not what it looks like.
 
 ## Stepping a period
 

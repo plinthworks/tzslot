@@ -27,6 +27,7 @@ export default defineConfig({
           { text: 'Getting started', link: '/guide/getting-started' },
           { text: 'Angular', link: '/guide/angular' },
           { text: 'Without a framework', link: '/guide/vanilla' },
+          { text: 'Choosing a period', link: '/guide/period' },
           { text: 'What you get back', link: '/guide/values' },
           { text: 'Choosing a time', link: '/guide/time' },
           { text: 'Driving it from outside', link: '/guide/external' },

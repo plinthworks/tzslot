@@ -33,6 +33,28 @@ calendar.goTo({ year: 2027, month: 3 });
 calendar.destroy();
 ```
 
+## Starting from a value
+
+Every widget takes its value among its options, so a screen can open on what
+is already chosen:
+
+```js
+createDateTimeField(el, {
+  timeZone: 'Europe/Paris',
+  value: Temporal.Instant.from('2026-09-23T12:30:00Z'),
+});
+```
+
+The shape is the one that widget reports: a `PlainDate` for a calendar or a
+date field, an `Instant` where there is a time, an array of `PlainDate` for
+`createMultiDate`, `{ start, end }` for a range, `{ start, end, allDay }` for
+`createRangeField`.
+
+`update({ value })` moves it afterwards and `update({ value: null })` empties
+it — neither calls `onChange`, so an application that writes a value back into
+the widget it came from will not loop. `goTo()` moves the month without
+choosing anything.
+
 ## Styles
 
 The layout comes with the widget: it injects one stylesheet per kind, once per

@@ -49,6 +49,41 @@ standalone.
 | `<tz-time-slots>` | a moment among the day's bookable times |
 | `<tz-datetime-range>` | an interval: two date-and-time fields |
 | `<tz-daily-range>` | a range of days with the same hours on each |
+| `<tz-range-field>` | a period — presets, two months, whole days or times, in one field |
+
+## Starting from a value
+
+A screen that edits something already has its value before the component
+exists. Bind it and it is on screen at the first render — no click, no tick:
+
+```ts
+readonly day = signal(Temporal.PlainDate.from('2026-09-23'));
+readonly at = signal(Temporal.Instant.from('2026-09-23T12:30:00Z'));
+```
+
+```html
+<tz-calendar [(value)]="day" />
+<tz-datetime-field [(value)]="at" timeZone="Europe/Paris" />
+```
+
+The same holds for a form control built with a value — including a `Date`,
+under `valueAs="date"`. The component shows it and leaves the control
+pristine: displaying a value is not the user editing one.
+
+```ts
+form = new FormGroup({
+  day: new FormControl<Date | null>(new Date('2026-09-23T10:00:00Z')),
+});
+```
+
+Writing to the signal or calling `setValue` later moves the widget too, and
+`null` empties it. To move only the month on screen, without choosing a day,
+ask the component itself:
+
+```html
+<tz-calendar #cal [(value)]="day" />
+<button (click)="cal.goTo({ year: 2027, month: 3 })">March 2027</button>
+```
 
 ## Forms
 

@@ -16,6 +16,16 @@ d’horloge, et à Paris ce matin-là il y en a deux — celle d’avant le
 changement, celle d’après. Un sélecteur qui enregistre une heure d’horloge a
 jeté l’information qui disait laquelle.
 
+Choisissez une heure ci-dessous et lisez la ligne en dessous : ce qui revient
+est un instant, en UTC, quoi qu’affiche le champ.
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', value: Temporal.Instant.from('2026-09-20T07:15Z') }" />
+
+Mettez-le au 25 octobre et prenez 02:30 — les deux lectures sont deux instants
+différents, à une heure d’écart, et la valeur dit lequel vous avez pris :
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', timeLayout: 'select', minuteStep: 30, today: Temporal.PlainDate.from('2026-10-25'), value: Temporal.Instant.from('2026-10-24T22:00Z') }" />
+
 ## Un jour n’est pas un instant — tant qu’on ne dit pas où
 
 Un calendrier vous rend un `PlainDate` : `2026-09-14`, une case dans une
@@ -26,6 +36,10 @@ différents à Paris et à São Paulo.
 Quand un jour doit devenir un moment — pour être enregistré, comparé, envoyé —
 le fuseau l’accompagne. C’est à cela que sert `valueTimeZone`, et c’est ce que
 la convention plus bas tranche une fois pour toutes.
+
+Un calendrier, et la date simple qu’il rend :
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
 
 ## Journées entières : `allDay` et la fin qu’on ne voit pas
 
@@ -58,6 +72,25 @@ sans que rien ne tombe dans le trou. Écrite autrement — `<= 20 sept.
 à 23:59:59,4 est perdu. Avec `allDay: false`, les deux bornes sont simplement
 les deux moments choisis, et la même requête fonctionne toujours.
 
+Les deux viennent du même champ, et c’est `showTime` qui décide — il n’y a pas
+d’interrupteur *Toute la journée*, parce qu’il demandait au lecteur de classer
+sa propre réponse avant de la donner.
+
+Journées entières. Regardez la ligne en dessous : `end` est le minuit **après**
+le dernier jour choisi.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
+
+Le même champ avec les heures, et `allDay` revient à `false` :
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
+
+::: warning En fournir une marche pareil
+Une valeur que vous passez avec des heures dedans a besoin de `allDay: false`,
+sinon le champ la lit comme des journées entières : les heures restent dans la
+valeur et le texte n’écrit que des jours.
+:::
+
 ## Une seule borne
 
 Une recherche a souvent une borne et pas l’autre : tout depuis une date, tout
@@ -72,6 +105,8 @@ réservation ne doit pas accepter un séjour qui ne finit jamais.
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', openEnded: true });
 ```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, months: 2, title: 'Videz une borne et lisez la valeur' }" />
 
 Chacun des deux champs du panneau porte alors une croix, et un champ vidé est
 ce qui dit que la période est ouverte de ce côté :
@@ -166,4 +201,8 @@ la bibliothèque.
 | `'iso'` | une chaîne dans la forme du composant : `2026-09-14`, ou `2026-09-14T07:00:00Z` |
 
 Sans framework, il n’y a pas de `valueAs` : `onChange` vous rend des valeurs
-Temporal, et `instant.toString()` donne la même chaîne UTC.
+Temporal, et `instant.toString()` donne la même chaîne UTC. Les quatre formes,
+écrites depuis le même choix — prenez un jour et regardez-les changer toutes
+les quatre :
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :show="(d) => d ? ['temporal → ' + d.toString(), 'utc      → ' + d.toZonedDateTime('Europe/Paris').toInstant().toString(), 'date     → ' + new Date(d.toZonedDateTime('Europe/Paris').toInstant().epochMilliseconds).toISOString(), 'iso      → ' + d.toString()].join('   ·   ') : 'rien choisi'" />

@@ -14,6 +14,16 @@ What it is *not* is "02:30 on 25 October". That is a wall time, and in Paris
 that morning there are two of them — the one before the clocks go back and the
 one after. A picker that stores a wall time has thrown away which.
 
+Choose a time below and read the line under it: what comes back is an instant,
+in UTC, whatever the field shows.
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', value: Temporal.Instant.from('2026-09-20T07:15Z') }" />
+
+Set it to 25 October and pick 02:30 — the two readings are two different
+instants, an hour apart, and the value says which you took:
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', timeLayout: 'select', minuteStep: 30, today: Temporal.PlainDate.from('2026-10-25'), value: Temporal.Instant.from('2026-10-24T22:00Z') }" />
+
 ## A day is not a moment — until you say where
 
 A calendar hands you a `PlainDate`: `2026-09-14`, a square on a grid. It has
@@ -24,6 +34,10 @@ and in São Paulo.
 So when a day has to become a moment — to be stored, compared, or sent — the
 zone comes with it. That is what `valueTimeZone` is for, and what the
 convention below settles once.
+
+A calendar, and the plain date it hands back:
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
 
 ## Whole days: `allDay` and the end you don't see
 
@@ -56,8 +70,23 @@ and nothing falls through the gap. Written the other way — `<= 20 Sept
 23:59:59.4 is lost. With `allDay: false` the two ends are simply the two
 moments chosen, and the same query still works.
 
-Both are shown on the same field: the switch inside the panel turns the times
-on and off, and `allDay` follows it.
+Both come from the same field, and `showTime` decides which — there is no
+*All day* switch, because it asked the reader to classify their own answer
+before giving it.
+
+Whole days. Watch the line under it: `end` is the midnight **after** the last
+day you chose.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
+
+The same field with times, and `allDay` comes back `false`:
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
+
+::: warning Handing one in works the same way
+A value you pass with hours in it needs `allDay: false`, or the field reads it
+as whole days: the hours stay in the value and the text writes days only.
+:::
 
 ## One end only
 
@@ -74,8 +103,10 @@ stay that never ends.
 createRangeField(element, { timeZone: 'Europe/Paris', openEnded: true });
 ```
 
-Each of the panel's two fields then carries a cross that empties it, and an
-emptied field is what says the period is open on that side:
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, months: 2, title: 'Empty one end and read the value' }" />
+
+Each of the panel's two fields carries a cross that empties it, and an emptied
+field is what says the period is open on that side:
 
 | | The value | The query |
 |---|---|---|
@@ -164,4 +195,7 @@ library.
 | `'iso'` | a string in the widget's own shape: `2026-09-14`, or `2026-09-14T07:00:00Z` |
 
 Without a framework there is no `valueAs`: `onChange` hands you Temporal
-values, and `instant.toString()` is the same UTC string.
+values, and `instant.toString()` is the same UTC string. The four shapes,
+written out from the same choice — pick a day and watch all four change:
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :show="(d) => d ? ['temporal → ' + d.toString(), 'utc      → ' + d.toZonedDateTime('Europe/Paris').toInstant().toString(), 'date     → ' + new Date(d.toZonedDateTime('Europe/Paris').toInstant().epochMilliseconds).toISOString(), 'iso      → ' + d.toString()].join('   ·   ') : 'nothing chosen'" />

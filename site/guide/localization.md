@@ -12,6 +12,36 @@ Pass a BCP-47 tag, or leave it out and the browser's own is used.
 <tz-calendar locale="fr-FR" />
 ```
 
+The same calendar, four locales. Nothing else is set: the month names, the
+weekday order and the first day of the week all follow.
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 1 }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', months: 1 }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', months: 1 }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Asia/Tokyo', locale: 'ja-JP', months: 1 }" />
+
+::: warning The week starts on Monday, whatever the locale
+`locale` decides the *names*, not where the week begins. `firstDayOfWeek` is
+`1` — Monday, as ISO-8601 numbers the week — until an application says
+otherwise, so the `en-US` calendar above starts on Monday where an American
+reader expects Sunday. Set it:
+
+```js
+createCalendar(element, { locale: 'en-US', firstDayOfWeek: 7 });
+```
+:::
+
+<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7, months: 1 }" />
+
+And a time field follows the locale into twelve hours, or not:
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-US', value: Temporal.Instant.from('2026-09-20T12:15Z') }" />
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', value: Temporal.Instant.from('2026-09-20T12:15Z') }" />
+
 No locale files ship with tzslot. Air Datepicker carries thirty of them; they
 go stale, and they are bytes every visitor downloads for languages they do not
 read.
@@ -33,6 +63,28 @@ import { createCalendar, FR } from '@tzslot/dom';
 createCalendar(element, { locale: 'fr-FR', messages: FR });
 ```
 :::
+
+The locale and the bundle are separate, and mixing them deliberately shows why
+they have to be. A French locale with the English bundle — French months,
+English buttons:
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: EN, buttons: ['today', 'clear'], months: 1 }" />
+
+Both French:
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, buttons: ['today', 'clear'], months: 1 }" />
+
+Overriding a few words rather than the whole bundle:
+
+```js
+createCalendar(element, {
+  locale: 'en-GB',
+  messages: { ...EN, today: 'Jump to today', clear: 'Start over' },
+  buttons: ['today', 'clear'],
+});
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', messages: { ...EN, today: 'Jump to today', clear: 'Start over' }, buttons: ['today', 'clear'], months: 1 }" />
 
 ## Another language
 
@@ -58,4 +110,11 @@ export const ES: TzslotMessages = {
 ```
 
 The name a zone gives each reading — "heure d'été d'Europe centrale" — is not
-in the bundle: that too comes from `Intl`, in the reader's language.
+in the bundle: that too comes from `Intl`, in the reader's language. The two
+words *summer* and *winter* are in the bundle, because they are the library's
+own shorthand and no API hands them out.
+
+Here is where all of it meets: a French locale, the French bundle, and the
+morning the clocks go back in Paris.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, showTime: true, timeLayout: 'select', minuteStep: 30, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z'), allDay: false } }" />

@@ -7,6 +7,156 @@ passer laisse les composants sobres, mais fonctionnels.
 Trois sections suivent, une par installation. Chacune se suffit à elle-même —
 lisez la vôtre et ignorez les autres.
 
+## Un thème, en entier
+
+Chaque exemple ci-dessous, c'est le CSS juste au-dessus, en train de tourner.
+Copiez le bloc, changez les sept couleurs, et vous avez le vôtre.
+
+### Bleu nuit
+
+Celui que veulent la plupart des tableaux de bord : une surface bleu profond,
+un bleu plus clair posé dessus, et un seul accent qui porte la sélection,
+l'anneau de focus et la teinte de la période.
+
+```css
+.minuit {
+  --tz-bg:         #0b1026;
+  --tz-bg-raised:  #161f43;
+  --tz-fg:         #e6ecff;
+  --tz-fg-muted:   #8b98c9;
+  --tz-border:     #2b3768;
+  --tz-accent:     #6ea8fe;
+  --tz-accent-fg:  #0b1026;
+  --tz-color-scheme: dark;
+}
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent': '#6ea8fe', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+`--tz-color-scheme: dark` est la ligne qu'on oublie. Sans elle, les composants
+lisent encore la moitié *claire* de chaque `light-dark()` que le thème n'a pas
+redéfinie, et une bordure pâle égarée surgit au milieu d'un panneau sombre.
+
+### Bleu nuit, avec sa propre police
+
+`--tz-font` accepte n'importe quelle pile de polices. Rien d'autre ne change —
+les composants héritent leur taille de la page, et c'est seulement la famille
+qui se décide ici.
+
+```css
+.minuit-serif {
+  /* les sept couleurs ci-dessus, plus : */
+  --tz-font:   Georgia, 'Times New Roman', serif;
+  --tz-radius: 2px;
+}
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, title: 'Bleu nuit, en Georgia' }" :theme="{ '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent': '#6ea8fe', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', '--tz-font': 'Georgia, \'Times New Roman\', serif', '--tz-radius': '2px', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+Ouvrez le panneau : il est dessiné sur le `body`, hors de cette boîte, et il
+sort bleu nuit quand même. Un panneau emporte la palette de l'élément depuis
+lequel il a été ouvert — sans quoi chaque champ posé sur une carte thémée
+ouvrirait un rectangle blanc par-dessus.
+
+### Terminal
+
+Une pile monospace et des coins carrés, pour une console ou un visualiseur de
+journaux.
+
+```css
+.terminal {
+  --tz-bg:        #0c0c0c;
+  --tz-bg-raised: #1c1c1c;
+  --tz-fg:        #d7ffd7;
+  --tz-fg-muted:  #5f875f;
+  --tz-border:    #2f4f2f;
+  --tz-accent:    #5fff5f;
+  --tz-accent-fg: #0c0c0c;
+  --tz-font:      ui-monospace, SFMono-Regular, Menlo, monospace;
+  --tz-radius:    0;
+  --tz-color-scheme: dark;
+}
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1, weekNumbers: true }" :theme="{ '--tz-bg': '#0c0c0c', '--tz-bg-raised': '#1c1c1c', '--tz-fg': '#d7ffd7', '--tz-fg-muted': '#5f875f', '--tz-border': '#2f4f2f', '--tz-accent': '#5fff5f', '--tz-accent-fg': '#0c0c0c', '--tz-font': 'ui-monospace, SFMono-Regular, Menlo, monospace', '--tz-radius': '0', '--tz-color-scheme': 'dark', 'background': '#0c0c0c', 'padding': '1rem' }" />
+
+### Papier
+
+Chaud, clair, arrondi — un formulaire de réservation plutôt qu'un tableau de
+bord.
+
+```css
+.papier {
+  --tz-bg:        #fbf7f0;
+  --tz-bg-raised: #f2e9db;
+  --tz-fg:        #3b2f2a;
+  --tz-fg-muted:  #9c8875;
+  --tz-border:    #e0d2bd;
+  --tz-accent:    #b4531f;
+  --tz-accent-fg: #fbf7f0;
+  --tz-radius:    14px;
+  --tz-color-scheme: light;
+}
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Votre séjour' }" :theme="{ '--tz-bg': '#fbf7f0', '--tz-bg-raised': '#f2e9db', '--tz-fg': '#3b2f2a', '--tz-fg-muted': '#9c8875', '--tz-border': '#e0d2bd', '--tz-accent': '#b4531f', '--tz-accent-fg': '#fbf7f0', '--tz-radius': '14px', '--tz-color-scheme': 'light', 'background': '#fbf7f0', 'padding': '1rem', 'borderRadius': '14px' }" />
+
+### Une ligne : l'accent seul
+
+Le plus petit thème qui vaille la peine d'être écrit. Tout ce qui découle de
+l'accent suit — le jour choisi, la teinte de la période, l'anneau de focus, le
+survol de la sélection — et le reste de la palette reste tel que le thème l'a
+livré.
+
+```css
+.marque { --tz-accent: #b4531f; --tz-accent-fg: #ffffff; }
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'L\'accent seul' }" :theme="{ '--tz-accent': '#b4531f', '--tz-accent-fg': '#ffffff' }" />
+
+Écrit `light-dark(#8a3f18, #ff9a63)`, il donne un accent différent à chaque
+schéma en une seule déclaration, sans media query et sans seconde copie à tenir
+à jour :
+
+```css
+.marque { --tz-accent: light-dark(#8a3f18, #ff9a63); }
+```
+
+### Deux sur une même page
+
+Un thème, c'est un jeu de propriétés personnalisées, et les propriétés
+personnalisées s'héritent. Posez-les sur une carte plutôt que sur `:root` et
+elles s'arrêtent à son bord — deux composants de la même page peuvent donc ne
+se ressembler en rien.
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-accent': '#6ea8fe', '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-bg': '#fbf7f0', '--tz-bg-raised': '#f2e9db', '--tz-fg': '#3b2f2a', '--tz-fg-muted': '#9c8875', '--tz-border': '#e0d2bd', '--tz-accent': '#b4531f', '--tz-accent-fg': '#fbf7f0', '--tz-radius': '14px', '--tz-color-scheme': 'light', 'background': '#fbf7f0', 'padding': '1rem', 'borderRadius': '14px' }" />
+
+### `data-theme`, sans nommer une seule couleur
+
+Un attribut bascule une sous-arborescence entre les deux moitiés de chaque
+`light-dark()` que le thème contient déjà. Rien à définir, et ça marche sur
+n'importe quel élément.
+
+```html
+<div class="carte" data-theme="dark">
+  <tz-calendar />
+</div>
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" scheme="dark" :theme="{ 'padding': '1rem', 'borderRadius': '12px', 'background': 'var(--tz-bg)' }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" scheme="light" :theme="{ 'padding': '1rem', 'borderRadius': '12px', 'background': 'var(--tz-bg)' }" />
+
+### `--tz-radius` tout seul
+
+Du carré à la pastille, sur chaque coin que dessinent les composants.
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" :theme="{ '--tz-radius': '0' }" />
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" :theme="{ '--tz-radius': '999px' }" />
+
 ## Avec Tailwind v4
 
 ```css

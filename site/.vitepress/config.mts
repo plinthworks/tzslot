@@ -72,6 +72,23 @@ export default defineConfig({
       lang: 'fr-FR',
       description: 'Des sélecteurs de date et d’heure qui savent ce que fait le changement d’heure.',
       themeConfig: {
+        // VitePress writes a dozen words of its own — the outline, the two
+        // footer links, the theme switch. Left out, a French page says
+        // "On this page" above a French table of contents.
+        outline: { level: [2, 3], label: 'Sur cette page' },
+        darkModeSwitchLabel: 'Apparence',
+        lightModeSwitchTitle: 'Passer au thème clair',
+        darkModeSwitchTitle: 'Passer au thème sombre',
+        sidebarMenuLabel: 'Menu',
+        returnToTopLabel: 'Retour en haut',
+        langMenuLabel: 'Changer de langue',
+        docFooter: { prev: 'Page précédente', next: 'Page suivante' },
+        notFound: {
+          title: 'PAGE INTROUVABLE',
+          quote: 'Cette page n’existe pas — ou plus.',
+          linkLabel: 'aller à l’accueil',
+          linkText: 'Retour à l’accueil',
+        },
         nav: [
           { text: 'Guide', link: '/fr/guide/getting-started' },
           { text: 'Exemples', link: '/fr/examples' },
@@ -117,7 +134,29 @@ export default defineConfig({
   },
   themeConfig: {
     socialLinks: [{ icon: 'github', link: 'https://github.com/plinthworks/tzslot' }],
-    search: { provider: 'local' },
+    search: {
+      provider: 'local',
+      options: {
+        locales: {
+          fr: {
+            translations: {
+              button: { buttonText: 'Rechercher', buttonAriaLabel: 'Rechercher' },
+              modal: {
+                displayDetails: 'Afficher le détail',
+                resetButtonTitle: 'Effacer la recherche',
+                backButtonTitle: 'Fermer',
+                noResultsText: 'Aucun résultat pour',
+                footer: {
+                  selectText: 'pour ouvrir',
+                  navigateText: 'pour naviguer',
+                  closeText: 'pour fermer',
+                },
+              },
+            },
+          },
+        },
+      },
+    },
     footer: { message: 'MIT', copyright: '© 2026 Plinthworks' },
   },
 });

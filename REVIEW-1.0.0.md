@@ -11,7 +11,9 @@ indépendamment, avant d'être retenus.
 
 ## Niveau 1 — correctness. Les corriger après la 1.0.0 change un comportement observable.
 
-### ☐ 1. Les journées entières sont fausses d'un jour là où minuit est sauté
+### ☑ 1. Les journées entières sont fausses d'un jour là où minuit est sauté
+
+> **Corrigé : la comparaison porte sur le début de journée du fuseau, plus sur le cadran `00:00`. Retenu par `packages/dom/test/midnight-zones.test.ts` — Santiago et La Havane.**
 `packages/dom/src/range-field.ts:404,414` · `packages/dom/src/datetime-range.ts:218,224`
 
 `midnight(day)` rend le *début de journée*, qui vaut **01:00** dans un fuseau
@@ -27,7 +29,9 @@ jour de trop, le calendrier éclaire deux cases — et comme `step()` et
 C'est l'invariant phare de la bibliothèque qui tombe sur la forme de
 changement d'heure pour laquelle elle existe.
 
-### ☐ 2. Un pas plus court qu'un jour ne fait rien sur une période en journées entières
+### ☑ 2. Un pas plus court qu'un jour ne fait rien sur une période en journées entières
+
+> **Corrigé : un pas plus court qu'une journée ne dessine plus de flèches sur une période en journées entières, au lieu d'en dessiner d'inertes. Retenu par `midnight-zones.test.ts`.**
 `packages/dom/src/range-field.ts:600` · `packages/core/src/shift.ts:50`
 
 `showTime` vaut `false` par défaut, donc la valeur par défaut est en journées
@@ -39,7 +43,9 @@ Vérifié : `shift: '15mn'` dessine des flèches actives qui ne déplacent rien.
 Les formes courtes documentées sont des boutons morts dans la configuration
 par défaut.
 
-### ☐ 3. Le champ période émet des plages à l'envers, sans message
+### ☑ 3. Le champ période émet des plages à l'envers, sans message
+
+> **Corrigé : la borne devenue impossible est abandonnée et redemandée — une nouvelle période commence, ce que l'utilisateur vient de faire. Une borne verrouillée refuse le clic. Retenu par `packages/dom/test/ordering.test.ts`.**
 `packages/dom/src/range-field.ts:654-682`
 
 `setEdge` écrit une borne sans jamais la comparer à l'autre, et le clic dans

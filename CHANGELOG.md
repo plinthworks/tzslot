@@ -2,6 +2,36 @@
 
 ## 1.1.0
 
+### Eight things a review found before this went out
+
+Three were introduced the same day, two of them in examples shown as working.
+
+- **A step with a date part and a time part lost the time part.** `{ days: 1,
+  minutes: 30 }` moved exactly a day, ten presses running, because days move
+  through `PlainDate` and `PlainDate.add` truncates without a word. Worse, the
+  total crosses 24 hours on the morning the clocks go forward, so the same
+  setting behaved one way on 29 March and another on every other day. Both
+  parts are applied now.
+- **`shift: true` on a day-only field stepped by an hour** and turned
+  `22/09/2026` into `22/09/2026 01:00 – 23/09/2026 01:00`, over controls that
+  cannot show or change an hour. It follows the hours on screen instead.
+- **`display: contents`, added so the second field could be hidden, dissolved
+  the box that stacks each label over its input.** From and To sat beside
+  their fields rather than above them, in every browser. The `[hidden]` rules
+  were all that was needed.
+- **The panel's intent to arm the end outlived its subject.** It survived
+  `clear()` and a value handed in from outside, so a click landed on the end
+  of a period it was never about.
+- **One click in `singleDay` reported twice**, the first with `end: null` — a
+  half-open period from a field that is not open-ended. It builds both ends
+  and reports once.
+- **`singleDay` with `defaultTimes` was not a whole day**: office hours won
+  over the day, giving nine hours from a control that says it gives one day.
+- **`singleDay` turned on over a period open at the start** hid the only field
+  holding the value. The day is kept either way.
+- Dead code from the two removals: the `'auto'`-era `subDay` guard, and
+  `RangePreset.step`, which stayed public and documented while nothing read it.
+
 ### The arrows, simplified
 
 `shift` had four shapes and a rule nobody could hold in their head. It has two

@@ -845,7 +845,6 @@ export const RANGEFIELD_CSS = `
    chosen. Said explicitly because a display on the element beats [hidden]. */
 .tz-rangefield__field[hidden],
 .tz-rangefield__between[hidden] { display: none; }
-.tz-rangefield__field { display: contents; }
 .tz-rangefield__inputs {
   display: flex;
   flex-wrap: wrap;

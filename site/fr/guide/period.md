@@ -288,8 +288,10 @@ createRangeField(element, { timeZone: 'Europe/Paris', shift: false });
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Sans flèches' }" />
 
-`true` les dessine et suit ce qui est choisi : **une heure** pour une période,
-**un jour** quand [`singleDay`](#singleday) dit que c'est une date.
+`true` les dessine et suit ce qui est choisi : **une heure** quand les heures
+sont à l'écran, **un jour** sinon — un champ en journées déplacé d'une heure
+transformerait `22/09/2026` en `22/09/2026 01:00 – 23/09/2026 01:00`, sur des
+contrôles incapables d'afficher ou de changer une heure.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: true });

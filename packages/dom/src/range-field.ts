@@ -67,11 +67,6 @@ export interface RangePreset {
    * running" can be written without reaching for a global.
    */
   readonly range: (today: PlainDate, at: { now: Instant; timeZone: string }) => DayRange | MomentRange;
-  /**
-   * What one press of the arrows moves, once this range is chosen. Left out,
-   * whole days move by their own length and a shorter range by its duration.
-   */
-  readonly step?: ShiftStep;
 }
 
 /** True for what a preset shorter than a day returns. */
@@ -174,7 +169,7 @@ export interface RangeFieldSettings {
    *
    * `false` — the default — draws none: a field that means one chosen period
    * has nothing to step through. `true` draws them and follows what is being
-   * chosen: an hour for a period, a day when `singleDay` says it is one date.
+   * chosen: an hour where the hours are on screen, a day otherwise.
    *
    * A step imposes it. A plain number is minutes — `15`, `60`, `1440` — which
    * is what most screens want; anything a number cannot say is said in full:
@@ -706,7 +701,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const menu = stepMenu();
     if (menu) return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
     if (s.shift === false || Array.isArray(s.shift)) return null;
-    if (s.shift === true) return s.singleDay ? { days: 1 } : { hours: 1 };
+    /*
+     * `true` asks for arrows without naming a step, and the answer follows
+     * what the field is choosing: an hour for a period with hours on screen,
+     * a day otherwise. An hour on a day-only field turned "22/09/2026" into
+     * "22/09/2026 01:00 – 23/09/2026 01:00" and drifted another hour on every
+     * press, over controls that cannot show or change an hour.
+     */
+    if (s.shift === true) return s.singleDay || !s.showTime ? { days: 1 } : { hours: 1 };
     return s.shift as ShiftStep;
   };
 
@@ -732,25 +734,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   const effectiveStep = (): ShiftStep | null => asStep(currentStep());
 
-  /**
-   * True for a step shorter than a day.
-   *
-   * A period of whole days cannot move by fifteen minutes and stay whole
-   * days, and a screen that shows no hours has nowhere to put the ones such a
-   * move would create. The arrows go away rather than sitting there doing
-   * nothing, which is what they did: PlainDate.add({ hours: 1 }) does not
-   * throw, it adds nothing.
-   */
-  const subDay = (step_: ShiftStep): boolean => {
-    // A duration counted in months or weeks cannot be measured in hours
-    // without a point to measure from, and Temporal says so rather than
-    // guessing. Today in the zone is as good a point as any for "is this
-    // shorter than a day".
-    const relative = s.value.start
-      ? zoned(s.value.start)
-      : s.today.toZonedDateTime({ timeZone: s.timeZone });
-    return Temporal.Duration.from(step_ as DurationLike).total({ unit: 'hour', relativeTo: relative }) < 24;
-  };
+
 
   const canShift = () => {
     const step_ = effectiveStep();
@@ -771,46 +755,58 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const by = effectiveStep();
     if (!canShift() || by === null) return;
     const moveBy = Temporal.Duration.from(asShiftStep(by));
-    const anchor = s.value.start ?? s.value.end;
 
     /*
-     * Shorter than a day: the two ends move as moments.
+     * A step has a date part and a time part, and both are applied.
      *
-     * Not because a period of whole days may not be stepped by fifteen
-     * minutes — it may, and the field then writes the hours it gained — but
-     * because dates cannot hold the answer. PlainDate.add({ minutes: 15 })
-     * does not throw; it adds nothing, and the arrow sits there doing nothing
-     * with it.
+     * Routing on "is the whole thing shorter than a day" lost the remainder:
+     * days move through PlainDate, and PlainDate.add({ days: 1, minutes: 30 })
+     * truncates to a day without a word — so `{ days: 1, minutes: 30 }` moved
+     * exactly a day, ten presses running. Worse, the total crosses 24 hours on
+     * the morning the clocks go forward, so the same setting behaved one way
+     * on 29 March and another on every other day.
      */
-    if (anchor && moveBy.total({ unit: 'hour', relativeTo: zoned(anchor) }) < 24) {
+    const datePart = moveBy.with({ hours: 0, minutes: 0, seconds: 0, milliseconds: 0, microseconds: 0, nanoseconds: 0 });
+    const timePart = moveBy.with({ years: 0, months: 0, weeks: 0, days: 0 });
+
+    // The time part moves the two ends as moments: a quarter of an hour cannot
+    // be said in dates, and the field writes the hours the period gained.
+    const withTime = (value: RangeFieldValue): RangeFieldValue =>
+      timePart.blank
+        ? value
+        : {
+            start: value.start ? shiftInstant(value.start, timePart, direction, s.timeZone) : null,
+            end: value.end ? shiftInstant(value.end, timePart, direction, s.timeZone) : null,
+          };
+
+    if (datePart.blank) {
       draft = s.value;
-      const next: RangeFieldValue = {
-        start: s.value.start ? shiftInstant(s.value.start, moveBy, direction, s.timeZone) : null,
-        end: s.value.end ? shiftInstant(s.value.end, moveBy, direction, s.timeZone) : null,
-      };
+      const next = withTime(s.value);
       if (panel.isOpen) choose(next);
       else commit(next);
       return;
     }
 
-    // A day or longer: the days move and the times come along unchanged.
+    // The date part moves the days, and the times come along unchanged.
     // Someone comparing one working week with the next means 09:00 to 17:00
     // again, not the same number of hours counted from where the first ended.
     const shown = days(s.value);
     draft = s.value; // so the times carry over into fromDays
     if (!shown.start || !shown.end) {
       const day = shown.start ?? shown.end!;
-      const moved = shiftDayRange({ start: day, end: day }, moveBy, direction);
-      const next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
+      const moved = shiftDayRange({ start: day, end: day }, datePart, direction);
+      const onDays = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
+      const next = withTime(onDays);
       if (panel.isOpen) choose(next);
       else commit(next);
       return;
     }
-    const moved = shiftDayRange({ start: shown.start, end: shown.end }, by, direction);
-    const next = fromDays({ start: moved.start, end: moved.end });
+    const moved = shiftDayRange({ start: shown.start, end: shown.end }, datePart, direction);
+    const next = withTime(fromDays({ start: moved.start, end: moved.end }));
     if (panel.isOpen) choose(next);
     else commit(next);
   }
+
 
 
   /**
@@ -825,12 +821,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * would make their next click throw that day away and begin again.
    */
   function crossOver(wasSingle: boolean): void {
-    const { start } = days(s.value);
+    const { start, end } = days(s.value);
     if (s.singleDay) {
       armed = 'start';
       armedByHand = false;
       armEndNext = false;
-      if (start) choose(fromDays({ start, end: start }), { close: false });
+      // The day to keep: the start, or the end when that is all there was —
+      // hiding the second field otherwise left a value on the trigger with no
+      // control anywhere able to reach it.
+      const day = start ?? end;
+      if (day) choose(fromDays({ start: day, end: day }), { close: false });
       return;
     }
     if (wasSingle && start) {
@@ -1398,9 +1398,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           const clicked = end ?? start;
           if (!clicked) return;
           if (s.singleDay) {
-            // One field: the day clicked is the whole day, both ends at once.
-            setEdge('start', { date: clicked, time: timeOf('start') ?? defaultTime('start') });
-            setEdge('end', { date: clicked, time: null });
+            /*
+             * One field: the day clicked is the whole day, built in one go.
+             *
+             * Two calls to setEdge reported twice — the first with end: null,
+             * a half-open period a field that is not openEnded should never
+             * produce. And routing the end through setEdge let defaultTimes
+             * win, so a screen naming office hours got nine hours out of a
+             * control that says it gives a whole day.
+             */
+            draft = { start: midnight(clicked), end: endOfDay(clicked) };
+            choose(draft, { close: !s.confirm });
             paintPanel();
             return;
           }
@@ -1461,7 +1469,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // framework hands the value straight back after every change, so
       // resetting it here re-armed the start between two clicks and both of
       // them landed on it.
-      if ('value' in settings) draft = s.value;
+      // A value from outside is a new subject: whatever the panel was about to
+      // do with the old one no longer applies.
+      if ('value' in settings) {
+        draft = s.value;
+        armEndNext = false;
+      }
       if ('singleDay' in settings && s.singleDay !== wasSingle) crossOver(wasSingle);
       render();
     },
@@ -1470,6 +1483,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     toggle: () => (panel.isOpen ? panel.close() : openPanel()),
     clear() {
       draft = EMPTY;
+      armEndNext = false;
       commit(draft);
     },
     destroy() {

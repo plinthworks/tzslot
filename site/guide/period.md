@@ -282,8 +282,10 @@ createRangeField(element, { timeZone: 'Europe/Paris', shift: false });
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'No arrows' }" />
 
-`true` draws them and follows what is being chosen: **an hour** for a period,
-**a day** when [`singleDay`](#singleday) says it is one date.
+`true` draws them and follows what is being chosen: **an hour** where the
+hours are on screen, **a day** otherwise — a day-only field stepped by an hour
+would turn `22/09/2026` into `22/09/2026 01:00 – 23/09/2026 01:00`, over
+controls that cannot show or change an hour.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: true });

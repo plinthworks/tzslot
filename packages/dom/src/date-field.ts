@@ -3,7 +3,7 @@ import type { PlainDate, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
-import { FIELD_CSS, ensureStyles } from './styles.js';
+import { FIELD_CSS, CALENDAR_CSS, ensureStyles } from './styles.js';
 import { createPanel, type FieldMode, type PanelController } from './panel.js';
 
 export type { FieldMode } from './panel.js';
@@ -177,6 +177,11 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     // Into the panel, on the day that matters: the selection, else today.
     initialFocus: (node) => node.querySelector<HTMLElement>('.tz-cal__day[tabindex="0"]'),
     content: (node) => {
+      // The panel is drawn on the body, so its grid has to be declared there:
+      // the calendar is told not to inject, and without this it came out as a
+      // column of unstyled buttons on any page where no other widget had
+      // happened to inject the same sheet.
+      if (injectStyles) ensureStyles(node, 'calendar', CALENDAR_CSS);
       const calendarHost = doc.createElement('div');
       node.append(calendarHost);
       calendar = createCalendar(calendarHost, {

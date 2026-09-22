@@ -1,20 +1,27 @@
 # Changelog
 
-## 1.0.1
+## 1.1.0
+
+### Two panels came out wrong, and both shipped in 1.0.0
 
 **The hour menu of `<tz-datetime-field>` was blank on every ordinary day.**
 With `timeLayout: 'select'`, a field reading `22/09/2026 10:15` opened a panel
-whose hour menu showed nothing at all — the minutes were right, the hour was
-empty, and picking one moved a time the reader had not asked to move.
+whose hour menu showed nothing — the minutes were right, the hour was empty,
+and picking one moved a time the reader had not asked to move. Its options are
+keyed by hour *and* reading: `10|` where a clock face happens once, `2|+02:00`
+and `2|+01:00` the morning one happens twice. The field named a reading
+unconditionally, so on an ordinary day it asked for `10|+02:00` and matched
+nothing. `createRangeField` carries exactly this guard, with a comment
+predicting the blank; this one never got it.
 
-Its options are keyed by hour *and* reading: `10|` where a clock face happens
-once, `2|+02:00` and `2|+01:00` the morning one happens twice. The field named
-a reading unconditionally, so on an ordinary day it asked for `10|+02:00`,
-which matches no option. The interval field carries exactly this guard, with a
-comment predicting the blank; this one never got it.
+**`createDateField` drew an unstyled calendar on a page of its own.** Its
+panel is on the body and the calendar inside is told not to inject its layout,
+which the field was then meant to declare there — and did not. Anywhere a
+second widget happened to inject the same sheet it looked right, which is how
+it passed every documentation page and every test.
 
-Found by a reader migrating a flatpickr screen, in a screenshot, an hour after
-1.0.0 went out. Four tests hold it, two of which were watched failing first.
+Both were found in screenshots, within two hours of 1.0.0, by someone
+migrating a real screen. Seven tests hold them, four watched failing first.
 
 ## 1.0.0
 

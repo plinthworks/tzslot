@@ -682,7 +682,7 @@ export function mountGrid<V>(
       header.remove();
       grid.remove();
       footer.remove();
-      host.classList.remove('tz-cal--notes');
+      host.classList.remove('tz-cal--notes', 'tz-cal--weeks');
       if (addedHostClass) host.classList.remove('tz-cal');
     },
   };

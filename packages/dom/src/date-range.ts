@@ -99,6 +99,15 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   let cursor: YearMonth | null = null;
   /** The day under the pointer, previewing where the range would end. */
   let hovered: PlainDate | null = null;
+  /**
+   * The day the keyboard is on.
+   *
+   * This calendar had no keyboard at all: forty-two tab stops a month — 
+   * eighty-four in the period field's two — no arrow keys, and a preview of
+   * the run about to be chosen that only a mouse could see. Its sibling,
+   * createCalendar, has had all of it from the start.
+   */
+  let focusedIso: string | null = null;
   let error: string | null = null;
   let stylesPending = injectStyles;
 
@@ -203,6 +212,28 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     (s.isDateDisabled?.(date) ?? false);
   const blocked = (date: PlainDate) => ruledOut(date) || renderedOut.has(date.toString());
 
+  /** The span the blocks are showing, first day to last. */
+  function shownSpan(): { first: PlainDate; last: PlainDate } {
+    const at = shown();
+    const first = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 });
+    const last = first.add({ months: Math.max(1, blocks.length) }).subtract({ days: 1 });
+    return { first, last };
+  }
+
+  const withinShown = (date: PlainDate) => {
+    const { first, last } = shownSpan();
+    return !before(date, first) && !before(last, date);
+  };
+
+  /** The first day on screen that may be chosen, for the keyboard to land on. */
+  function firstUsable(): string | null {
+    const { first, last } = shownSpan();
+    for (let date = first; !before(last, date); date = date.add({ days: 1 })) {
+      if (!blocked(date)) return date.toString();
+    }
+    return null;
+  }
+
   function render(): void {
     if (stylesPending && host.isConnected) {
       ensureStyles(host, 'range', RANGE_CSS);
@@ -217,6 +248,17 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     next.setAttribute('aria-label', s.messages.nextMonth);
 
     fitMonths();
+    // Where Tab lands: the day the keyboard is on, else the start of the
+    // period, else the first day of the first month that can be chosen. A
+    // disabled button cannot take focus, so an unusable one is no entry at
+    // all.
+    const usable = (iso: string | null): iso is string => {
+      if (!iso) return false;
+      const date = Temporal.PlainDate.from(iso);
+      return !off && !blocked(date) && withinShown(date);
+    };
+    const tabbable =
+      [focusedIso, s.value.start?.toString() ?? null].find(usable) ?? firstUsable();
     host.classList.toggle('tz-range--months', blocks.length > 1);
     host.classList.toggle('tz-range--weeks', s.weekNumbers);
 
@@ -287,6 +329,9 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         cell.classList.toggle('tz-range__day--within', within);
         cell.setAttribute('aria-selected', String(isStart || isEnd));
         cell.disabled = off || blocked(date);
+        // One stop for the whole grid, months included: Tab reaches the
+        // calendar, the arrows move inside it.
+        cell.tabIndex = date.toString() === tabbable && !cell.disabled ? 0 : -1;
       });
     });
     host.classList.toggle('tz-range--notes', notes);
@@ -354,6 +399,58 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     return target instanceof HTMLButtonElement && target.dataset['date'] ? target : null;
   };
 
+  /**
+   * Arrow keys move a day, PageUp/PageDown a month, Home/End across the week —
+   * the pattern the ARIA grid guidance describes, and the one this widget's
+   * sibling already follows.
+   *
+   * The run under the keyboard is previewed exactly as the run under the
+   * pointer is: half a selection is hard enough to hold in the head without
+   * the screen keeping it to itself.
+   */
+  function onKeydown(event: KeyboardEvent): void {
+    if (s.disabled) return;
+    const at = document.activeElement;
+    const current =
+      at instanceof HTMLElement && at.dataset['date'] ? at.dataset['date'] : focusedIso;
+
+    if (event.key === 'Enter' || event.key === ' ') return; // the button does it
+
+    const from = Temporal.PlainDate.from(current ?? s.value.start?.toString() ?? s.today.toString());
+    const intoWeek = (from.dayOfWeek - s.firstDayOfWeek + 7) % 7;
+    const moves: Record<string, () => PlainDate> = {
+      ArrowLeft: () => from.subtract({ days: 1 }),
+      ArrowRight: () => from.add({ days: 1 }),
+      ArrowUp: () => from.subtract({ weeks: 1 }),
+      ArrowDown: () => from.add({ weeks: 1 }),
+      PageUp: () => from.subtract({ months: 1 }),
+      PageDown: () => from.add({ months: 1 }),
+      Home: () => from.subtract({ days: intoWeek }),
+      End: () => from.add({ days: 6 - intoWeek }),
+    };
+    const move = moves[event.key];
+    if (!move) return;
+
+    event.preventDefault();
+    const target = move();
+    focusedIso = target.toString();
+    // Walking off the months on screen brings them along.
+    if (!withinShown(target)) cursor = { year: target.year, month: target.month };
+    // The preview follows, so a keyboard user sees the run they would choose.
+    if (s.value.start && !s.value.end) hovered = target;
+    render();
+    grid.querySelector<HTMLElement>(`[data-date="${focusedIso}"]`)?.focus();
+  }
+
+  grid.addEventListener('keydown', onKeydown, on);
+  grid.addEventListener(
+    'focusin',
+    (event) => {
+      const cell = (event.target as Element).closest<HTMLElement>('.tz-range__day');
+      if (cell?.dataset['date']) focusedIso = cell.dataset['date'];
+    },
+    on,
+  );
   prev.addEventListener('click', () => shift(-1), on);
   next.addEventListener('click', () => shift(1), on);
   grid.addEventListener(
@@ -412,7 +509,10 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
       header.remove();
       grid.remove();
       alert.remove();
-      host.classList.remove('tz-range--notes');
+      // Every class it put there, not the one that came to mind: a host
+      // handed back with tz-range--months still on it is a host whose next
+      // tenant inherits a layout nobody asked for.
+      host.classList.remove('tz-range--notes', 'tz-range--weeks', 'tz-range--months');
       if (addedHostClass) host.classList.remove('tz-range');
     },
   };

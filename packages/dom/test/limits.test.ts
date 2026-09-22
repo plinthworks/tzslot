@@ -141,8 +141,15 @@ describe('one end the reader may read but not move', () => {
     );
     expect(armed).toBe(0); // focusing it did not arm it
 
+    // 25 September is after the end, and the end is locked, so it cannot move
+    // out of the way: the click is refused rather than emitting a period that
+    // runs backwards. This test used to assert exactly that backwards period.
     panel().querySelector<HTMLButtonElement>('[data-date="2026-09-25"]')!.click();
-    expect(shown()).toBe('25/09/2026 10:00 – 18/09/2026 17:00'); // only the start moved
+    expect(shown()).toBe('18/09/2026 10:00 – 18/09/2026 17:00');
+
+    // A day before the end moves the start and nothing else.
+    panel().querySelector<HTMLButtonElement>('[data-date="2026-09-14"]')!.click();
+    expect(shown()).toBe('14/09/2026 10:00 – 18/09/2026 17:00');
   });
 
   it('and a locked end is not pushed by a span limit either', () => {

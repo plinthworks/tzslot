@@ -440,13 +440,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const at = (day: PlainDate, time: PlainTime) =>
     day.toZonedDateTime({ timeZone: s.timeZone, plainTime: time }).toInstant();
 
+/**
+ * Whether a moment is the instant a day begins in this zone.
+ *
+ * Not "is its clock face midnight": Santiago and Havana spring forward *at*
+ * midnight, so the day begins at 01:00 and the wall time 00:00 never happens.
+ * Comparing against the day's own start is the only test that holds
+ * everywhere — and the two zones where it differs are exactly the ones this
+ * library exists for.
+ */
+  const opensADay = (at_: Instant) => at_.equals(midnight(zoned(at_).toPlainDate()));
+
   /** The days the value covers, both included — what the calendar highlights. */
   function days(value: RangeFieldValue): { start: PlainDate | null; end: PlainDate | null } {
     const start = value.start ? zoned(value.start).toPlainDate() : null;
     if (!value.end) return { start, end: null };
     const end = zoned(value.end);
     const last =
-      value.allDay !== false && end.toPlainTime().equals(Temporal.PlainTime.from('00:00'))
+      value.allDay !== false && opensADay(value.end)
         ? end.toPlainDate().subtract({ days: 1 })
         : end.toPlainDate();
     return { start, end: last };
@@ -609,8 +620,31 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     return start !== null && end !== null ? 'auto' : { days: 1 };
   };
 
+  /**
+   * True for a step shorter than a day.
+   *
+   * A period of whole days cannot move by fifteen minutes and stay whole
+   * days, and a screen that shows no hours has nowhere to put the ones such a
+   * move would create. The arrows go away rather than sitting there doing
+   * nothing, which is what they did: PlainDate.add({ hours: 1 }) does not
+   * throw, it adds nothing.
+   */
+  const subDay = (step_: ShiftStep): boolean => {
+    if (step_ === 'auto') return false;
+    // A duration counted in months or weeks cannot be measured in hours
+    // without a point to measure from, and Temporal says so rather than
+    // guessing. Today in the zone is as good a point as any for "is this
+    // shorter than a day".
+    const relative = s.value.start
+      ? zoned(s.value.start)
+      : s.today.toZonedDateTime({ timeZone: s.timeZone });
+    return Temporal.Duration.from(step_ as DurationLike).total({ unit: 'hour', relativeTo: relative }) < 24;
+  };
+
   const canShift = () => {
-    if (effectiveStep() === null || off()) return false;
+    const step_ = effectiveStep();
+    if (step_ === null || off()) return false;
+    if (wholeDays() && s.value.allDay !== false && subDay(step_)) return false;
     const { start, end } = days(s.value);
     return start !== null || end !== null;
   };
@@ -714,7 +748,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       : edge === 'start'
         ? midnight(wall.date)
         : midnight(wall.date.add({ days: 1 }));
-    draft = withinSpan({ ...draft, [edge]: at_, allDay: !timed } as RangeFieldValue, edge);
+    draft = withinSpan(ordered({ ...draft, [edge]: at_, allDay: !timed } as RangeFieldValue, edge), edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
   }
@@ -727,6 +761,32 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const given = edge === 'start' ? s.labels.start : s.labels.end;
     if (given !== undefined) return given;
     return edge === 'start' ? s.messages.rangeStart : s.messages.rangeEnd;
+  }
+
+  /**
+   * A period whose two ends are the right way round.
+   *
+   * The calendar's own swap logic is bypassed here, because a click fills the
+   * armed field and nothing else. Someone who arms the start and clicks a day
+   * after the end has said something impossible; the other end follows rather
+   * than the click being refused, which is what the range calendar does when
+   * it is left to itself, and it never emits `start > end`.
+   */
+  function ordered(value: RangeFieldValue, touched: Edge): RangeFieldValue {
+    const { start, end } = value;
+    if (!start || !end || Temporal.Instant.compare(start, end) <= 0) return value;
+    const other: Edge = touched === 'start' ? 'end' : 'start';
+    if (off(other)) {
+      // Locked, so it cannot move out of the way: the click is refused rather
+      // than emitting a period that runs backwards.
+      return draft;
+    }
+    // The end that is now impossible is dropped, and it is the one to fill
+    // next: this is someone beginning a new period, and saying so reads
+    // better than a period of no length at all.
+    armed = other;
+    armedByHand = false;
+    return { ...value, [other]: null } as RangeFieldValue;
   }
 
   /**

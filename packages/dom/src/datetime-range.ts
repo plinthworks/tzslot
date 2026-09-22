@@ -217,13 +217,22 @@ export function createDateTimeRange(
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
   const midnight = (day: PlainDate) => day.toZonedDateTime({ timeZone: s.timeZone }).toInstant();
 
+/**
+ * Whether a moment is the instant a day begins in this zone.
+ *
+ * Not "is its clock face midnight": Santiago and Havana spring forward *at*
+ * midnight, so the day begins at 01:00 and the wall time 00:00 never happens.
+ * Comparing against the day's own start is the only test that holds
+ * everywhere — and the two zones where it differs are exactly the ones this
+ * library exists for.
+ */
+  const opensADay = (at_: Instant) => at_.equals(midnight(zoned(at_).toPlainDate()));
+
   /** The last day of a whole-day range, which ends at the midnight after it. */
   function lastDay(end: Instant | null): PlainDate | null {
     if (!end) return null;
     const at = zoned(end);
-    return at.toPlainTime().equals(Temporal.PlainTime.from('00:00'))
-      ? at.toPlainDate().subtract({ days: 1 })
-      : at.toPlainDate();
+    return opensADay(end) ? at.toPlainDate().subtract({ days: 1 }) : at.toPlainDate();
   }
 
   /**

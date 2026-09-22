@@ -40,6 +40,8 @@ export interface PanelController {
   close(options?: { restoreFocus?: boolean }): void;
   /** After something inside changed size. */
   place(): void;
+  /** Put the focus inside an open panel — the way in for a field that is typed into. */
+  focusInside(): void;
 }
 
 /** What a panel must take with it from where its field sits. */
@@ -249,5 +251,19 @@ export function createPanel(options: PanelOptions): PanelController {
     open,
     close,
     place,
+    /**
+     * Put the focus inside an open panel.
+     *
+     * A field that can be typed into keeps the focus in its text, so nothing
+     * ever moved it into the panel: the calendar was reachable only by
+     * tabbing through the rest of the document.
+     */
+    focusInside() {
+      if (!opened) return;
+      const landing = options.initialFocus
+        ? options.initialFocus(opened.panel)
+        : opened.panel.querySelector<HTMLElement>('button:not(:disabled)');
+      (landing ?? opened.panel.querySelector<HTMLElement>('[tabindex="0"], button:not(:disabled)'))?.focus();
+    },
   };
 }

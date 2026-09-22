@@ -267,12 +267,22 @@ export function mountGrid<V>(
   });
 
   const coarse = el('div', 'tz-cal__coarse');
+  /**
+   * A grid is made of rows. These twelve cells sat directly in the container,
+   * so a screen reader was told "grid" and then found cells with no rows to
+   * put them in. Three rows of four, which is how they are drawn anyway.
+   */
   const coarseCells = Array.from({ length: 12 }, () => {
     const cell = button('tz-cal__coarse-cell');
     cell.setAttribute('role', 'gridcell');
     return cell;
   });
-  coarse.append(...coarseCells);
+  for (let r = 0; r < 3; r++) {
+    const row = el('div', 'tz-cal__coarse-row');
+    row.setAttribute('role', 'row');
+    row.append(...coarseCells.slice(r * 4, r * 4 + 4));
+    coarse.append(row);
+  }
 
   const footer = el('div', 'tz-cal__footer');
   const todayButton = button('tz-cal__action tz-cal__action--today');
@@ -564,7 +574,26 @@ export function mountGrid<V>(
    * week — the pattern the ARIA grid guidance describes.
    */
   function onKeydown(event: KeyboardEvent): void {
-    if (s.view !== 'days' || s.disabled) return;
+    if (s.disabled) return;
+    if (s.view !== 'days') {
+      // The coarse views are a grid of four columns, and had no arrows at all.
+      const at = doc.activeElement;
+      const index = coarseCells.indexOf(at as HTMLButtonElement);
+      if (index < 0) return;
+      const moves: Record<string, number> = {
+        ArrowLeft: index - 1,
+        ArrowRight: index + 1,
+        ArrowUp: index - 4,
+        ArrowDown: index + 4,
+        Home: 0,
+        End: coarseCells.length - 1,
+      };
+      const wanted = moves[event.key];
+      if (wanted === undefined) return;
+      event.preventDefault();
+      coarseCells[Math.min(Math.max(wanted, 0), coarseCells.length - 1)]?.focus();
+      return;
+    }
 
     if (event.key === 'Enter' || event.key === ' ') {
       if (!focusedIso) return;

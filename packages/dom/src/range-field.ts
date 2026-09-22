@@ -595,7 +595,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let presetShift: ShiftStep | null = null;
 
   /** The offered steps, when the reader is given the choice. */
-  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) ? s.shift : null);
+  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) && s.shift.length > 0 ? s.shift : null);
   /** Which of them is chosen. Kept by position, so a relabelled menu is harmless. */
   let stepIndex = 0;
   const currentStep = (): ShiftStep | null => {
@@ -959,7 +959,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       );
     }
     if (chosen.start === null || chosen.end === null) return false;
-    if (isBuiltIn(preset.name)) {
+    // Only a shortcut that *is* a built-in one. A custom preset named
+    // 'thisWeek' was ticked by the built-in definition of thisWeek, ignoring
+    // the range function it came with.
+    if (isBuiltIn(preset.name) && !(s.presets as readonly unknown[]).includes(preset)) {
       return matchesPreset(preset.name, { start: chosen.start, end: chosen.end }, {
         today: s.today,
         firstDayOfWeek: s.firstDayOfWeek,

@@ -88,12 +88,16 @@ export const CALENDAR_CSS = `
 /* Four columns: twelve months and twelve years both land on three tidy rows,
    and the block ends up as wide as the day grid, so the header does not jump
    when the view changes. */
+/* Three rows of four. The rows exist for the screen reader — a grid without
+   them is a grid with nothing to walk — and display:contents keeps the
+   drawing exactly as it was. */
 .tz-cal__coarse {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
   width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, var(--tz-gap, 0.25rem)));
 }
+.tz-cal__coarse-row { display: contents; }
 .tz-cal__coarse-cell { padding: 0.5rem 0.25rem; }
 /* A note under the number: the cells widen and grow, and only then. */
 .tz-cal--notes { --tz-cal-cell-size: var(--tz-cal-note-cell-size, 2.75rem); }

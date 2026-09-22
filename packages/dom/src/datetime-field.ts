@@ -285,7 +285,7 @@ export function createDateTimeField(
   host.append(back, wrap, stepPicker, forward);
 
   /** The offered steps, when the reader is given the choice. */
-  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) ? s.shift : null);
+  const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) && s.shift.length > 0 ? s.shift : null);
   let stepIndex = 0;
   const currentStep = (): DurationLike | null => {
     const menu = stepMenu();
@@ -812,9 +812,16 @@ export function createDateTimeField(
   typed.addEventListener(
     'keydown',
     (event) => {
-      if (event.key === 'ArrowDown' && !panel.isOpen) {
+      if (event.key === 'ArrowDown') {
         event.preventDefault();
-        openPanel();
+        if (!panel.isOpen) {
+          openPanel();
+          return;
+        }
+        // A second ArrowDown walks into the panel. It used to do nothing at
+        // all, which left the calendar reachable only by tabbing through the
+        // rest of the document.
+        panel.focusInside();
         return;
       }
       if (event.key !== 'Enter') return;

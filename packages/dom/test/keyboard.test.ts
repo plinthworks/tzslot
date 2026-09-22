@@ -122,3 +122,38 @@ describe('a calendar whose entry point is out of bounds', () => {
     cal.destroy();
   });
 });
+
+describe('a field that is typed into', () => {
+  it('a second ArrowDown walks into the panel', async () => {
+    const { createDateTimeField } = await import('../src/index.js');
+    const field = createDateTimeField(host, { timeZone: 'Europe/Paris', locale: 'en-GB' });
+    const typed = host.querySelector<HTMLInputElement>('input.tz-field__trigger')!;
+    typed.focus();
+
+    typed.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(field.isOpen).toBe(true);
+    expect(document.activeElement).toBe(typed); // the text keeps it, so far
+
+    typed.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    // It used to do nothing at all, leaving the calendar reachable only by
+    // tabbing through the rest of the document.
+    expect(panel().contains(document.activeElement)).toBe(true);
+    field.destroy();
+  });
+});
+
+describe('the month and year views', () => {
+  it('are rows of cells, and the arrows walk them', async () => {
+    const { createCalendar } = await import('../src/index.js');
+    const cal = createCalendar(host, { locale: 'en-GB', view: 'months', today: Temporal.PlainDate.from('2026-09-15') });
+    expect(host.querySelectorAll('.tz-cal__coarse [role="row"]').length).toBe(3);
+
+    const cells = [...host.querySelectorAll<HTMLButtonElement>('.tz-cal__coarse-cell')];
+    cells[0]!.focus();
+    cells[0]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(cells[1]);
+    cells[1]!.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }));
+    expect(document.activeElement).toBe(cells[5]);
+    cal.destroy();
+  });
+});

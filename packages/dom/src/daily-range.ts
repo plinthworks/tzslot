@@ -119,6 +119,10 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     return node;
   };
 
+  /** Declared above everything that listens, so destroy() takes all of it. */
+  const listening = new AbortController();
+  const on = { signal: listening.signal };
+
   const addedHostClass = !host.classList.contains('tz-daily');
   host.classList.add('tz-daily');
 
@@ -147,6 +151,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     const label = el('p', 'tz-daily__column-label');
     const list = el('div', 'tz-slots tz-daily__list');
     list.setAttribute('role', 'listbox');
+    list.addEventListener('keydown', (event) => onListKeydown(event, list), on);
     list.dataset['edge'] = edge;
     const inputHost = el('div', 'tz-daily__input');
     inputHost.dataset['edge'] = edge;
@@ -255,6 +260,34 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     paintNextDay(column);
   }
 
+  const firstTime = () => times()[0]?.toString({ smallestUnit: 'minute' }) ?? null;
+
+  /**
+   * The arrows walk a list of times, Home and End reach its ends — the model
+   * the listbox role announces, and did not have.
+   */
+  function onListKeydown(event: KeyboardEvent, list: HTMLElement): void {
+    if (s.disabled) return;
+    const options = [...list.querySelectorAll<HTMLButtonElement>('.tz-slots__slot')];
+    const at = doc.activeElement;
+    const index = options.indexOf(at as HTMLButtonElement);
+    const moves: Record<string, number> = {
+      ArrowDown: index + 1,
+      ArrowRight: index + 1,
+      ArrowUp: index - 1,
+      ArrowLeft: index - 1,
+      Home: 0,
+      End: options.length - 1,
+    };
+    const wanted = moves[event.key];
+    if (wanted === undefined || index < 0) return;
+    event.preventDefault();
+    const target = options[Math.min(Math.max(wanted, 0), options.length - 1)];
+    if (!target) return;
+    for (const option of options) option.tabIndex = option === target ? 0 : -1;
+    target.focus();
+  }
+
   function paintList(list: HTMLElement, edge: 'from' | 'to', label: string): void {
     const chosen = s.value[edge];
     const opens = s.value.from;
@@ -273,6 +306,9 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       b.classList.toggle('tz-slots__slot--selected', selected);
       b.setAttribute('aria-selected', String(selected));
       b.disabled = s.disabled;
+      // One stop per list, as the listbox role promises. The chosen time, or
+      // the first: the arrows do the rest.
+      b.tabIndex = !s.disabled && (selected || (chosen === null && text === firstTime())) ? 0 : -1;
       // An end at or before the start is tomorrow's; say so on the button.
       const nextDay = edge === 'to' && opens !== null && minutesOf(t) <= minutesOf(opens);
       const time = el('span', 'tz-slots__time');
@@ -374,7 +410,6 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     s.onChange?.(next);
   }
 
-  const listening = new AbortController();
   columns.addEventListener(
     'click',
     (event) => {

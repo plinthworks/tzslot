@@ -178,6 +178,10 @@ export function presetRange(name: PresetName, { today, firstDayOfWeek = 1 }: Pre
 
 /** True when a range is exactly what a preset means, so it can be ticked. */
 export function matchesPreset(name: PresetName, range: DayRange, options: PresetOptions): boolean {
+  // A shortcut shorter than a day is two moments; it matches no pair of dates
+  // and cannot be asked as one. It used to throw out of a function whose whole
+  // job is to answer yes or no.
+  if (isSubDayPreset(name)) return false;
   const wanted = presetRange(name, options);
   return wanted.start.equals(range.start) && wanted.end.equals(range.end);
 }

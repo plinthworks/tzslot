@@ -7,7 +7,8 @@ indépendamment, avant d'être retenus.
 
 État : ☐ à faire · ☑ corrigé, avec le test qui le retient
 
-**Niveau 1 : 8 sur 8 traités** (7 corrigés, 1 partiellement rejeté après vérification).
+**Les 24 points sont traités** : 23 corrigés, 1 (le 7) partiellement rejeté après vérification.
+Chacun porte le test qui le retient ; deux ont été vérifiés comme échouant sans leur correctif.
 
 ---
 
@@ -136,11 +137,14 @@ si.
    > **Corrigé : le panneau est peint **avant** d'être focalisé, et il vise le premier champ. Trois défauts en sont sortis : un champ focalisé se croyait en cours de saisie et n'affichait plus sa valeur ; son blur lisait le texte vide comme un effacement ; et le focus d'ouverture passait pour un armement volontaire, ce qui cassait l'enchaînement à deux clics.**
 ☑ 12. Le piège à tabulation du panneau **ignore `<select>`** — or c'est le défaut du champ période. Six menus dans le panneau, zéro dans le piège. `panel.ts:125-128`
    > **Corrigé : le piège connaît maintenant `select`, `textarea`, `a[href]` et `[tabindex]`, et ignore ce qui est `hidden`.**
-13. `createDateTimeField` en mode saisissable (le défaut) n'a pas de chemin clavier vers son panneau. `datetime-field.ts:667,788`
+☑ 13. `createDateTimeField` en mode saisissable (le défaut) n'a pas de chemin clavier vers son panneau. `datetime-field.ts:667,788`
+   > **Corrigé : un second ArrowDown entre dans le panneau, via `panel.focusInside()`.**
 ☑ 14. Entrée sur un raccourci **détruit le bouton sous le focus** : `paintPresets` fait `replaceChildren` à chaque peinture. La même précaution est prise ailleurs dans le fichier. `range-field.ts:758`
    > **Corrigé : la colonne des raccourcis est repeinte, plus reconstruite. Le bouton survit à l'appui et garde le focus.**
-15. `createTimeSlots` annonce `role="listbox"` et n'implémente rien du modèle clavier. Idem `daily-range.ts`.
-16. `role="grid"` sans `role="row"` dans les vues mois et année, et aucune flèche clavier.
+☑ 15. `createTimeSlots` annonce `role="listbox"` et n'implémente rien du modèle clavier. Idem `daily-range.ts`.
+   > **Corrigé : les deux listes ont le modèle clavier qu'elles annonçaient — un seul arrêt de tabulation, flèches, Début/Fin, et un créneau que personne ne peut prendre est enjambé. Retenu par `packages/dom/test/listbox.test.ts`.**
+☑ 16. `role="grid"` sans `role="row"` dans les vues mois et année, et aucune flèche clavier.
+   > **Corrigé : trois lignes de quatre (`role="row"`, `display: contents`, donc le dessin ne bouge pas) et les flèches dans les vues mois et année.**
 
 ## Niveau 3 — surface d'API que la 1.0.0 figerait
 
@@ -158,7 +162,8 @@ si.
    > **Corrigé : un `div` avec une classe (`tz-dtr__field`). Le nom servait aussi de sélecteur dans trois tests, qui sont mis à jour.**
 ☑ 23. `clear()` veut dire **trois choses différentes** selon le composant.
    > **Corrigé : vider veut dire une chose — vider, repeindre le panneau ouvert, et le signaler. Le champ date rafraîchit son calendrier, le champ date-heure signale même s'il était déjà vide, et l'intervalle garde son mode journées entières.**
-24. Divers vérifiés par lecture : `aria-label=""` quand le libellé est une icône ; `shift: []` dessine un bouton vide ; un raccourci maison nommé comme un intégré est coché par la définition intégrée ; `destroy()` laisse deux classes sur l'hôte ; `isDateLike('hello')` vaut `true` ; `matchesPreset` lève pour les raccourcis courts.
+☑ 24. Divers vérifiés par lecture : `aria-label=""` quand le libellé est une icône ; `shift: []` dessine un bouton vide ; un raccourci maison nommé comme un intégré est coché par la définition intégrée ; `destroy()` laisse deux classes sur l'hôte ; `isDateLike('hello')` vaut `true` ; `matchesPreset` lève pour les raccourcis courts.
+   > **Corrigé : `aria-label=""` remplacé par pas d'attribut du tout ; `shift: []` ne dessine plus de bouton vide ; un raccourci maison nommé comme un intégré garde sa propre définition ; `destroy()` retire toutes ses classes ; `isDateLike` n'accepte plus n'importe quelle chaîne ; `matchesPreset` répond `false` pour un raccourci court au lieu de lever.**
 
 ## Niveau 4 — tests qui ne testent pas ce qu'ils annoncent
 

@@ -17,7 +17,7 @@ import {
 } from '@tzslot/angular';
 import { Temporal, usingPolyfill } from '@tzslot/core';
 import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, ShiftStep } from '@tzslot/core';
-
+  
 /** Black or white, whichever reads better on a #rrggbb colour (WCAG luminance). */
 function readableOn(hex: string): string {
   const [r, g, b] = [1, 3, 5].map((i) => {

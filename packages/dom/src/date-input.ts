@@ -235,8 +235,12 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     // screen reader that is walking the form.
     input.readOnly = s.disabled;
     input.setAttribute('aria-readonly', String(s.disabled));
-    // A picture above the field says nothing to a screen reader.
-    input.setAttribute('aria-label', s.ariaLabel ?? (typeof s.label === 'string' ? s.label : ''));
+    // A picture above the field says nothing to a screen reader, and an empty
+    // aria-label says *explicitly* nothing — worse than none at all, because
+    // it stops the browser looking for a name elsewhere.
+    const name = s.ariaLabel ?? (typeof s.label === 'string' ? s.label : '') ?? '';
+    if (name) input.setAttribute('aria-label', name);
+    else input.removeAttribute('aria-label');
     // The mark is decoration: a click on it lands in the field, which is what
     // a hand aiming at a field and hitting its icon meant to do.
     const wanted = s.icon === undefined ? drawIcon('calendar', doc) : s.icon;

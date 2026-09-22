@@ -101,9 +101,10 @@ export function fromInstant(instant: Instant | null, shape: ValueShape): unknown
 
 /** True for the values the conversions above accept, so a guard can be written. */
 export function isDateLike(value: unknown): value is DateLike {
-  return (
-    value instanceof Date ||
-    typeof value === 'string' ||
-    (typeof value === 'object' && value !== null && 'day' in value && 'month' in value)
-  );
+  if (value instanceof Date) return true;
+  // A string only when it reads as a date. It used to say yes to 'hello',
+  // which makes a guard that guards nothing — the caller finds out at the
+  // throw instead.
+  if (typeof value === 'string') return /^\d{4}-\d{2}-\d{2}([T ].*)?$/.test(value.trim());
+  return typeof value === 'object' && value !== null && 'day' in value && 'month' in value && 'year' in value;
 }

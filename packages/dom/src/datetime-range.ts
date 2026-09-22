@@ -255,6 +255,9 @@ export function createDateTimeRange(
     return { start, end: last ? midnight(last) : null, allDay: false };
   }
 
+  /**
+   * The switch, moved by the reader. That is a choice, so it is reported.
+   */
   function setAllDay(on: boolean): void {
     if (on === wholeDays()) return;
     commit(converted(s.value, on));
@@ -262,7 +265,6 @@ export function createDateTimeRange(
 
   function commit(next: DateTimeRangeValue): void {
     s.value = next;
-    s.allDay = next.allDay === true;
     render();
     s.onChange?.(next);
   }
@@ -399,11 +401,9 @@ export function createDateTimeRange(
     }
   }
 
-  /** One end of a whole-day range: a date, with no time to be chosen. */
   // Said once is enough: `allDay: true` alongside an ordinary interval turns
   // it into whole days, and a value that already says so needs no option.
   const asked = initial.allDay;
-  s.allDay = asked ?? wholeDays();
   if (asked !== undefined && asked !== wholeDays()) s.value = converted(s.value, asked);
 
   render();
@@ -415,9 +415,13 @@ export function createDateTimeRange(
     update(settings) {
       const wanted = 'allDay' in settings ? settings.allDay! : null;
       Object.assign(s, settings);
-      // allDay set from outside works like the switch: the days are kept.
-      if (wanted !== null && wanted !== wholeDays()) setAllDay(wanted);
-      else render();
+      // The outside telling the widget something is never the reader doing
+      // it: the days are kept, the shape changes, and nothing is reported.
+      // This used to run through the switch, so a form writing a value with
+      // setValue(…, { emitEvent: false }) got an emission anyway — and the
+      // instants it had just set were rewritten under it.
+      if (wanted !== null && wanted !== wholeDays()) s.value = converted(s.value, wanted);
+      render();
     },
     clear() {
       commit(EMPTY);

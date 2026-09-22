@@ -56,7 +56,9 @@ Vérifié : valeur 10 → 20 septembre, armer « Du », cliquer le 25 → la val
 requête `>= :from AND < :to` du consommateur ne renvoie plus rien, en silence.
 `messages.endBeforeStart` existe et n'est jamais utilisé ici.
 
-### ☐ 4. `<tz-datetime-range>` viole le contrat ControlValueAccessor
+### ☑ 4. `<tz-datetime-range>` viole le contrat ControlValueAccessor
+
+> **Corrigé : `update()` n'émet plus rien — c'est la règle de la bibliothèque, ce composant y échappait. Le champ `s.allDay`, écrit et jamais lu, est supprimé : `value.allDay` est la seule source de vérité. Retenu par `packages/angular/test/cva-contract.test.ts`, vérifié comme échouant sans le correctif.**
 `packages/angular/src/datetime-range.ts:177` → `packages/dom/src/datetime-range.ts:407-411`
 
 `writeValue` déclenche `onChange`, parce qu'une valeur écrite sans le drapeau
@@ -71,7 +73,9 @@ Cause voisine : `s.allDay` est écrit à deux endroits et lu nulle part ; la
 seule source de vérité est `value.allDay`, donc tout sérialiseur qui perd le
 drapeau optionnel éteint les journées entières.
 
-### ☐ 5. Un sélecteur de mois ou d'année ignore `min`, `max` et `isDateDisabled`
+### ☑ 5. Un sélecteur de mois ou d'année ignore `min`, `max` et `isDateDisabled`
+
+> **Corrigé : un clic sur un mois ou une année à `minView` passe par la même porte qu'un jour, et la case est désactivée quand elle est hors bornes. Plus haut, un mois reste une façon de naviguer et reste cliquable. Retenu par `packages/dom/test/coarse-bounds.test.ts`.**
 `packages/dom/src/calendar.ts:526-538` et `:448-470`
 
 `zoomIn` appelle `choose` au lieu de `select`, et `paintCoarse` ne consulte

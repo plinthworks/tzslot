@@ -465,7 +465,7 @@ export function mountGrid<V>(
       flag(cell, 'tz-cal__coarse-cell--today', current);
       flag(cell, 'tz-cal__coarse-cell--selected', selected);
       cell.setAttribute('aria-selected', String(selected));
-      cell.disabled = off;
+      cell.disabled = off || coarseBlocked(value, year);
     });
   }
 
@@ -527,14 +527,32 @@ export function mountGrid<V>(
     if (s.disabled) return;
     const { year, month } = shown();
     const target = s.view === 'months' ? { year, month: value } : { year: value, month };
-    cursor = target;
 
     const below = ORDER[ORDER.indexOf(s.view) - 1]!;
     if (ORDER.indexOf(below) < ORDER.indexOf(s.minView)) {
-      choose(Temporal.PlainDate.from({ ...target, day: 1 }));
+      // At minView the choice is the answer, so it goes through the same gate
+      // a day does. It used to call choose() directly and a month picker
+      // under min/max emitted dates outside them.
+      select(Temporal.PlainDate.from({ ...target, day: 1 }));
       return;
     }
+    cursor = target;
     setView(below);
+  }
+
+  /**
+   * Whether a coarse cell — a month, a year — can be chosen at all.
+   *
+   * Only at minView, where the cell *is* the answer: higher up it is a way of
+   * getting somewhere, and a decade containing one allowed day must stay
+   * reachable.
+   */
+  function coarseBlocked(value: number, year: number): boolean {
+    const below = ORDER[ORDER.indexOf(s.view) - 1]!;
+    if (ORDER.indexOf(below) >= ORDER.indexOf(s.minView)) return false;
+    const target =
+      s.view === 'months' ? { year, month: value, day: 1 } : { year: value, month: shown().month, day: 1 };
+    return blocked(Temporal.PlainDate.from(target));
   }
 
   /**

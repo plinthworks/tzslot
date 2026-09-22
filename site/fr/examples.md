@@ -130,7 +130,7 @@ Les raccourcis vont du plus court au plus long, et `openEnded` permet de vider
 un champ — *à partir du 18* sans fin, c’est ce que veulent dire la plupart des
 recherches.
 
-Tout est détaillé dans [Choisir une période](./guide/periode) : les
+Tout est détaillé dans [Choisir une période](./guide/period) : les
 raccourcis, les flèches, les mots au-dessus des champs, et les deux matins de
 l’année où une heure n’est pas ce qu’elle paraît.
 

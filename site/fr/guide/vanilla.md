@@ -66,7 +66,7 @@ vous-même les chaînes exportées.
 import { CALENDAR_CSS, FIELD_CSS } from '@tzslot/dom';
 ```
 
-La couleur est à part, et facultative : voir [Thème](./theme).
+La couleur est à part, et facultative : voir [Thème](./theming).
 
 ## Shadow DOM
 

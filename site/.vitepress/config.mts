@@ -73,8 +73,8 @@ export default defineConfig({
       description: 'Des sélecteurs de date et d’heure qui savent ce que fait le changement d’heure.',
       themeConfig: {
         nav: [
-          { text: 'Guide', link: '/fr/guide/demarrer' },
-          { text: 'Exemples', link: '/fr/exemples' },
+          { text: 'Guide', link: '/fr/guide/getting-started' },
+          { text: 'Exemples', link: '/fr/examples' },
           { text: 'API', link: '/api/calendar' },
           { text: 'Journal', link: 'https://github.com/plinthworks/tzslot/blob/main/CHANGELOG.md' },
         ],
@@ -82,19 +82,19 @@ export default defineConfig({
           {
             text: 'Guide',
             items: [
-              { text: 'Démarrer', link: '/fr/guide/demarrer' },
+              { text: 'Démarrer', link: '/fr/guide/getting-started' },
               { text: 'Angular', link: '/fr/guide/angular' },
-              { text: 'Sans framework', link: '/fr/guide/sans-framework' },
-              { text: 'Choisir une période', link: '/fr/guide/periode' },
-              { text: 'Ce qu’on récupère', link: '/fr/guide/valeurs' },
-              { text: 'Choisir une heure', link: '/fr/guide/heure' },
-              { text: 'Piloter depuis l’extérieur', link: '/fr/guide/exterieur' },
-              { text: 'Format et saisie', link: '/fr/guide/format' },
-              { text: 'Langue et locale', link: '/fr/guide/langue' },
-              { text: 'Thème', link: '/fr/guide/theme' },
+              { text: 'Sans framework', link: '/fr/guide/vanilla' },
+              { text: 'Choisir une période', link: '/fr/guide/period' },
+              { text: 'Ce qu’on récupère', link: '/fr/guide/values' },
+              { text: 'Choisir une heure', link: '/fr/guide/time' },
+              { text: 'Piloter depuis l’extérieur', link: '/fr/guide/external' },
+              { text: 'Format et saisie', link: '/fr/guide/formatting' },
+              { text: 'Langue et locale', link: '/fr/guide/localization' },
+              { text: 'Thème', link: '/fr/guide/theming' },
             ],
           },
-          { text: 'Exemples', link: '/fr/exemples' },
+          { text: 'Exemples', link: '/fr/examples' },
           {
             text: 'API (en anglais)',
             items: [

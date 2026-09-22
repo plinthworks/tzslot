@@ -7,10 +7,10 @@ hero:
   actions:
     - theme: brand
       text: Démarrer
-      link: /fr/guide/demarrer
+      link: /fr/guide/getting-started
     - theme: alt
       text: Exemples
-      link: /fr/exemples
+      link: /fr/examples
     - theme: alt
       text: GitHub
       link: https://github.com/plinthworks/tzslot

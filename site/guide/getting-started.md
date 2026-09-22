@@ -1,6 +1,6 @@
 # Getting started
 
-> Cette documentation existe [en français](/fr/guide/demarrer).
+> Cette documentation existe [en français](/fr/guide/getting-started).
 
 tzslot is four packages, published together and versioned together.
 

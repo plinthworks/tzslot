@@ -63,7 +63,7 @@ donner, et le laissait se demander à quoi servaient les heures qu’il voyait.
 
 Avec `showTime: false`, une période est faite de journées entières : du minuit
 qui ouvre la première **au minuit qui suit la dernière**, la fin exclusive
-expliquée dans [Ce qu’on récupère](./valeurs#journees-entieres-allday-et-la-fin-qu-on-ne-voit-pas).
+expliquée dans [Ce qu’on récupère](./values#journees-entieres-allday-et-la-fin-qu-on-ne-voit-pas).
 
 Avec `showTime: true`, chaque jour choisi porte une heure — minuit, sauf si
 l’écran en décide autrement :

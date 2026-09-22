@@ -60,7 +60,7 @@ fuseau, à un changement de règles, et à une relecture l’année suivante.
 ## Où aller ensuite
 
 - [Angular](./angular) — les composants, formulaires compris.
-- [Sans framework](./sans-framework) — `create…`, `update`, `destroy`.
-- [Choisir une période](./periode) — le composant le plus riche, en détail.
-- [Ce qu’on récupère](./valeurs) — instants, journées entières, et la fin exclusive.
-- [Exemples](../exemples) — tous les composants, en fonctionnement dans la page.
+- [Sans framework](./vanilla) — `create…`, `update`, `destroy`.
+- [Choisir une période](./period) — le composant le plus riche, en détail.
+- [Ce qu’on récupère](./values) — instants, journées entières, et la fin exclusive.
+- [Exemples](../examples) — tous les composants, en fonctionnement dans la page.

@@ -49,7 +49,7 @@ ils sont standalone.
 | `<tz-time-slots>` | un moment parmi les créneaux du jour |
 | `<tz-datetime-range>` | un intervalle : deux champs date-et-heure |
 | `<tz-daily-range>` | une plage de jours avec les mêmes horaires chaque jour |
-| `<tz-range-field>` | une période, en un champ — [sa propre page](./periode) |
+| `<tz-range-field>` | une période, en un champ — [sa propre page](./period) |
 
 ## Partir d’une valeur
 
@@ -130,7 +130,7 @@ bootstrapApplication(App, {
 ```
 
 Le `timeZone` donné ici est celui que lisent tous les composants : il cesse
-donc d’être obligatoire sur la balise. [Ce qu’on récupère](./valeurs) explique
+donc d’être obligatoire sur la balise. [Ce qu’on récupère](./values) explique
 les formes, et pourquoi les journées entières finissent au minuit *suivant*.
 
 ## Les mots

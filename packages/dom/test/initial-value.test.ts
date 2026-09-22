@@ -91,7 +91,6 @@ describe('a value given at creation', () => {
       value: {
         start: Temporal.Instant.from('2026-09-22T22:00:00Z'), // 23 Sept, 00:00 Paris
         end: Temporal.Instant.from('2026-09-26T22:00:00Z'), // 27 Sept, 00:00 — after the 26th
-        allDay: true,
       },
     });
     expect(shown()).toContain('23/09/2026 – 26/09/2026');

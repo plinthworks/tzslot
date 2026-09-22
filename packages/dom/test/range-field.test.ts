@@ -33,7 +33,6 @@ describe('one field for a period', () => {
       value: {
         start: Temporal.Instant.from('2026-08-21T22:00:00Z'), // 22 Aug, 00:00 Paris
         end: Temporal.Instant.from('2026-09-20T22:00:00Z'), // 21 Sept, 00:00 — after the 20th
-        allDay: true,
       },
     });
     expect(trigger().textContent).toContain('22/08/2026 – 20/09/2026');
@@ -56,7 +55,6 @@ describe('one field for a period', () => {
     // Six days back and today, midnight to the midnight after.
     expect(value.start.toZonedDateTimeISO(paris).toString()).toContain('2026-09-14T00:00:00');
     expect(value.end.toZonedDateTimeISO(paris).toString()).toContain('2026-09-21T00:00:00');
-    expect(value.allDay).toBe(true);
     expect(panel()).toBeNull();
   });
 
@@ -121,7 +119,7 @@ describe('with times', () => {
     hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
     const value = onChange.mock.calls.at(-1)![0];
-    expect(value.allDay).toBe(false);
+    // No flag says it is an interval; the start's own hour does.
     expect(value.start.toZonedDateTimeISO(paris).toPlainTime().toString()).toBe('09:00:00');
   });
 

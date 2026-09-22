@@ -102,7 +102,7 @@ describe('asking for one end only', () => {
   it('carries the hours when there are any', () => {
     make({ showTime: true });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-14T07:00:00Z'), end: null, allDay: false },
+      value: { start: Temporal.Instant.from('2026-09-14T07:00:00Z'), end: null },
     });
     expect(shown()).toBe('From 14/09/2026 09:00');
     field.open();
@@ -114,7 +114,7 @@ describe('asking for one end only', () => {
   it('an imposed step moves the single end, and “auto” falls back to a day', () => {
     make({ shift: { days: 7 } });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-13T22:00:00Z'), end: null, allDay: true },
+      value: { start: Temporal.Instant.from('2026-09-13T22:00:00Z'), end: null },
     });
     const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
     expect(arrows()[1]!.disabled).toBe(false);
@@ -198,11 +198,11 @@ describe('the interval, open at one end', () => {
       timeZone: paris,
       locale: 'en-GB',
       openEnded: true,
-      value: { start: Temporal.Instant.from('2026-09-14T07:00:00Z'), end: null, allDay: false },
+      value: { start: Temporal.Instant.from('2026-09-14T07:00:00Z'), end: null },
     });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('From 14 Sept 2026, 09:00');
 
-    widget.update({ value: { start: null, end: Temporal.Instant.from('2026-09-20T15:00:00Z'), allDay: false } });
+    widget.update({ value: { start: null, end: Temporal.Instant.from('2026-09-20T15:00:00Z') } });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('Until 20 Sept 2026, 17:00');
     widget.destroy();
   });
@@ -241,7 +241,8 @@ describe('the hours live in the two fields now', () => {
     expect(input(0).value).toBe('14/09/2026'); // the day, in the text
     const hours = [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__time')];
     expect(hours.map((h) => h.hidden)).toEqual([false, false]); // the hour, beside it
-    expect(field.value.allDay).toBe(false);
+    // The day clicked as the end means all of it: the midnight opening the 21st.
+    expect(field.value.end!.toZonedDateTimeISO('Europe/Paris').toPlainDate().toString()).toBe('2026-09-21');
   });
 });
 
@@ -251,7 +252,7 @@ describe('moving a period that is open at one end', () => {
   it('a day at a time, without reopening the calendar', () => {
     make({ shift: 'auto' });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-17T22:00:00Z'), end: null, allDay: true }, // from 18 Sept
+      value: { start: Temporal.Instant.from('2026-09-17T22:00:00Z'), end: null }, // from 18 Sept
     });
     expect(shown()).toBe('From 18/09/2026');
     expect(arrows()[0]!.disabled).toBe(false); // it used to refuse
@@ -268,7 +269,7 @@ describe('moving a period that is open at one end', () => {
   it('an imposed step wins, and a short one moves the moment', () => {
     make({ shift: { minutes: 15 }, showTime: true });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false }, // 10:00
+      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null }, // 10:00
     });
     expect(shown()).toBe('From 18/09/2026 10:00');
     arrows()[0]!.click();
@@ -278,7 +279,7 @@ describe('moving a period that is open at one end', () => {
   it('a month steps the month, and the hour stays put', () => {
     make({ shift: { months: 1 }, showTime: true });
     field.update({
-      value: { start: null, end: Temporal.Instant.from('2026-09-20T15:00:00Z'), allDay: false }, // until 17:00
+      value: { start: null, end: Temporal.Instant.from('2026-09-20T15:00:00Z') }, // until 17:00
     });
     expect(shown()).toBe('Until 20/09/2026 17:00');
     arrows()[1]!.click();
@@ -293,10 +294,10 @@ describe('the interval’s sentence, on the morning an hour repeats', () => {
       timeZone: paris,
       locale: 'en-GB',
       openEnded: true,
-      value: { start: Temporal.Instant.from('2026-10-25T00:30:00Z'), end: null, allDay: false },
+      value: { start: Temporal.Instant.from('2026-10-25T00:30:00Z'), end: null },
     });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('From 25 Oct 2026, 02:30 (summer)');
-    widget.update({ value: { start: Temporal.Instant.from('2026-10-25T01:30:00Z'), end: null, allDay: false } });
+    widget.update({ value: { start: Temporal.Instant.from('2026-10-25T01:30:00Z'), end: null } });
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('From 25 Oct 2026, 02:30 (winter)');
     widget.destroy();
   });

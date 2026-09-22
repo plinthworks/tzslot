@@ -70,8 +70,9 @@ createDateTimeField(el, {
 
 The shape is the one that widget reports: a `PlainDate` for a calendar or a
 date field, an `Instant` where there is a time, an array of `PlainDate` for
-`createMultiDate`, `{ start, end }` for a range, `{ start, end, allDay }` for
-`createRangeField`.
+`createMultiDate`, `{ start, end }` for a range and for `createRangeField`,
+and `{ start, end, allDay }` for `createDateTimeRange`, the one widget that
+still lets a reader declare whole days.
 
 `update({ value })` moves it afterwards and `update({ value: null })` empties
 it — neither calls `onChange`, so an application that writes a value back into

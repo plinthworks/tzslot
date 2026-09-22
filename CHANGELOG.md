@@ -38,6 +38,16 @@ when the clocks move during it.
   leave in for a whole application; `valueAs: 'utc'` hands out an instant
   whatever the widget, a date-only field included.
 - Words come from one bundle, English and French included.
+- **A period is two moments and nothing else.** `createRangeField` hands back
+  `{ start, end }`: whether it is whole days is read off the pair — both ends
+  landing on a day's first instant — never declared. The `allDay` flag it used
+  to carry was set by whoever built the value and forgotten by everyone handed
+  one, so a screen that computed 09:00 to 18:00 and left it out had its hours
+  hidden without a word. A day chosen as the end still means all of it: the
+  midnight that opens the day after, which is the exclusive end everything is
+  built on. `showTime` decides only whether the hours are on screen to be
+  read and changed. `createDateTimeRange`, which still offers an *All day*
+  switch, keeps its own flag.
 - **The week starts where the locale says it does** — Monday in France, Sunday
   in the United States and Japan, Saturday in much of the Arab world — asked of
   `Intl` rather than kept in a table here. The week-long shortcuts follow the

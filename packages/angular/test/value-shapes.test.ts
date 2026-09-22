@@ -55,7 +55,7 @@ describe('a form holding ISO strings', () => {
     const control = host.form.controls.period;
     // A back end sends this. writeValue used to call zoned() on it and throw
     // "toZonedDateTimeISO is not a function".
-    control.setValue({ start: '2026-09-13T22:00:00Z', end: '2026-09-20T22:00:00Z', allDay: true });
+    control.setValue({ start: '2026-09-13T22:00:00Z', end: '2026-09-20T22:00:00Z' });
     await settle();
 
     const field = (fixture.nativeElement as HTMLElement).querySelector('tz-range-field .tz-field__text')!;

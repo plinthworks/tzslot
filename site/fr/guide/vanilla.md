@@ -71,7 +71,9 @@ createDateTimeField(el, {
 La forme est celle que ce composant rend : un `PlainDate` pour un calendrier
 ou un champ de date, un `Instant` dès qu’il y a une heure, un tableau de
 `PlainDate` pour `createMultiDate`, `{ start, end }` pour une plage,
-`{ start, end, allDay }` pour `createRangeField`.
+`{ start, end }` pour `createRangeField`, et `{ start, end, allDay }` pour
+`createDateTimeRange`, le seul composant où le lecteur déclare encore les
+journées entières.
 
 `update({ value })` la déplace ensuite et `update({ value: null })` la vide —
 ni l’un ni l’autre n’appelle `onChange`, donc une application qui renvoie une

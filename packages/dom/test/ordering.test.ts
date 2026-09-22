@@ -85,7 +85,6 @@ describe('a start pushed past the end', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'), // 10:00
         end: Temporal.Instant.from('2026-09-18T15:00:00Z'), // 17:00
-        allDay: false,
       },
     });
     field.open();
@@ -103,7 +102,6 @@ describe('a start pushed past the end', () => {
       value: {
         start: Temporal.Instant.from('2026-09-09T22:00:00Z'), // 10 Sept
         end: Temporal.Instant.from('2026-09-20T22:00:00Z'), // 20 Sept
-        allDay: true,
       },
     });
     field.open();

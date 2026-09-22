@@ -55,7 +55,6 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-06-30T22:00:00Z'), // 1 July, Paris
         end: Temporal.Instant.from('2026-09-30T22:00:00Z'), // midnight after 30 Sept
-        allDay: true,
       },
     });
     expect(shown()).toBe('01/07/2026 – 30/09/2026');
@@ -73,12 +72,10 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
         end: Temporal.Instant.from('2026-09-20T22:00:00Z'),
-        allDay: true,
       },
     });
     arrows()[1]!.click();
     const value = reported.at(-1)!;
-    expect(value.allDay).toBe(true);
     expect(value.start!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-21');
     expect(value.end!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('00:00');
   });
@@ -91,7 +88,6 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-10-11T22:00:00Z'),
         end: Temporal.Instant.from('2026-10-18T22:00:00Z'),
-        allDay: true,
       },
     });
     arrows()[1]!.click();
@@ -106,7 +102,6 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'), // 14 Sept
         end: Temporal.Instant.from('2026-09-16T22:00:00Z'), // 15 Sept inclusive
-        allDay: true,
       },
     });
     arrows()[0]!.click();
@@ -119,12 +114,10 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-09-14T07:00:00Z'), // 09:00 Paris
         end: Temporal.Instant.from('2026-09-15T15:00:00Z'), // 17:00 Paris
-        allDay: false,
       },
     });
     arrows()[1]!.click();
     const value = reported.at(-1)!;
-    expect(value.allDay).toBe(false);
     expect(value.start!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('09:00');
     expect(value.end!.toZonedDateTimeISO(paris).toPlainTime().toString({ smallestUnit: 'minute' })).toBe('17:00');
     expect(shown()).toBe('16/09/2026 09:00 – 17/09/2026 17:00');
@@ -143,7 +136,6 @@ describe('with shift on', () => {
       value: {
         start: Temporal.Instant.from('2026-06-30T22:00:00Z'),
         end: Temporal.Instant.from('2026-09-30T22:00:00Z'),
-        allDay: true,
       },
     });
     field.open();
@@ -231,7 +223,6 @@ describe('a menu of steps, when the reader chooses', () => {
       value: {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'), // 14 Sept
         end: Temporal.Instant.from('2026-09-16T22:00:00Z'), // 16 Sept, whole days
-        allDay: true,
       },
     });
     const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;

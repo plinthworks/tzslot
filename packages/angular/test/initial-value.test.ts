@@ -36,7 +36,6 @@ class Host {
   readonly period = signal({
     start: Temporal.Instant.from('2026-09-22T22:00:00Z'),
     end: Temporal.Instant.from('2026-09-26T22:00:00Z'),
-    allDay: true,
   });
   // The shape an application migrating off flatpickr already holds.
   readonly form = new FormGroup({

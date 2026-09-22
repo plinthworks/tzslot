@@ -142,7 +142,6 @@ describe('a step that cannot apply draws no arrows', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
         end: Temporal.Instant.from('2026-09-18T15:00:00Z'),
-        allDay: false,
       },
     });
     const arrows = [...host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')];

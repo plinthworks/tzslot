@@ -38,7 +38,7 @@ Les boutons sous ce champ sont câblés exactement ainsi :
 | tous | `value`, `update(settings)`, `clear()`, `destroy()` |
 | les champs | `open()`, `close()`, `toggle()`, `isOpen`, `setIcon(node)` |
 | le calendrier et la plage | `goTo({ year, month })`, `setIcons({ prev, next })` |
-| l’intervalle | `value.allDay`, et `update({ allDay })` pour le poser |
+| `createDateTimeRange` | `value.allDay`, et `update({ allDay })` pour le poser |
 
 `update()` n’appelle jamais `onChange` : c’est l’extérieur qui informe le
 composant, pas l’utilisateur qui agit. `clear()` l’appelle, parce que c’est un

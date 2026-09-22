@@ -56,7 +56,8 @@ describe('the quarter hour that is running', () => {
     field.open();
     preset('This quarter hour').click();
 
-    expect(field.value.allDay).toBe(false);
+    // Not whole days — read off the moments, there is no flag saying so.
+    expect(field.value.start!.until(field.value.end!).total({ unit: 'minute' })).toBe(15);
     expect([clock(field.value.start), clock(field.value.end)]).toEqual(['11:00', '11:15']);
     expect(shown()).toBe('21/09/2026 11:00 – 21/09/2026 11:15');
   });
@@ -154,10 +155,13 @@ describe('going back from a short range to a long one', () => {
     field.open();
     preset('This quarter').click();
 
-    // Seen in a browser as "01/07/2026 10:45 – 30/09/2026 11:00".
-    expect(field.value.allDay).toBe(true);
-    expect(shown()).toBe('01/07/2026 – 30/09/2026');
-    expect(clock(field.value.start)).toBe('00:00');
+    // The bug this holds: seen in a browser as "01/07/2026 10:45 – 30/09/2026
+    // 11:00", the quarter hour's times carried into a shortcut meaning days.
+    // Both ends land on a day's first instant instead.
+    expect([clock(field.value.start), clock(field.value.end)]).toEqual(['00:00', '00:00']);
+    // With the hours on screen the field says them, midnight included: the
+    // quarter ends at the instant October opens, which is what it holds.
+    expect(shown()).toBe('01/07/2026 00:00 – 01/10/2026 00:00');
   });
 });
 
@@ -171,7 +175,6 @@ describe('a range chosen by hand, moved by a quarter of an hour', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'), // 10:00 Paris
         end: Temporal.Instant.from('2026-09-21T03:00:00Z'), // 05:00 Paris
-        allDay: false,
       },
     });
     expect(shown()).toBe('18/09/2026 10:00 – 21/09/2026 05:00');
@@ -197,7 +200,6 @@ describe('a range chosen by hand, moved by a quarter of an hour', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
         end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
-        allDay: false,
       },
     });
     const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;

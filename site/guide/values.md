@@ -39,7 +39,7 @@ A calendar, and the plain date it hands back:
 
 <Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
 
-## Whole days: `allDay` and the end you don't see
+## Whole days, and the end you don't see
 
 A period is one of two things, and a search that mixes them up is wrong
 without looking wrong:
@@ -49,17 +49,21 @@ without looking wrong:
 - **An interval.** "14 September 09:00 to 20 September 17:00" — two moments
   someone chose.
 
-`allDay` says which one you are holding. When it is `true`, the widget has
-already done the work: `start` is the midnight that opens the first day, and
-`end` is **the midnight after the last one** — the 21st, not the 20th.
+**Nothing says which.** A period is two moments, and that is the whole value:
 
 ```ts
 { start: 2026-09-13T22:00:00Z,   // 14 Sept, 00:00 in Paris
-  end:   2026-09-20T22:00:00Z,   // 21 Sept, 00:00 in Paris
-  allDay: true }
+  end:   2026-09-20T22:00:00Z }  // 21 Sept, 00:00 in Paris
 ```
 
-That end is exclusive on purpose, so a query reads:
+Whole days are the pair whose two ends land on a day's first instant. It is
+read off the value, never declared — a flag saying so was set by whoever built
+the value and forgotten by everyone handed one, and a screen that computed
+09:00 to 18:00 and left it out had its hours hidden without a word.
+
+A day chosen as the end means **all of it**: the midnight that opens the day
+after — the 21st, not the 20th. That end is exclusive on purpose, so a query
+reads:
 
 ```sql
 WHERE happened_at >= :start AND happened_at < :end
@@ -67,10 +71,10 @@ WHERE happened_at >= :start AND happened_at < :end
 
 and nothing falls through the gap. Written the other way — `<= 20 Sept
 23:59:59` — every screen has to remember the seconds, and something logged at
-23:59:59.4 is lost. With `allDay: false` the two ends are simply the two
-moments chosen, and the same query still works.
+23:59:59.4 is lost. When the two ends are moments someone chose, the same
+query still works unchanged.
 
-Both come from the same field, and `showTime` decides which — there is no
+`showTime` decides whether the hours are on screen at all — there is no
 *All day* switch, because it asked the reader to classify their own answer
 before giving it.
 
@@ -79,14 +83,10 @@ day you chose.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
 
-The same field with times, and `allDay` comes back `false`:
+The same field with hours on screen — the field then says the two moments as
+they are, midnight included:
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
-
-::: warning Handing one in works the same way
-A value you pass with hours in it needs `allDay: false`, or the field reads it
-as whole days: the hours stay in the value and the text writes days only.
-:::
 
 ## One end only
 

@@ -61,7 +61,7 @@ describe('how an hour is asked for', () => {
   const withHours = (options = {}) => {
     make({ showTime: true, ...options });
     field.update({
-      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null, allDay: false },
+      value: { start: Temporal.Instant.from('2026-09-18T08:00:00Z'), end: null },
     });
     field.open();
   };
@@ -103,7 +103,6 @@ describe('a step written the short way', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'), // 10:00
         end: Temporal.Instant.from('2026-09-21T03:00:00Z'), // 05:00
-        allDay: false,
       },
     });
     const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
@@ -121,7 +120,6 @@ describe('a step written the short way', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
         end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
-        allDay: false,
       },
     });
     const before = shown();
@@ -141,7 +139,6 @@ describe('a step written the short way', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
         end: Temporal.Instant.from('2026-09-21T03:00:00Z'),
-        allDay: false,
       },
     });
     const picker = host.querySelector<HTMLButtonElement>('.tz-field__step')!;
@@ -162,10 +159,10 @@ describe('no switch to classify the answer', () => {
       .click();
 
     // Built from the hours on screen it would have ended at 30 September
-    // 00:00 and dropped the last day of the quarter.
-    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+    // 00:00 and dropped the last day of the quarter. It ends at the instant
+    // October opens, and says so.
+    expect(shown()).toBe('01/07/2026 00:00 – 01/10/2026 00:00');
     expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
-    expect(field.value.allDay).toBe(true);
   });
 
   it('and touching one hour turns the pair into moments without moving a day', () => {
@@ -182,9 +179,11 @@ describe('no switch to classify the answer', () => {
     hour.dispatchEvent(new Event('input', { bubbles: true }));
     hour.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
 
-    // The end was the midnight after 30 September; as an interval it must read
-    // as the 30th, not as 1 October.
-    expect(shown()).toBe('01/07/2026 09:00 – 30/09/2026 00:00');
+    // One hour set moves that end and nothing else. The end stays where the
+    // shortcut put it — the instant October opens — instead of being rebuilt
+    // a day earlier behind the reader's back.
+    expect(shown()).toBe('01/07/2026 09:00 – 01/10/2026 00:00');
+    expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
   });
 
   it('a day chosen takes the hours the screen named', () => {

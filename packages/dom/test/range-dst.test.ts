@@ -71,7 +71,6 @@ describe('the morning an hour happens twice', () => {
       value: {
         start: Temporal.Instant.from('2026-10-24T22:00:00Z'), // 25 Oct, 00:00
         end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
-        allDay: false,
       },
       messages: FR,
     });
@@ -97,7 +96,6 @@ describe('the morning an hour happens twice', () => {
       value: {
         start: Temporal.Instant.from('2026-10-25T00:00:00Z'), // 02:00 summer
         end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
-        allDay: false,
       },
     });
     field.open();
@@ -113,7 +111,6 @@ describe('the morning an hour does not happen', () => {
       value: {
         start: Temporal.Instant.from('2026-03-29T00:00:00Z'), // 01:00 Paris
         end: Temporal.Instant.from('2026-03-29T22:00:00Z'),
-        allDay: false,
       },
     });
     field.open();
@@ -133,7 +130,6 @@ describe('once the panel is closed', () => {
       value: {
         start: Temporal.Instant.from('2026-10-24T22:00:00Z'), // 00:00
         end: Temporal.Instant.from('2026-10-25T00:30:00Z'), // 02:30 summer
-        allDay: false,
       },
     });
     const shown = () => host.querySelector('.tz-field__text')!.textContent;
@@ -145,7 +141,6 @@ describe('once the panel is closed', () => {
       value: {
         start: Temporal.Instant.from('2026-10-24T22:00:00Z'),
         end: Temporal.Instant.from('2026-10-25T01:30:00Z'),
-        allDay: false,
       },
     });
     expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (hiver)');
@@ -156,7 +151,7 @@ describe('once the panel is closed', () => {
       messages: FR,
       locale: 'fr-FR',
       openEnded: true,
-      value: { start: Temporal.Instant.from('2026-10-25T00:15:00Z'), end: null, allDay: false },
+      value: { start: Temporal.Instant.from('2026-10-25T00:15:00Z'), end: null },
     });
     // Seen on the screen as "À partir du 25/10/2026 02:15", which of the two
     // being anyone's guess.
@@ -168,7 +163,6 @@ describe('once the panel is closed', () => {
       value: {
         start: Temporal.Instant.from('2026-09-21T07:00:00Z'),
         end: Temporal.Instant.from('2026-09-21T15:00:00Z'),
-        allDay: false,
       },
     });
     expect(host.querySelector('.tz-field__text')!.textContent).toBe('21/09/2026 09:00 – 21/09/2026 17:00');
@@ -177,10 +171,13 @@ describe('once the panel is closed', () => {
       value: {
         start: Temporal.Instant.from('2026-10-24T22:00:00Z'),
         end: Temporal.Instant.from('2026-10-25T23:00:00Z'),
-        allDay: true,
       },
     });
-    expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026');
+    // Whole days on a screen that shows hours: the two moments as they are,
+    // and — the point of this test — no reading named after either of them.
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe(
+      '25/10/2026 00:00 – 26/10/2026 00:00',
+    );
   });
 });
 
@@ -200,7 +197,6 @@ describe('the menus name both readings themselves', () => {
       value: {
         start: Temporal.Instant.from('2026-10-25T00:00:00Z'), // 02:00 summer
         end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
-        allDay: false,
       },
     });
     field.open();
@@ -224,7 +220,6 @@ describe('the menus name both readings themselves', () => {
       value: {
         start: Temporal.Instant.from('2026-10-25T00:00:00Z'), // 02:00 summer
         end: Temporal.Instant.from('2026-10-25T22:00:00Z'),
-        allDay: false,
       },
     });
     field.open();

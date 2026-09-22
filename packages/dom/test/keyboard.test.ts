@@ -52,7 +52,6 @@ describe('opening the panel', () => {
       value: {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
         end: Temporal.Instant.from('2026-09-20T22:00:00Z'),
-        allDay: true,
       },
     });
     field.open();
@@ -68,7 +67,6 @@ describe('the tab trap', () => {
       value: {
         start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
         end: Temporal.Instant.from('2026-09-18T15:00:00Z'),
-        allDay: false,
       },
     });
     field.open();

@@ -75,7 +75,6 @@ describe('writing a value into the form', () => {
       {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
         end: Temporal.Instant.from('2026-09-20T22:00:00Z'),
-        allDay: true,
       },
       { emitEvent: false },
     );

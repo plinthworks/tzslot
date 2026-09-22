@@ -55,7 +55,6 @@ export interface RangeFieldValue {
    * at 23:59:59.
    */
   readonly end: Instant | null;
-  readonly allDay?: boolean;
 }
 
 /** A named range offered beside the calendar. */
@@ -252,7 +251,7 @@ export interface RangeFieldInstance {
   destroy(): void;
 }
 
-const EMPTY: RangeFieldValue = { start: null, end: null, allDay: true };
+const EMPTY: RangeFieldValue = { start: null, end: null };
 
 /** Which of the two ends a click or a keystroke is about. */
 type Edge = 'start' | 'end';
@@ -425,7 +424,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   function readingsFor(edge: Edge): Reading[] {
     const at_ = draft[edge];
-    if (!at_ || draft.allDay !== false) return [];
+    if (!at_ || !s.showTime) return [];
     const here = zoned(at_);
     const found = resolveWallTime(here.toPlainDate(), here.toPlainTime(), s.timeZone);
     if (!found.exists || !found.ambiguous) return [];
@@ -487,15 +486,27 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
  */
   const opensADay = (at_: Instant) => at_.equals(midnight(zoned(at_).toPlainDate()));
 
+  /**
+   * Whether a period is made of whole days — which is not remembered, it is
+   * read off the value: both ends land on a day's first instant.
+   *
+   * There used to be a flag saying so, set by whoever built the value and
+   * forgotten by everyone handed one. A screen that computed 09:00 to 18:00
+   * and left it out got its hours hidden, silently. The value already knew.
+   */
+  const coversWholeDays = (v: RangeFieldValue) =>
+    (!v.start || opensADay(v.start)) && (!v.end || opensADay(v.end));
+
   /** The days the value covers, both included — what the calendar highlights. */
   function days(value: RangeFieldValue): { start: PlainDate | null; end: PlainDate | null } {
     const start = value.start ? zoned(value.start).toPlainDate() : null;
     if (!value.end) return { start, end: null };
     const end = zoned(value.end);
-    const last =
-      value.allDay !== false && opensADay(value.end)
-        ? end.toPlainDate().subtract({ days: 1 })
-        : end.toPlainDate();
+    // An end that opens a day closes the one before it: the period holds no
+    // part of that day. True whether or not the hours are on screen.
+    const last = opensADay(value.end)
+      ? end.toPlainDate().subtract({ days: 1 })
+      : end.toPlainDate();
     return { start, end: last };
   }
 
@@ -504,22 +515,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // Without showTime there is nowhere to read or change an hour, so days
     // chosen on the calendar are whole days — even just after a shortcut that
     // was an interval, which would otherwise leave times nothing can edit.
-    const allDay = wholeDays();
+    const whole = wholeDays();
     const times = {
-      start: draft.start && !allDay ? zoned(draft.start).toPlainTime() : null,
-      end: draft.end && !allDay ? zoned(draft.end).toPlainTime() : null,
+      start: draft.start && !whole ? zoned(draft.start).toPlainTime() : null,
+      end: draft.end && !whole ? zoned(draft.end).toPlainTime() : null,
     };
-    if (allDay) {
+    if (whole) {
       return {
         start: range_.start ? midnight(range_.start) : null,
         end: range_.end ? midnight(range_.end.add({ days: 1 })) : null,
-        allDay,
       };
     }
+    const endTime = times.end ?? (hasDefaultTime('end') ? defaultTime('end') : null);
     return {
       start: range_.start ? resolveEdge('start', range_.start, times.start ?? defaultTime('start')) : null,
-      end: range_.end ? resolveEdge('end', range_.end, times.end ?? defaultTime('end')) : null,
-      allDay,
+      end: range_.end
+        ? endTime
+          ? resolveEdge('end', range_.end, endTime)
+          : endOfDay(range_.end)
+        : null,
     };
   }
 
@@ -551,16 +565,46 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     return given ? Temporal.PlainTime.from(given) : Temporal.PlainTime.from('00:00');
   };
 
+  /** Whether the screen named an hour for that end, as opposed to falling back to midnight. */
+  const hasDefaultTime = (edge: Edge) =>
+    (edge === 'start' ? s.defaultTimes.start : s.defaultTimes.end) !== undefined;
+
+  /**
+   * The moment a day chosen as the *end* stands for, when no hour was said.
+   *
+   * A day picked as the end means all of it — the midnight that opens the day
+   * after, which is the exclusive end everything else is built on. Reading it
+   * as that day at 00:00 would quietly drop the day the reader just clicked.
+   */
+  const endOfDay = (day: PlainDate) => midnight(day.add({ days: 1 }));
+
   const pattern = () => s.format ?? patternFor(s.locale, { time: false });
 
   /** What the field says about a value — the chosen one, or the pending draft. */
   function display(value: RangeFieldValue = s.value): string {
     if (s.displayWith) return s.displayWith(value, s.timeZone);
-    const { start, end } = days(value);
+    /*
+     * Whether the hours are written at all.
+     *
+     * `showTime` asked for them, so they are shown even at midnight — the
+     * screen said it deals in times. And they are written whatever `showTime`
+     * says when the period is not whole days, because a quarter-hour shortcut
+     * on a day-only screen reading "21/09/2026" alone would be a lie.
+     */
+    const withHours = s.showTime || !coversWholeDays(value);
+    // With hours the field says the two moments as they are, the exclusive end
+    // included: 21/09 09:00 – 26/09 00:00 is the truth of a five-day stay.
+    // Without them it says the days covered, 21/09 – 25/09.
+    const { start, end } = withHours
+      ? {
+          start: value.start ? zoned(value.start).toPlainDate() : null,
+          end: value.end ? zoned(value.end).toPlainDate() : null,
+        }
+      : days(value);
     if (!start && !end) return '';
     const shape = pattern();
     const time = (at_: Instant | null) => {
-      if (value.allDay !== false || !at_) return '';
+      if (!withHours || !at_) return '';
       const written = formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale);
       // Which 02:30 was chosen is visible in the panel and nowhere else once
       // it closes, and a field that reads 02:30 twice over is a field the
@@ -680,7 +724,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const canShift = () => {
     const step_ = effectiveStep();
     if (step_ === null || off()) return false;
-    if (wholeDays() && s.value.allDay !== false && subDay(step_)) return false;
+    // A quarter of an hour cannot be said in dates: refused only when the
+    // screen shows no hours *and* the period has none of its own — a
+    // quarter-hour shortcut on a day-only screen still writes its times, so
+    // it can still be stepped.
+    if (!s.showTime && coversWholeDays(s.value) && subDay(step_)) return false;
     const { start, end } = days(s.value);
     return start !== null || end !== null;
   };
@@ -702,7 +750,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // moves as days and the hours come along unchanged — someone comparing
     // one working week with the next means 09:00 to 17:00 again, not the same
     // number of hours counted from wherever the first one ended.
-    if (s.value.allDay === false && s.value.start && s.value.end) {
+    if (!coversWholeDays(s.value) && s.value.start && s.value.end) {
       const own = s.value.start.until(s.value.end);
       const moveBy = by === 'auto' ? own : Temporal.Duration.from(by);
       const shortHop = moveBy.total({ unit: 'hour', relativeTo: zoned(s.value.start) }) < 24;
@@ -711,7 +759,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         const next = {
           start: shiftInstant(s.value.start, moveBy, direction, s.timeZone),
           end: shiftInstant(s.value.end, moveBy, direction, s.timeZone),
-          allDay: false,
         };
         if (panel.isOpen) choose(next);
         else commit(next);
@@ -730,9 +777,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       let next: RangeFieldValue;
       if (moveBy.total({ unit: 'hour', relativeTo: zoned(only) }) < 24) {
         const moved = shiftInstant(only, moveBy, direction, s.timeZone);
-        next = s.value.start
-          ? { start: moved, end: null, allDay: false }
-          : { start: null, end: moved, allDay: false };
+        next = s.value.start ? { start: moved, end: null } : { start: null, end: moved };
       } else {
         const day = shown.start ?? shown.end!;
         const moved = shiftDayRange({ start: day, end: day }, moveBy, direction);
@@ -761,17 +806,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // Without showTime there is nowhere to read or change an hour, so a day
     // chosen is a whole day.
     const timed = s.showTime;
-    // Whole days becoming an interval: both ends are rebuilt from the days on
-    // screen first, or the end — which is the midnight *after* the last day —
-    // would suddenly read as that following day.
-    if (timed && draft.allDay !== false && (draft.start || draft.end)) {
-      const shownDays = days(draft);
-      draft = {
-        start: shownDays.start ? resolveEdge('start', shownDays.start, defaultTime('start')) : null,
-        end: shownDays.end ? resolveEdge('end', shownDays.end, defaultTime('end')) : null,
-        allDay: false,
-      };
-    }
     if (!wall.date) {
       draft = { ...draft, [edge]: null } as RangeFieldValue;
       choose(draft);
@@ -779,12 +813,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
     const wanted = wall.time ?? defaultTime(edge);
     const onGrid = timed && s.snapMinutes ? snapTime(wanted, s.snapMinutes) : wanted;
-    const at_ = timed
-      ? resolveEdge(edge, wall.date, onGrid, wall.offset)
-      : edge === 'start'
-        ? midnight(wall.date)
-        : midnight(wall.date.add({ days: 1 }));
-    draft = withinSpan(ordered({ ...draft, [edge]: at_, allDay: !timed } as RangeFieldValue, edge), edge);
+    /*
+     * A day chosen as the end means all of it, while nobody has put an hour
+     * on that end — the reader pointed at a day, not at its first instant.
+     * Read as "the 20th at 00:00" it would drop the day just clicked, and the
+     * calendar would light every day but the one under the cursor.
+     *
+     * The test is the hour itself, not how it arrived, so clicking the 20th
+     * and typing 20/09 into the field mean the same thing. An hour set on the
+     * end — by the reader or by `defaultTimes` — takes over from then on.
+     */
+    const midnightHour = !wall.time || wall.time.equals(Temporal.PlainTime.from('00:00'));
+    const allOfTheDay = edge === 'end' && midnightHour && !hasDefaultTime('end');
+    const at_ =
+      timed && !allOfTheDay
+        ? resolveEdge(edge, wall.date, onGrid, wall.offset)
+        : edge === 'start'
+          ? midnight(wall.date)
+          : endOfDay(wall.date);
+    draft = withinSpan(ordered({ ...draft, [edge]: at_ } as RangeFieldValue, edge), edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
   }
@@ -909,7 +956,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
     presetShift = preset.step ?? (isMoments(picked) ? picked.start.until(picked.end) : 'auto');
     if (isMoments(picked)) {
-      choose({ start: picked.start, end: picked.end, allDay: false }, { close: !s.confirm });
+      choose({ start: picked.start, end: picked.end }, { close: !s.confirm });
       return;
     }
     // A shortcut named in days means those days entirely — first midnight to
@@ -919,7 +966,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       {
         start: midnight(picked.start),
         end: midnight(picked.end.add({ days: 1 })),
-        allDay: true,
       },
       { close: !s.confirm },
     );
@@ -959,7 +1005,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * wrong one.
    */
   function marks(preset: RangePreset, chosen: { start: PlainDate | null; end: PlainDate | null }): boolean {
-    if (isSubDayPreset(preset.name) || draft.allDay === false) {
+    if (isSubDayPreset(preset.name) || !coversWholeDays(draft)) {
       const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
       if (!isMoments(picked)) return false;
       return (
@@ -1100,7 +1146,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           button.setAttribute('aria-pressed', String(picked));
           button.disabled = off();
           button.onclick = () => {
-            draft = { ...draft, allDay: false, [edge]: instant } as RangeFieldValue;
+            draft = { ...draft, [edge]: instant } as RangeFieldValue;
             choose(draft);
           };
         });
@@ -1344,7 +1390,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     close: () => panel.close(),
     toggle: () => (panel.isOpen ? panel.close() : openPanel()),
     clear() {
-      draft = { ...EMPTY, allDay: wholeDays() };
+      draft = EMPTY;
       commit(draft);
     },
     destroy() {

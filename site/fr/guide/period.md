@@ -61,20 +61,16 @@ createRangeField(element, {
   value: {
     start: Temporal.Instant.from('2026-09-21T07:00Z'),
     end: Temporal.Instant.from('2026-09-25T16:00Z'),
-    allDay: false,
   },
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: Temporal.Instant.from('2026-09-25T16:00Z'), allDay: false } }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: Temporal.Instant.from('2026-09-25T16:00Z') } }" />
 
-::: warning `allDay: false` n'est pas facultatif ici
-Sans lui, les deux bornes sont lues comme des journées entières : les heures
-restent dans la valeur mais le champ écrit `21/09/2026 – 25/09/2026`, et la fin
-compte comme le minuit **après** le dernier jour. C'est ce que `allDay`
-tranche — voir [Journées entières](./values#journées-entières-allday-et-la-fin-qu-on-ne-voit-pas).
-Une valeur porteuse d'heures le dit.
-:::
+Il n'y a rien d'autre à passer. Une période, ce sont deux moments : savoir si
+ce sont des journées entières se lit sur eux — les deux tombant sur le premier
+instant d'un jour — plutôt que de se déclarer. Une valeur qui porte des heures
+le dit en les portant.
 
 ## Jours, ou horaires
 
@@ -430,13 +426,13 @@ l'arrivée est arrêtée et dont le départ reste ouvert :
 createRangeField(element, {
   timeZone: 'Europe/Paris',
   showTime: true,
-  value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null, allDay: false },
+  value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null },
   openEnded: true,
   disabled: { start: true },
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, showTime: true, disabled: { start: true }, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null, allDay: false }, title: 'Arrivée arrêtée' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, showTime: true, disabled: { start: true }, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null }, title: 'Arrivée arrêtée' }" />
 
 ### `mode`
 
@@ -658,7 +654,7 @@ createRangeField(element, {
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z'), allDay: false }, title: 'Le matin où les pendules reculent' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z') }, title: 'Le matin où les pendules reculent' }" />
 
 Les menus proposent l'heure deux fois et étoilent la seconde — `02` et `02*` —
 avec une ligne sous le champ qui nomme la lecture en vigueur : *été*, ou

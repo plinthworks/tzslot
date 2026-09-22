@@ -605,14 +605,16 @@ export class Demo {
 
   protected readonly pricedDate = signal<PlainDate | null>(null);
 
-  protected readonly period = signal<RangeFieldValue>({ start: null, end: null, allDay: true });
+  protected readonly period = signal<RangeFieldValue>({ start: null, end: null });
   protected periodText(): string {
-    const { start, end, allDay } = this.period();
+    const { start, end } = this.period();
     if (!start && !end) return 'rien choisi';
     if (!end) return `à partir de ${start!.toString()} · pas de fin`;
     if (!start) return `jusqu'à ${end.toString()} · pas de début`;
     const hours = start.until(end).total({ unit: 'hour' });
-    return `${start.toString()} → ${end.toString()} · ${hours} h · ${allDay ? 'journées entières' : 'avec heures'}`;
+    // Whole days are not declared any more; they are what the moments say.
+    const whole = hours % 24 === 0;
+    return `${start.toString()} → ${end.toString()} · ${hours} h · ${whole ? 'journées entières' : 'avec heures'}`;
   }
 
   /** Whether the arrows are drawn at all, and what one press moves. */

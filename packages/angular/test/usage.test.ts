@@ -245,7 +245,6 @@ describe('the options a real screen asked for', () => {
     readonly period = signal({
       start: Temporal.Instant.from('2026-09-18T08:00:00Z'),
       end: Temporal.Instant.from('2026-09-18T15:00:00Z'),
-      allDay: false,
     });
   }
 

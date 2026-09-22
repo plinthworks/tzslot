@@ -37,7 +37,6 @@ const setHour = (edge: 0 | 1, clock: string) => {
 const both = (start: string, end: string) => ({
   start: Temporal.Instant.from(start),
   end: Temporal.Instant.from(end),
-  allDay: false,
 });
 
 beforeEach(() => {
@@ -94,7 +93,7 @@ describe('a period held to a length', () => {
   });
 
   it('the second click sets the end and pulls the start, as a filter screen does', () => {
-    make({ showTime: false, maxSpan: '2d', value: { start: null, end: null, allDay: true } });
+    make({ showTime: false, maxSpan: '2d', value: { start: null, end: null } });
     field.open();
     panel().querySelector<HTMLButtonElement>('[data-date="2026-10-24"]')!.click();
     panel().querySelector<HTMLButtonElement>('[data-date="2026-10-31"]')!.click();
@@ -110,7 +109,6 @@ describe('a period held to a length', () => {
       value: {
         start: Temporal.Instant.from('2026-10-23T22:00:00Z'), // 24 Oct
         end: Temporal.Instant.from('2026-10-30T23:00:00Z'), // 31 Oct
-        allDay: true,
       },
     });
     field.open();

@@ -37,7 +37,7 @@ The buttons under this field are wired exactly like that:
 | all of them | `value`, `update(settings)`, `clear()`, `destroy()` |
 | the fields | `open()`, `close()`, `toggle()`, `isOpen`, `setIcon(node)` |
 | the calendar and the range | `goTo({ year, month })`, `setIcons({ prev, next })` |
-| the interval | `value.allDay`, and `update({ allDay })` to set it |
+| `createDateTimeRange` | `value.allDay`, and `update({ allDay })` to set it |
 
 `update()` never calls `onChange`: it is the outside telling the widget
 something, not the user doing it. `clear()` does, because that is a choice.

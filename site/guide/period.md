@@ -59,20 +59,15 @@ createRangeField(element, {
   value: {
     start: Temporal.Instant.from('2026-09-21T07:00Z'),
     end: Temporal.Instant.from('2026-09-25T16:00Z'),
-    allDay: false,
   },
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: Temporal.Instant.from('2026-09-25T16:00Z'), allDay: false } }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: Temporal.Instant.from('2026-09-25T16:00Z') } }" />
 
-::: warning `allDay: false` is not optional here
-Leave it out and the two ends are read as whole days: the hours stay in the
-value but the field writes `21/09/2026 – 25/09/2026`, and the end counts as
-the midnight **after** the last day. That is what `allDay` decides — see
-[Whole days](./values#whole-days-allday-and-the-end-you-don-t-see). A value
-with hours in it says so.
-:::
+There is nothing else to pass. A period is two moments: whether it is whole
+days is read off them — both landing on a day's first instant — rather than
+declared. A value with hours in it says so by having them.
 
 ## Days, or times
 
@@ -419,13 +414,13 @@ arrival is settled and whose departure is still open:
 ```js
 createRangeField(element, {
   timeZone: 'Europe/Paris',
-  value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null, allDay: false },
+  value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null },
   openEnded: true,
   disabled: { start: true },
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, showTime: true, disabled: { start: true }, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null, allDay: false }, title: 'Arrival settled' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', openEnded: true, showTime: true, disabled: { start: true }, value: { start: Temporal.Instant.from('2026-09-21T07:00Z'), end: null }, title: 'Arrival settled' }" />
 
 ### `mode`
 
@@ -642,7 +637,7 @@ createRangeField(element, {
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z'), allDay: false }, title: 'The morning the clocks go back' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z') }, title: 'The morning the clocks go back' }" />
 
 The menus offer the hour twice and star the second — `02` and `02*` — with a
 line under the field naming the reading in force: *summer*, or *\* winter*

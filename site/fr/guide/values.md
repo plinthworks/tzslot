@@ -41,27 +41,33 @@ Un calendrier, et la date simple qu’il rend :
 
 <Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
 
-## Journées entières : `allDay` et la fin qu’on ne voit pas
+## Journées entières, et la fin qu’on ne voit pas
 
-Une période est l’une de deux choses, et une recherche qui les confond est
+Une période, c’est l’une de deux choses, et une recherche qui les confond est
 fausse sans en avoir l’air :
 
 - **Des journées entières.** « du 14 au 20 septembre » — du minuit qui ouvre
   le 14 au minuit qui ferme le 20, quelles que soient les heures.
-- **Un intervalle.** « 14 septembre 09:00 au 20 septembre 17:00 » — deux
+- **Un intervalle.** « le 14 septembre à 09:00 jusqu’au 20 à 17:00 » — deux
   moments que quelqu’un a choisis.
 
-`allDay` dit lequel vous tenez. Quand il vaut `true`, le composant a déjà fait
-le travail : `start` est le minuit qui ouvre le premier jour, et `end` est **le
-minuit qui suit le dernier** — le 21, pas le 20.
+**Rien ne dit lequel.** Une période, ce sont deux moments, et c’est toute la
+valeur :
 
 ```ts
 { start: 2026-09-13T22:00:00Z,   // 14 sept., 00:00 à Paris
-  end:   2026-09-20T22:00:00Z,   // 21 sept., 00:00 à Paris
-  allDay: true }
+  end:   2026-09-20T22:00:00Z }  // 21 sept., 00:00 à Paris
 ```
 
-Cette fin est exclusive à dessein, pour qu’une requête s’écrive :
+Les journées entières, c’est la paire dont les deux bornes tombent sur le
+premier instant d’un jour. Ça se lit sur la valeur, ça ne se déclare jamais —
+un drapeau qui le disait était posé par celui qui construisait la valeur et
+oublié par tous ceux qui en recevaient une, et un écran qui calculait 09:00 à
+18:00 sans le renseigner voyait ses heures masquées sans un mot.
+
+Un jour choisi comme fin vaut **toute la journée** : le minuit qui ouvre le
+lendemain — le 21, pas le 20. Cette fin est exclusive exprès, pour qu’une
+requête s’écrive :
 
 ```sql
 WHERE happened_at >= :start AND happened_at < :end
@@ -69,27 +75,22 @@ WHERE happened_at >= :start AND happened_at < :end
 
 sans que rien ne tombe dans le trou. Écrite autrement — `<= 20 sept.
 23:59:59` — chaque écran doit penser aux secondes, et un événement enregistré
-à 23:59:59,4 est perdu. Avec `allDay: false`, les deux bornes sont simplement
-les deux moments choisis, et la même requête fonctionne toujours.
+à 23:59:59,4 est perdu. Quand les deux bornes sont des moments choisis, la
+même requête fonctionne sans changer.
 
-Les deux viennent du même champ, et c’est `showTime` qui décide — il n’y a pas
+`showTime` décide seulement si les heures sont à l’écran — il n’y a pas
 d’interrupteur *Toute la journée*, parce qu’il demandait au lecteur de classer
 sa propre réponse avant de la donner.
 
-Journées entières. Regardez la ligne en dessous : `end` est le minuit **après**
-le dernier jour choisi.
+Journées entières. Regardez la ligne en dessous : `end` est le minuit
+**après** le dernier jour choisi.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
 
-Le même champ avec les heures, et `allDay` revient à `false` :
+Le même champ avec les heures à l’écran — il dit alors les deux moments tels
+qu’ils sont, minuit compris :
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
-
-::: warning En fournir une marche pareil
-Une valeur que vous passez avec des heures dedans a besoin de `allDay: false`,
-sinon le champ la lit comme des journées entières : les heures restent dans la
-valeur et le texte n’écrit que des jours.
-:::
 
 ## Une seule borne
 

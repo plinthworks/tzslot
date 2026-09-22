@@ -34,7 +34,7 @@ import type { DurationLike, Instant, PlainTime, ShiftOption, ShiftStep } from '@
 
 export type { RangeFieldValue, RangePreset } from '@tzslot/dom';
 
-const EMPTY: RangeFieldValue = { start: null, end: null, allDay: true };
+const EMPTY: RangeFieldValue = { start: null, end: null };
 
 /**
  * `<tz-range-field>` — one field for a period, from @tzslot/dom, spoken in
@@ -283,12 +283,13 @@ export class RangeField implements ControlValueAccessor {
       this.value.set(EMPTY);
       return;
     }
+    // Two moments, nothing else. An allDay a form still carries is ignored:
+    // whether a period is whole days is read off the moments themselves.
     const pair = pairIn(value);
-    const allDay = (value as { allDay?: boolean }).allDay;
-    this.value.set({ start: pair.start, end: pair.end, allDay: allDay ?? true });
+    this.value.set({ start: pair.start, end: pair.end });
   }
   registerOnChange(fn: (value: unknown) => void): void {
-    this.onChange = (next) => fn(pairOut(next, this.valueAs(), { allDay: next.allDay === true }));
+    this.onChange = (next) => fn(pairOut(next, this.valueAs(), {}));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;

@@ -352,7 +352,7 @@ describe('clear means one thing', () => {
     expect(spans.at(-1)!.allDay).toBe(true);
     interval.destroy();
 
-    const periods: { allDay?: boolean }[] = [];
+    const periods: unknown[] = [];
     const period = createRangeField(host, {
       timeZone: 'Europe/Paris',
       locale: 'en-GB',

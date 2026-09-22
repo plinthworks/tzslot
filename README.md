@@ -20,7 +20,7 @@ what the clock faces suggest.
 | `@tzslot/core` | The arithmetic. No DOM, no framework — usable on a server too. |
 | `@tzslot/dom` | Every widget, in plain DOM. Works in any framework, or none. |
 | `@tzslot/angular` | Angular components over `@tzslot/dom`: signals, forms, zoneless or not. Angular 18 to 21. |
-| `@tzslot/theme` | Optional. CSS (or Sass) setting the widgets' colours; light, dark, high contrast, a Tailwind v4 bridge. |
+| `@tzslot/theme` | Optional. CSS (or Sass) setting the widgets' colours; light, dark, high contrast, a bridge for Tailwind v4 and one for v3. |
 
 The widgets live in `@tzslot/dom`; a framework package only translates its own
 idioms into calls on them. A behaviour fixed there is fixed everywhere.
@@ -160,7 +160,8 @@ Nine palette colours, each `light-dark(light, dark)`. `data-theme="dark"` on
 any element themes everything inside it; `--tz-accent` on any element
 recolours the selection, the range tint and the focus ring beneath it.
 `@tzslot/theme/contrast.css` follows `prefers-contrast: more`, and
-`@tzslot/theme/tailwind.css` maps the palette to a Tailwind v4 theme. From
+`@tzslot/theme/tailwind.css` maps the palette to a Tailwind v4 theme and
+`tailwind3.css` to a v3 one. From
 Sass, `@use '@tzslot/theme/tzslot' with ($accent: …)`. All of it in
 `docs/customising.md`.
 

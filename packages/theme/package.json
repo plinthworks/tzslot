@@ -13,13 +13,15 @@
       "sass": "./tzslot.scss",
       "default": "./tzslot.css"
     },
-    "./tailwind.css": "./tailwind.css"
+    "./tailwind.css": "./tailwind.css",
+    "./tailwind3.css": "./tailwind3.css"
   },
   "files": [
     "tzslot.css",
     "tzslot.scss",
     "contrast.css",
-    "tailwind.css"
+    "tailwind.css",
+    "tailwind3.css"
   ],
   "sideEffects": [
     "*.css"

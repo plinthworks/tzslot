@@ -28,9 +28,16 @@
  * nothing to do. With the class strategy (a .dark class toggled by your
  * app), the .dark rule below reaches them; add
  *
- *   :root { --tz-color-scheme: light; }
+ *   :root:not(.dark) { --tz-color-scheme: light; }
  *
  * so that no .dark means light even when the system is dark.
+ *
+ * The :not() is not decoration. `:root` and `.dark` weigh the same (0,1,0),
+ * so between two rules of equal weight the later one in the stylesheet wins —
+ * and yours is imported after this file. Written `:root`, it beats `.dark`
+ * every time and the widgets stay light inside a dark page: readable text on
+ * a light surface that is no longer there. `:root:not(.dark)` weighs (0,2,0)
+ * and says what it means whatever the order.
  */
 
 :root {

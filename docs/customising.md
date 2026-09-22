@@ -172,8 +172,38 @@ emits the theme variables something references, and the bridge is what
 references them.
 
 Dark mode by class (`.dark` on `<html>`) is covered; add
-`:root { --tz-color-scheme: light; }` so that no `.dark` means light even on
-a dark system. The playground's `tailwind.html` is a complete example.
+`:root:not(.dark) { --tz-color-scheme: light; }` so that no `.dark` means
+light even on a dark system. The `:not()` is not decoration — `:root` and
+`.dark` weigh the same, so a bare `:root` written after the bridge wins on
+source order and pins the widgets to light inside a dark page. The
+playground's `tailwind.html` is a complete example.
+
+## With Tailwind v3
+
+v3 keeps its theme in JavaScript, reachable only through `theme()`, so it has
+a bridge of its own:
+
+```css
+/* styles.css */
+@import "tailwindcss/base";
+@import "tailwindcss/components";
+@import "tailwindcss/utilities";
+@import "@tzslot/theme";
+@import "@tzslot/theme/tailwind3.css";
+
+:root:not(.dark) { --tz-color-scheme: light; }   /* darkMode: 'class' only */
+```
+
+The `@import` form of the directives, not `@tailwind`: `postcss-import`
+refuses an `@import` that follows another statement, and the bridge would
+never arrive. The file also has to be compiled by Tailwind — it is PostCSS
+that turns `theme(colors.zinc.900)` into a colour — and your build has to
+inline `@import` (Vite, Next and the Angular builder do; the `tailwindcss`
+CLI alone does not). Where neither holds, paste the eleven declarations into
+your own CSS.
+
+Pointing the v4 bridge at v3 fails silently: it compiles, and no colour
+arrives.
 
 ## More contrast
 

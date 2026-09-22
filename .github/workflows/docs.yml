@@ -29,7 +29,11 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm test
+      # One worker, as a small runner gives you: Angular's test environment is
+      # set up once per context, and a worker shared between files is the only
+      # place that shows.
+      - run: npm run test:ci
+      - run: npm run typecheck
       - run: npm run docs:build
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

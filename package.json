@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "vitest run",
+    "test:ci": "vitest run --maxWorkers=1",
     "test:watch": "vitest",
     "typecheck": "tsc -p packages/core/tsconfig.json --noEmit && tsc -p packages/dom/tsconfig.json --noEmit && tsc -p tsconfig.spec.json --noEmit",
     "start": "vite",

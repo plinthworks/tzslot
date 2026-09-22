@@ -48,6 +48,8 @@ yet been generalised.
 ```bash
 npm start              # playground on http://localhost:4500 — often already running; don't kill it
 npm test               # vitest + jsdom
+npm run test:ci        # the same, in one worker — what a small runner does, and
+                       # the only way to catch state shared between test files
 npm run typecheck      # every package, tests and playground
 npm run build          # each package into packages/*/dist (only dist/ is published)
 npm run pack:local     # tarballs into packed/
@@ -72,6 +74,10 @@ npm run publish:next   # publish a pre-release under the `next` tag — run by t
   sizes and behaviour rather than asserting them; after a change that affects
   consumers, reinstall the packed packages into a throwaway Angular app and
   `ng build` it.
+- A green `npm test` is not a green CI: with a worker per file, state that
+  leaks between files is invisible. `npm run test:ci` shares one, which is what
+  a single-core runner does — fifty-five files failed there while all sixty
+  passed here.
 - jsdom checks behaviour, never layout. Say plainly what was not seen in a real
   browser; headless system Chrome through `playwright-core` (`channel: 'chrome'`)
   works without downloading a browser. **Element screenshots there are taken by

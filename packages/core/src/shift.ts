@@ -14,6 +14,20 @@ import type { DayRange } from './presets.js';
 export type ShiftStep = number | DurationLike;
 
 /**
+ * A step two dates can actually move by: years, months, weeks, days.
+ *
+ * `ShiftStep` is what a *field* takes, and a field can hold a time. A pair of
+ * dates cannot, so `shiftDayRange` asks for this narrower thing rather than
+ * accepting a quarter of an hour and returning the same two days.
+ */
+export interface DayStep {
+  readonly years?: number;
+  readonly months?: number;
+  readonly weeks?: number;
+  readonly days?: number;
+}
+
+/**
  * A step as Temporal can add it.
  *
  * A plain number is minutes, which is the shape most screens want: `15` is a
@@ -59,11 +73,18 @@ function wholeMonths({ start, end }: DayRange): number {
  * have the same length, so the last day has to be asked for rather than
  * carried along.
  */
-export function shiftDayRange(range: DayRange, step: ShiftStep, direction: 1 | -1): DayRange {
-  const by = Temporal.Duration.from(asShiftStep(step));
+export function shiftDayRange(range: DayRange, step: DayStep, direction: 1 | -1): DayRange {
+  const by = Temporal.Duration.from(step);
+  // Dates cannot hold an hour, and PlainDate.add does not say so: it truncates
+  // and returns the same day. A caller who asks to move two dates by fifteen
+  // minutes has made a mistake, and hearing about it is better than watching
+  // the arrow do nothing.
+  if (by.hours || by.minutes || by.seconds || by.milliseconds || by.microseconds || by.nanoseconds) {
+    throw new RangeError(`a range of days cannot move by ${by.toString()}: it has a time part`);
+  }
   const months = wholeMonths(range);
   const inMonths = by.years * 12 + by.months;
-  if (months > 0 && inMonths > 0 && by.weeks === 0 && by.days === 0 && by.blank === false) {
+  if (months > 0 && inMonths > 0 && by.weeks === 0 && by.days === 0) {
     const start = range.start.add({ months: direction * inMonths });
     return { start, end: start.add({ months }).subtract({ days: 1 }) };
   }

@@ -30,7 +30,7 @@ export {
 } from './presets.js';
 export type { PresetName, DayRange, PresetOptions, MomentRange, SubDayPreset } from './presets.js';
 export { shiftDayRange, shiftInstant, shiftDate, parseDuration, snapTime, asShiftStep } from './shift.js';
-export type { ShiftStep, ShiftOption } from './shift.js';
+export type { DayStep, ShiftStep, ShiftOption } from './shift.js';
 export type { DailyWindow, DailyWindowsSummary } from './daily.js';
 export {
   toPlainDate,

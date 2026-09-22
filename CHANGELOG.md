@@ -31,6 +31,10 @@ Three were introduced the same day, two of them in examples shown as working.
   holding the value. The day is kept either way.
 - Dead code from the two removals: the `'auto'`-era `subDay` guard, and
   `RangePreset.step`, which stayed public and documented while nothing read it.
+- **`shiftDayRange` took a step it could not apply and said nothing.** Asked to
+  move two dates by fifteen minutes it returned the same two dates, because
+  `PlainDate.add` truncates rather than refusing. It now takes a `DayStep` —
+  years, months, weeks, days — and throws on anything carrying a time.
 
 ### The arrows, simplified
 

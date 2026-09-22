@@ -50,6 +50,16 @@ describe('an arrow that moves what is selected', () => {
     expect(span(shiftDayRange(feb, { months: 1 }, 1))).toBe('2026-03-01…2026-03-31');
   });
 
+  it('refuses a step two dates cannot carry, rather than doing nothing', () => {
+    // PlainDate.add({ minutes: 30 }) truncates and returns the same day, so
+    // the arrow used to sit there moving nothing at all.
+    const week = presetRange('last7Days', { today });
+    expect(() => shiftDayRange(week, { minutes: 30 } as never, 1)).toThrow(/time part/);
+    // A plain number is minutes, which a field takes and a pair of dates does
+    // not. The type says so now; a JavaScript caller hears it from Temporal.
+    expect(() => shiftDayRange(week, 30 as never, 1)).toThrow();
+  });
+
   it('a week moves by a week, and comes back where it started', () => {
     const week = presetRange('last7Days', { today }); // 15–21 September
     const back = shiftDayRange(week, { days: 7 }, -1);

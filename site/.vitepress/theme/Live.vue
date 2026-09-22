@@ -17,8 +17,16 @@ const props = withDefaults(
     show?: (value: unknown) => string;
     /** Buttons beside it, each given the widget to drive. */
     controls?: { label: string; run: (widget: any) => void }[];
+    /**
+     * Palette properties set on a box around the widget, so a theming example
+     * shows the theme rather than describing it. Exactly what an application
+     * would write in its own CSS, spelt as an object.
+     */
+    theme?: Record<string, string>;
+    /** `dark` or `light` on that box, as data-theme would be in a page. */
+    scheme?: 'dark' | 'light';
   }>(),
-  { options: () => ({}), show: undefined, controls: () => [] },
+  { options: () => ({}), show: undefined, controls: () => [], theme: undefined, scheme: undefined },
 );
 
 const stage = ref<HTMLElement>();
@@ -40,7 +48,10 @@ onMounted(() => {
     | undefined;
   if (!create || !stage.value) return;
   instance.value = create(stage.value, {
-    ...(french() ? { locale: 'fr-FR', messages: tzslot.FR } : {}),
+    // The page decides, not the reader's browser: an English page showing
+    // "septembre 2026" is the example demonstrating the wrong thing. An
+    // explicit locale in the options still wins — it is spread after this.
+    ...(french() ? { locale: 'fr-FR', messages: tzslot.FR } : { locale: 'en-GB' }),
     ...props.options,
     onChange: (value: unknown) => {
       held.value = props.show ? props.show(value) : describe(value);
@@ -73,8 +84,10 @@ function describe(value: unknown): string {
 <template>
   <div class="live">
     <!-- The widget claims the element it is given — display, class and all —
-         so it gets one of its own rather than the panel's own box. -->
-    <div class="live__stage"><div ref="stage" /></div>
+         so it gets one of its own rather than the panel's own box. The theme
+         goes on the box around it: a field's panel is drawn on the body, and
+         it carries the palette of the element it was opened from. -->
+    <div class="live__stage" :style="theme" :data-theme="scheme"><div ref="stage" /></div>
     <div v-if="controls.length" class="live__controls">
       <button v-for="control of controls" :key="control.label" type="button"
               @click="instance && control.run(instance)">

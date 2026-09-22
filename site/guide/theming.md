@@ -7,6 +7,149 @@ but working.
 Three sections follow, one per setup. Each is complete on its own — read the
 one you are in and ignore the rest.
 
+## A theme, whole
+
+Every example below is the CSS above it, running. Copy the block, change the
+seven colours, and you have your own.
+
+### Midnight blue
+
+The one most dashboards want: a deep blue surface, a warmer blue raised above
+it, and a single accent that carries the selection, the focus ring and the
+range tint.
+
+```css
+.midnight {
+  --tz-bg:         #0b1026;
+  --tz-bg-raised:  #161f43;
+  --tz-fg:         #e6ecff;
+  --tz-fg-muted:   #8b98c9;
+  --tz-border:     #2b3768;
+  --tz-accent:     #6ea8fe;
+  --tz-accent-fg:  #0b1026;
+  --tz-color-scheme: dark;
+}
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent': '#6ea8fe', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+`--tz-color-scheme: dark` is the line people forget. Without it the widgets
+still read the *light* half of every `light-dark()` the theme did not
+override, and one stray pale border turns up in the middle of a dark panel.
+
+### Midnight blue, with a font of its own
+
+`--tz-font` takes any font stack. Nothing else changes — the widgets inherit
+their size from the page and only the family is being decided here.
+
+```css
+.midnight-serif {
+  /* the seven colours above, plus: */
+  --tz-font:   Georgia, 'Times New Roman', serif;
+  --tz-radius: 2px;
+}
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, title: 'Midnight, in Georgia' }" :theme="{ '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent': '#6ea8fe', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', '--tz-font': 'Georgia, \'Times New Roman\', serif', '--tz-radius': '2px', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+Open the panel: it is drawn on the `body`, outside this box, and comes out
+midnight blue anyway. A panel carries the palette of the element it was opened
+from, or every field on a themed card would open a white rectangle over it.
+
+### Terminal
+
+A monospaced stack and square corners, for a console or a log viewer.
+
+```css
+.terminal {
+  --tz-bg:        #0c0c0c;
+  --tz-bg-raised: #1c1c1c;
+  --tz-fg:        #d7ffd7;
+  --tz-fg-muted:  #5f875f;
+  --tz-border:    #2f4f2f;
+  --tz-accent:    #5fff5f;
+  --tz-accent-fg: #0c0c0c;
+  --tz-font:      ui-monospace, SFMono-Regular, Menlo, monospace;
+  --tz-radius:    0;
+  --tz-color-scheme: dark;
+}
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1, weekNumbers: true }" :theme="{ '--tz-bg': '#0c0c0c', '--tz-bg-raised': '#1c1c1c', '--tz-fg': '#d7ffd7', '--tz-fg-muted': '#5f875f', '--tz-border': '#2f4f2f', '--tz-accent': '#5fff5f', '--tz-accent-fg': '#0c0c0c', '--tz-font': 'ui-monospace, SFMono-Regular, Menlo, monospace', '--tz-radius': '0', '--tz-color-scheme': 'dark', 'background': '#0c0c0c', 'padding': '1rem' }" />
+
+### Paper
+
+Warm, light, rounded — a booking form rather than a dashboard.
+
+```css
+.paper {
+  --tz-bg:        #fbf7f0;
+  --tz-bg-raised: #f2e9db;
+  --tz-fg:        #3b2f2a;
+  --tz-fg-muted:  #9c8875;
+  --tz-border:    #e0d2bd;
+  --tz-accent:    #b4531f;
+  --tz-accent-fg: #fbf7f0;
+  --tz-radius:    14px;
+  --tz-color-scheme: light;
+}
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Your stay' }" :theme="{ '--tz-bg': '#fbf7f0', '--tz-bg-raised': '#f2e9db', '--tz-fg': '#3b2f2a', '--tz-fg-muted': '#9c8875', '--tz-border': '#e0d2bd', '--tz-accent': '#b4531f', '--tz-accent-fg': '#fbf7f0', '--tz-radius': '14px', '--tz-color-scheme': 'light', 'background': '#fbf7f0', 'padding': '1rem', 'borderRadius': '14px' }" />
+
+### One line: the accent alone
+
+The smallest theme worth writing. Everything derived from the accent follows —
+the chosen day, the range tint, the focus ring, the hover on the selection —
+and the rest of the palette stays as the theme shipped it.
+
+```css
+.brand { --tz-accent: #b4531f; --tz-accent-fg: #ffffff; }
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Accent only' }" :theme="{ '--tz-accent': '#b4531f', '--tz-accent-fg': '#ffffff' }" />
+
+Written `light-dark(#8a3f18, #ff9a63)` it gives a different accent to each
+scheme in one declaration, with no media query and no second copy to keep in
+step:
+
+```css
+.brand { --tz-accent: light-dark(#8a3f18, #ff9a63); }
+```
+
+### Two on one page
+
+A theme is a set of custom properties, and custom properties inherit. Put them
+on a card rather than on `:root` and they stop at its edge — so two widgets on
+the same page can look nothing like each other.
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-accent': '#6ea8fe', '--tz-bg': '#0b1026', '--tz-bg-raised': '#161f43', '--tz-fg': '#e6ecff', '--tz-fg-muted': '#8b98c9', '--tz-border': '#2b3768', '--tz-accent-fg': '#0b1026', '--tz-color-scheme': 'dark', 'background': '#0b1026', 'padding': '1rem', 'borderRadius': '12px' }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" :theme="{ '--tz-bg': '#fbf7f0', '--tz-bg-raised': '#f2e9db', '--tz-fg': '#3b2f2a', '--tz-fg-muted': '#9c8875', '--tz-border': '#e0d2bd', '--tz-accent': '#b4531f', '--tz-accent-fg': '#fbf7f0', '--tz-radius': '14px', '--tz-color-scheme': 'light', 'background': '#fbf7f0', 'padding': '1rem', 'borderRadius': '14px' }" />
+
+### `data-theme`, without naming a colour
+
+One attribute flips a subtree between the two halves of every `light-dark()`
+the theme already holds. Nothing to define, and it works on any element.
+
+```html
+<div class="card" data-theme="dark">
+  <tz-calendar />
+</div>
+```
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" scheme="dark" :theme="{ 'padding': '1rem', 'borderRadius': '12px', 'background': 'var(--tz-bg)' }" />
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" scheme="light" :theme="{ 'padding': '1rem', 'borderRadius': '12px', 'background': 'var(--tz-bg)' }" />
+
+### `--tz-radius` alone
+
+From square to a pill, on every corner the widgets draw.
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" :theme="{ '--tz-radius': '0' }" />
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" :theme="{ '--tz-radius': '999px' }" />
+
 ## With Tailwind v4
 
 ```css

@@ -47,6 +47,19 @@ Enregistrez un instant, jamais une heure d’horloge : un instant ne prête à
 aucune interprétation, où qu’on se trouve, et il survit à un changement de
 fuseau, à un changement de règles, et à une relecture l’année suivante.
 
+Ce n’est pas une note de bas de page à croire sur parole. Voici le 29 mars
+2026 à Paris — 02:00 est barrée, parce qu’elle n’arrive pas :
+
+<Live widget="TimeSlots" :options="{ date: '2026-03-29', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '00:00', maxTime: '05:00' }" />
+
+Et le 25 octobre, où elle arrive deux fois — deux vrais créneaux, à une heure
+d’écart, distingués par leurs décalages :
+
+<Live widget="TimeSlots" :options="{ date: '2026-10-25', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '00:00', maxTime: '05:00' }" />
+
+Choisissez-en un et lisez la ligne en dessous : ce qui revient est un moment,
+et les deux lectures ne sont pas le même moment.
+
 ## Ce qu’il faut
 
 - **Angular 18 à 22** pour `@tzslot/angular` ; rien d’autre qu’un DOM pour le

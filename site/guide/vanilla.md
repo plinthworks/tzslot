@@ -15,6 +15,29 @@ const calendar = createCalendar(document.querySelector('#day'), {
 
 <Live widget="Calendar" :options="{ locale: 'en-GB' }" />
 
+## Every widget, running
+
+The nine factories, each on this page with nothing but `@tzslot/dom` behind
+them. The line under each is its `onChange`.
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
+
+<Live widget="MultiDate" :options="{ timeZone: 'Europe/Paris', months: 1, maxDates: 3 }" />
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DateRange" :options="{ timeZone: 'Europe/Paris', months: 2 }" />
+
+<Live widget="TimeSlots" :options="{ date: '2026-09-22', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '09:00', maxTime: '17:00' }" />
+
+<Live widget="DateTimeRange" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DailyRange" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true }" />
+
 ## The instance
 
 | | |

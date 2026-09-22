@@ -51,6 +51,27 @@ standalone.
 | `<tz-daily-range>` | a range of days with the same hours on each |
 | `<tz-range-field>` | a period, in one field — [its own page](./period) |
 
+Each one, running. The wrappers add signals, forms and Angular's own idioms
+over exactly these:
+
+<Live widget="Calendar" :options="{ timeZone: 'Europe/Paris', months: 1 }" />
+
+<Live widget="MultiDate" :options="{ timeZone: 'Europe/Paris', months: 1, maxDates: 3 }" />
+
+<Live widget="DateField" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DateRange" :options="{ timeZone: 'Europe/Paris', months: 2 }" />
+
+<Live widget="TimeSlots" :options="{ date: '2026-09-22', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '09:00', maxTime: '17:00' }" />
+
+<Live widget="DateTimeRange" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="DailyRange" :options="{ timeZone: 'Europe/Paris' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true }" />
+
 ## Starting from a value
 
 A screen that edits something already has its value before the component

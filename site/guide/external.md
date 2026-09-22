@@ -42,6 +42,113 @@ The buttons under this field are wired exactly like that:
 `update()` never calls `onChange`: it is the outside telling the widget
 something, not the user doing it. `clear()` does, because that is a choice.
 
+### `update(settings)` — anything, while it runs
+
+Every option is a setting, and every setting can be changed after the widget
+exists. There is no rebuild and nothing is lost: the value the reader chose
+survives a change of locale, of layout, of zone.
+
+```js
+field.update({ locale: 'ja-JP' });
+field.update({ timeLayout: 'select' });
+field.update({ timeZone: 'Asia/Tokyo' });   // the same instant, read elsewhere
+```
+
+<Live
+  widget="DateTimeField"
+  :options="{ timeZone: 'Europe/Paris', value: Temporal.Instant.from('2026-09-20T07:15Z') }"
+  :controls="[
+    { label: 'en-GB', run: (f) => f.update({ locale: 'en-GB' }) },
+    { label: 'en-US', run: (f) => f.update({ locale: 'en-US' }) },
+    { label: 'ja-JP', run: (f) => f.update({ locale: 'ja-JP' }) },
+    { label: 'Tokyo', run: (f) => f.update({ timeZone: 'Asia/Tokyo' }) },
+    { label: 'Paris', run: (f) => f.update({ timeZone: 'Europe/Paris' }) },
+  ]"
+/>
+
+The last two buttons are the whole point of the library in one gesture: the
+value under the field never changes, and the text does. A moment read from
+somewhere else is a different clock face, not a different moment.
+
+### `value` and `update({ value })`
+
+Reading is a property; writing is a setting like any other. Writing does not
+fire `onChange`, so the line under this one only moves when **Clear** is
+pressed — that is a choice, and a choice is reported.
+
+<Live
+  widget="DateTimeField"
+  :options="{ timeZone: 'Europe/Paris' }"
+  :controls="[
+    { label: 'Now', run: (f) => f.update({ value: Temporal.Now.instant() }) },
+    { label: 'In an hour', run: (f) => f.update({ value: Temporal.Now.instant().add({ hours: 1 }) }) },
+    { label: 'Clear', run: (f) => f.clear() },
+    { label: 'Log it', run: (f) => console.log(f.value) },
+  ]"
+/>
+
+### `goTo({ year, month })` — on a calendar
+
+Moving what is shown, without touching what is chosen. A wizard step that says
+"pick a day in December" opens December.
+
+```js
+calendar.goTo({ year: 2026, month: 12 });
+```
+
+<Live
+  widget="Calendar"
+  :options="{ timeZone: 'Europe/Paris', months: 1 }"
+  :controls="[
+    { label: 'December', run: (c) => c.goTo({ year: 2026, month: 12 }) },
+    { label: 'March 2027', run: (c) => c.goTo({ year: 2027, month: 3 }) },
+    { label: 'Back to now', run: (c) => c.goTo({ year: 2026, month: 9 }) },
+  ]"
+/>
+
+### `setIcon` and `setIcons`
+
+The field's own mark, and the calendar's two arrows, replaced while it runs.
+
+```js
+field.setIcon(icon('clock'));
+calendar.setIcons({ prev: icon('chevronLeft'), next: icon('chevronRight') });
+```
+
+<Live
+  widget="DateField"
+  :options="{ timeZone: 'Europe/Paris' }"
+  :controls="[
+    { label: 'A clock', run: (f) => f.setIcon(icon('clock')) },
+    { label: 'A calendar', run: (f) => f.setIcon(icon('calendar')) },
+    { label: 'A word', run: (f) => f.setIcon('when?') },
+  ]"
+/>
+
+### `open`, `close`, `toggle`, `isOpen`
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', months: 2 }"
+  :controls="[
+    { label: 'Toggle', run: (f) => f.toggle() },
+    { label: 'Open', run: (f) => f.open() },
+    { label: 'Close', run: (f) => f.close() },
+    { label: 'Is it open?', run: (f) => alert(f.isOpen ? 'open' : 'closed') },
+  ]"
+/>
+
+### `destroy()`
+
+Takes the widget off the page and unhooks every listener it added. A
+single-page application that forgets it leaks a listener per screen.
+
+<Live
+  widget="Calendar"
+  :options="{ timeZone: 'Europe/Paris', months: 1 }"
+  :controls="[{ label: 'Destroy it', run: (c) => c.destroy() }]"
+/>
+
 ## In Angular
 
 The same methods, reached with `viewChild`:

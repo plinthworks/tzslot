@@ -48,6 +48,19 @@ Store an instant, never a wall time: an instant is unambiguous everywhere and
 survives a change of zone, a change of the rules, and being read back next
 year.
 
+That is not a footnote you have to take on trust. Here is 29 March 2026 in
+Paris — 02:00 is struck through, because it does not happen:
+
+<Live widget="TimeSlots" :options="{ date: '2026-03-29', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '00:00', maxTime: '05:00' }" />
+
+And 25 October, where it happens twice — two real slots, an hour apart, told
+apart by their offsets:
+
+<Live widget="TimeSlots" :options="{ date: '2026-10-25', timeZone: 'Europe/Paris', stepMinutes: 60, minTime: '00:00', maxTime: '05:00' }" />
+
+Choose one and read the line underneath: what comes back is a moment, and the
+two readings are not the same moment.
+
 ## Requirements
 
 - **Angular 18 to 22** for `@tzslot/angular`; nothing but a DOM for the rest.

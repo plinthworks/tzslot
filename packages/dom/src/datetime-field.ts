@@ -1,5 +1,5 @@
-import { Temporal, resolveWallTime, shiftInstant, snapTime, firstDayFor } from '@tzslot/core';
-import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, Slot, Weekday } from '@tzslot/core';
+import { Temporal, asShiftStep, resolveWallTime, shiftInstant, snapTime, firstDayFor } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, ShiftStep, Slot, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
@@ -52,19 +52,24 @@ export interface DateTimeFieldSettings {
    */
   snapMinutes: number | null;
   /**
-   * Arrows that step the chosen moment, without opening anything: an hour
-   * later, a day earlier. `false` — the default — draws none. The step is
-   * always explicit here; a single moment has no length of its own to follow,
-   * so there is nothing for an 'auto' to mean. It is counted on the zone's
-   * clocks, so `{ days: 1 }` on the night they change is 23 or 25 hours, and
-   * the time of day survives.
+   * How far one press of an arrow moves the moment, and whether there are
+   * arrows at all.
    *
-   * A list of `{ step, label }` instead puts a menu between the arrows and
-   * lets the reader choose — a quarter of an hour, an hour, a day — on a page
-   * that serves all three. An 'auto' entry is ignored here, for the reason
-   * just given.
+   * `false` — the default — draws none. `true` draws them and moves by a day,
+   * which is what one date is chosen in. A duration imposes the step, in
+   * whatever shape the business needs; a list offers several and lets the
+   * reader pick between them, `showStep` deciding whether that picker shows.
+   *
+   * Counted on the zone's clocks, so an hour is an hour of real time on the
+   * two mornings that are not twenty-four hours long.
    */
-  shift: DurationLike | readonly ShiftOption[] | false;
+  shift: boolean | DurationLike | readonly ShiftOption[];
+  /**
+   * Whether the step sits between the arrows, where the reader can read it and
+   * press it. It appears when `shift` is a list; a list of one shows the step
+   * without handing it over. `false` hides it even then.
+   */
+  showStep: boolean;
   /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
   stepMinutes: number;
@@ -169,6 +174,7 @@ export function createDateTimeField(
     showTime: true,
     snapMinutes: null,
     shift: false,
+    showStep: true,
     timeLayout: 'input',
     stepMinutes: 30,
     minuteStep: 1,
@@ -296,15 +302,15 @@ export function createDateTimeField(
   /** The offered steps, when the reader is given the choice. */
   const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) && s.shift.length > 0 ? s.shift : null);
   let stepIndex = 0;
-  const currentStep = (): DurationLike | null => {
+  const currentStep = (): ShiftStep | null => {
     const menu = stepMenu();
     if (menu) {
-      const chosen = menu[Math.min(stepIndex, menu.length - 1)]?.step;
-      // 'auto' means "as long as what is selected", and a single moment is
-      // not long. Such an entry cannot drive these arrows.
-      return chosen === undefined || chosen === 'auto' ? null : chosen;
+      return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
     }
-    return s.shift === false ? null : (s.shift as DurationLike);
+    if (s.shift === false) return null;
+    // `true` asks for arrows without naming a step: a day, which is what one
+    // date is chosen in.
+    return s.shift === true ? { days: 1 } : (s.shift as DurationLike);
   };
 
   /**
@@ -317,7 +323,7 @@ export function createDateTimeField(
   function step(direction: 1 | -1): void {
     const by = currentStep();
     if (by === null || s.disabled || s.value === null) return;
-    commit(shiftInstant(s.value, by, direction, s.timeZone));
+    commit(shiftInstant(s.value, asShiftStep(by), direction, s.timeZone));
   }
 
   /** Which of the two is in the document, and what the panel hangs from. */
@@ -567,7 +573,7 @@ export function createDateTimeField(
     const menu = stepMenu();
     const by = currentStep();
     host.classList.toggle('tz-field--shift', by !== null);
-    stepPicker.hidden = menu === null;
+    stepPicker.hidden = menu === null || !s.showStep;
     if (menu) {
       const current = menu[Math.min(stepIndex, menu.length - 1)];
       stepIndex = Math.min(stepIndex, menu.length - 1);

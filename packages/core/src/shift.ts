@@ -11,7 +11,20 @@ import type { DayRange } from './presets.js';
  * are two honest answers — the length of what is already selected, or a
  * length the screen imposes.
  */
-export type ShiftStep = 'auto' | DurationLike;
+export type ShiftStep = number | DurationLike;
+
+/**
+ * A step as Temporal can add it.
+ *
+ * A plain number is minutes, which is the shape most screens want: `15` is a
+ * quarter of an hour, `60` an hour, `1440` a day. Seconds are not offered —
+ * an arrow that moves a booking by a second is an arrow nobody presses — and
+ * anything a number cannot say is said in full: `{ months: 1, hours: 1,
+ * minutes: 45 }`, or the short form `'45mn'`.
+ */
+export function asShiftStep(step: ShiftStep): DurationLike {
+  return typeof step === 'number' ? { minutes: step } : step;
+}
 
 /**
  * One entry of a menu of steps, when the screen lets the reader choose.
@@ -25,7 +38,8 @@ export interface ShiftOption {
   readonly label: string;
 }
 
-/** Whole months in a span, when it is made of whole months; 0 when it is not. */
+
+/** Whole months from the first to the last, or 0 when the range is not that. */
 function wholeMonths({ start, end }: DayRange): number {
   const lastOfMonth = end.day === end.daysInMonth;
   if (start.day !== 1 || !lastOfMonth) return 0;
@@ -35,30 +49,26 @@ function wholeMonths({ start, end }: DayRange): number {
 /**
  * The same range, one notch away.
  *
- * `'auto'` moves by what is selected, and that is not the same as moving by
- * its length in days. The third quarter of 2026 is 92 days long; stepping
- * back 92 days from 1 July lands on 31 March, and the user who asked for the
- * previous quarter gets a range that starts one day early and drifts further
- * every time they press the arrow. So a span made of whole months moves by
- * months — which is what a quarter, a month and a year all are — and anything
- * else moves by its length in days, where the drift cannot happen.
+ * The step is a duration and nothing else — `{ days: 1 }`, `{ hours: 1 }`,
+ * `{ months: 1, hours: 1, minutes: 45 }` — and it is added as written.
+ *
+ * With one exception, and it is arithmetic rather than taste: a range of whole
+ * months moved by whole months has its end recomputed from its new start.
+ * Added to both ends, three months from 1 July – 30 September gives 1 October
+ * – 30 December, and the fourth quarter ends on the 31st. Months do not all
+ * have the same length, so the last day has to be asked for rather than
+ * carried along.
  */
 export function shiftDayRange(range: DayRange, step: ShiftStep, direction: 1 | -1): DayRange {
-  if (step !== 'auto') {
-    const by = Temporal.Duration.from(step);
-    const moved = direction === 1 ? by : by.negated();
-    return { start: range.start.add(moved), end: range.end.add(moved) };
-  }
+  const by = Temporal.Duration.from(asShiftStep(step));
   const months = wholeMonths(range);
-  if (months > 0) {
-    const start = range.start.add({ months: direction * months });
-    // Recomputed rather than moved, so a 31-day month followed by a 30-day one
-    // still ends on its own last day.
+  const inMonths = by.years * 12 + by.months;
+  if (months > 0 && inMonths > 0 && by.weeks === 0 && by.days === 0 && by.blank === false) {
+    const start = range.start.add({ months: direction * inMonths });
     return { start, end: start.add({ months }).subtract({ days: 1 }) };
   }
-  const days = range.start.until(range.end).days + 1;
-  const by = { days: direction * days };
-  return { start: range.start.add(by), end: range.end.add(by) };
+  const moved = direction === 1 ? by : by.negated();
+  return { start: range.start.add(moved), end: range.end.add(moved) };
 }
 
 /**

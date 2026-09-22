@@ -71,7 +71,7 @@ describe('a whole day in a zone whose midnight is skipped', () => {
       locale: 'en-GB',
       today: Temporal.PlainDate.from('2026-09-05'),
       presets: ['today'],
-      shift: 'auto',
+      shift: { days: 1 },
     });
     field.open();
     document.querySelector<HTMLButtonElement>('.tz-rangefield__preset')!.click();
@@ -112,11 +112,11 @@ describe('the interval widget has the same rule', () => {
   });
 });
 
-describe('a step that cannot apply draws no arrows', () => {
-  it('fifteen minutes on a period of whole days', () => {
-    // The default: showTime off, so a period is whole days and has nowhere to
-    // put an hour. The arrows used to be drawn, enabled, and do nothing at
-    // all — PlainDate.add({ minutes: 15 }) adds no days and does not throw.
+describe('a step shorter than a day', () => {
+  it('moves a period of whole days, and the field says the hours it gained', () => {
+    // The arrows used to be drawn, enabled, and do nothing — PlainDate.add({
+    // minutes: 15 }) adds no days and does not throw — so they were disabled
+    // instead. Both answers were wrong: the two ends move as moments.
     field = createRangeField(host, {
       timeZone: 'Europe/Paris',
       locale: 'en-GB',
@@ -126,9 +126,13 @@ describe('a step that cannot apply draws no arrows', () => {
     });
     field.open();
     document.querySelector<HTMLButtonElement>('.tz-rangefield__preset')!.click();
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('21/09/2026');
 
-    const arrows = [...host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')];
-    expect(arrows.every((a) => a.hidden || a.disabled)).toBe(true);
+    field.open();
+    [...host.querySelectorAll<HTMLButtonElement>('.tz-field__shift')][1]!.click();
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe(
+      '21/09/2026 00:15 – 22/09/2026 00:15',
+    );
   });
 
   it('but the same step works the moment the period carries hours', () => {

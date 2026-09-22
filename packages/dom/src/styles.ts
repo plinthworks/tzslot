@@ -164,14 +164,20 @@ export const FIELD_CSS = `
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
 .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
-/* The field, its step menu and its two arrows on one line — but a narrow
-   column is not a reason to push the forward arrow off the edge, so the row
-   wraps and the trigger gives up its minimum width rather than the arrows
-   giving up their place. */
+/* The field, its step menu and its two arrows on one line, and they stay on
+   it: the trigger gives up its width rather than the arrows giving up their
+   place.
+
+   It used to wrap instead, on the reasoning that a narrow column is no reason
+   to push the forward arrow off the edge. Wrapping is worse than narrow. An
+   inline-flex box is sized on its items' flex-basis, not on their content, so
+   as soon as the field held a date the box came out at that basis and the
+   forward arrow dropped to a line of its own — at every width, on a page with
+   room to spare. */
 .tz-field--shift {
   display: inline-flex;
   align-items: stretch;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   gap: 0.25rem;
   max-width: 100%;
 }
@@ -192,7 +198,6 @@ export const FIELD_CSS = `
   line-height: 1;
 }
 .tz-field__shift:disabled { opacity: 0.4; cursor: not-allowed; }
-.tz-field__step[hidden] { display: none; }
 .tz-field__step[hidden] { display: none; }
 .tz-field__step {
   border: 1px solid var(--tz-field-border, var(--tz-border, currentColor));
@@ -836,6 +841,11 @@ export const RANGEFIELD_CSS = `
 /* The two fields sit side by side, with whatever separates them between
    them — a word, an arrow, nothing. They drop onto two lines only when the
    panel is too narrow to hold them. */
+/* The two fields, and the mark between them, hidden together when one day is
+   chosen. Said explicitly because a display on the element beats [hidden]. */
+.tz-rangefield__field[hidden],
+.tz-rangefield__between[hidden] { display: none; }
+.tz-rangefield__field { display: contents; }
 .tz-rangefield__inputs {
   display: flex;
   flex-wrap: wrap;
@@ -931,6 +941,9 @@ export const RANGEFIELD_CSS = `
   align-items: flex-start;
   gap: 1rem;
 }
+/* display on the element itself beats [hidden]'s display:none, so it has to be
+   said again here or showPresets would set an attribute nothing obeys. */
+.tz-rangefield__presets[hidden] { display: none; }
 .tz-rangefield__presets {
   display: flex;
   flex-direction: column;

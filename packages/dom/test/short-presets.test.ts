@@ -26,7 +26,7 @@ const make = (options = {}) => {
     locale: 'en-GB',
     today,
     now,
-    shift: 'auto',
+    shift: { minutes: 15 },
     presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'],
     onChange: (value) => reported.push(value),
     ...options,
@@ -77,40 +77,30 @@ describe('the quarter hour that is running', () => {
     expect([clock(field.value.start), clock(field.value.end)]).toEqual(['11:00', '11:15']);
   });
 
-  it('the hour does the same, an hour at a time', () => {
+  it('the hour is an hour long, whatever the arrows are set to', () => {
     make();
     field.open();
     preset('This hour').click();
     expect([clock(field.value.start), clock(field.value.end)]).toEqual(['11:00', '12:00']);
-
-    field.open();
-    arrows()[0]!.click();
-    expect([clock(field.value.start), clock(field.value.end)]).toEqual(['10:00', '11:00']);
   });
 
-  it('a quarter of a year still moves by a quarter', () => {
-    make();
+  /**
+   * A shortcut computes a value. A step moves one. They used to touch — the
+   * shortcut just pressed decided what an arrow moved by — and that was one
+   * mechanism too many: the arrows changed meaning under the reader's hand
+   * depending on what they had pressed a moment earlier.
+   */
+  it('a shortcut does not change what the arrows move by', () => {
+    make({ shift: { minutes: 15 } });
     field.open();
     preset('This quarter').click();
     expect(shown()).toBe('01/07/2026 – 30/09/2026');
+
     field.open();
     arrows()[0]!.click();
-    expect(shown()).toBe('01/04/2026 – 30/06/2026');
-  });
-
-  it('choosing days by hand drops the rule the shortcut left', () => {
-    make();
-    field.open();
-    preset('This quarter hour').click();
-    field.open();
-    panel().querySelector<HTMLButtonElement>('[data-date="2026-09-14"]')!.click();
-    panel().querySelector<HTMLButtonElement>('[data-date="2026-09-16"]')!.click();
-    expect(shown()).toBe('14/09/2026 – 16/09/2026');
-
-    field.open();
-    arrows()[1]!.click();
-    // Three days on, not fifteen minutes.
-    expect(shown()).toBe('17/09/2026 – 19/09/2026');
+    // A quarter of an hour, because that is what the screen asked for — not a
+    // quarter of a year, because that is what was pressed last.
+    expect(shown()).toBe('30/06/2026 23:45 – 30/09/2026 23:45');
   });
 
   it('is ticked while it is what is chosen', () => {
@@ -123,13 +113,13 @@ describe('the quarter hour that is running', () => {
 });
 
 describe('a shortcut of your own', () => {
-  it('can be two moments, and can name its own step', () => {
+  it('can be two moments', () => {
     make({
+      shift: { minutes: 5 },
       presets: [
         {
           name: 'lastFiveMinutes',
           label: 'Last 5 minutes',
-          step: { minutes: 5 },
           range: (_today: PlainDate, at: { now: Instant }) => ({
             start: at.now.subtract({ minutes: 5 }),
             end: at.now,

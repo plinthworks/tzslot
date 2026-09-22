@@ -101,6 +101,8 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
    * Counted on the zone's clocks, so a day is 23 or 25 hours when they change.
    */
   readonly shift = input<DurationLike | readonly ShiftOption[] | false>(false);
+  /** Whether the step sits between the arrows, to be read and pressed. */
+  readonly showStep = input(true);
   readonly stepMinutes = input(30);
   /** With timeLayout 'select': minutes between the options. Every minute by default. */
   readonly minuteStep = input(1);
@@ -168,6 +170,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     timeLayout: this.timeLayout(),
     snapMinutes: this.snapMinutes(),
     shift: this.shift(),
+    showStep: this.showStep(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
     minTime: this.minTime(),

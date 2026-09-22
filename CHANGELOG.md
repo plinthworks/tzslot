@@ -2,17 +2,50 @@
 
 ## 1.1.0
 
-### Two panels came out wrong, and both shipped in 1.0.0
+### The arrows, simplified
+
+`shift` had four shapes and a rule nobody could hold in their head. It has two
+ideas now: whether there are arrows, and how far one press moves.
+
+**A plain number is minutes** — `15` is a quarter of an hour, `60` an hour,
+`1440` a day. Seconds are not offered: an arrow that moves a booking by a
+second is an arrow nobody presses. Anything a number cannot say is said in
+full: `{ days: 1, minutes: 30 }`, `{ months: 1, hours: 1, minutes: 45 }`, or
+the short form `'45mn'`. `true` asks for arrows without naming a step and
+follows what is being chosen — an hour for a period, a day for one date.
+
+**`'auto'` is gone**, and with it the coupling between shortcuts and steps. A
+shortcut computes a value; a step moves one. They used to touch — the shortcut
+just pressed decided what an arrow moved by — and that was one mechanism too
+many: the arrows changed meaning under the reader's hand depending on what
+they had pressed a moment earlier. `presetStep()` goes too.
+
+**A step shorter than a day no longer disables the arrows.** They used to be
+drawn, enabled, and do nothing at all, because `PlainDate.add({ minutes: 15 })`
+adds nothing and does not throw; then they were disabled instead. Both answers
+were wrong. The two ends move as moments, and the field writes the hours the
+period gained.
+
+### Three options a screen can turn on and off while it runs
+
+- **`singleDay`** — one field instead of two, and a click means that whole
+  day. The value is a period either way, so a screen can switch without what
+  it is bound to ever changing shape. Crossing over keeps the start day, and
+  coming back arms the *end*: the reader has their day already and is
+  switching precisely to add an end.
+- **`showPresets`** — whether the column of shortcuts is drawn, without
+  touching the list. `presets: []` empties it, and then something else has to
+  remember what was in it.
+- **`showStep`** — whether the step sits between the arrows, to be read and
+  pressed. A list of one shows it without handing it over.
+
+### Two panels came out wrong in 1.0.0
 
 **The hour menu of `<tz-datetime-field>` was blank on every ordinary day.**
-With `timeLayout: 'select'`, a field reading `22/09/2026 10:15` opened a panel
-whose hour menu showed nothing — the minutes were right, the hour was empty,
-and picking one moved a time the reader had not asked to move. Its options are
-keyed by hour *and* reading: `10|` where a clock face happens once, `2|+02:00`
-and `2|+01:00` the morning one happens twice. The field named a reading
-unconditionally, so on an ordinary day it asked for `10|+02:00` and matched
-nothing. `createRangeField` carries exactly this guard, with a comment
-predicting the blank; this one never got it.
+Its options are keyed by hour *and* reading — `10|` where a clock face happens
+once, `2|+02:00` and `2|+01:00` the morning one happens twice — and the field
+named a reading unconditionally, so it asked for `10|+02:00` and matched
+nothing.
 
 **`createDateField` drew an unstyled calendar on a page of its own.** Its
 panel is on the body and the calendar inside is told not to inject its layout,
@@ -20,8 +53,14 @@ which the field was then meant to declare there — and did not. Anywhere a
 second widget happened to inject the same sheet it looked right, which is how
 it passed every documentation page and every test.
 
-Both were found in screenshots, within two hours of 1.0.0, by someone
-migrating a real screen. Seven tests hold them, four watched failing first.
+**A field with arrows wrapped as soon as it held a date.** The row wrapped so
+a narrow column would not push the forward arrow off the edge; an inline-flex
+box is sized on its items' basis rather than their content, so the box came
+out at that basis and the arrow dropped to a line of its own — at every width.
+It shrinks instead.
+
+Also: the week starts where the locale says it does, and every widget is now
+checked alone on an empty page, which is how two of these hid.
 
 ## 1.0.0
 

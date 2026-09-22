@@ -1,8 +1,8 @@
 import {
   Temporal,
+  asShiftStep,
   presetRange,
   presetMoments,
-  presetStep,
   isSubDayPreset,
   matchesPreset,
   parseDuration,
@@ -84,6 +84,22 @@ export interface RangeFieldSettings {
   timeZone: string;
   /** Named ranges beside the calendar. The built-in names, or your own. */
   presets: readonly (PresetName | RangePreset)[];
+  /**
+   * Whether the column of shortcuts is drawn at all.
+   *
+   * Separate from `presets` so a screen can hide it without forgetting the
+   * list: `presets: []` empties it, and then something has to remember what
+   * was in it to put it back.
+   */
+  showPresets: boolean;
+  /**
+   * One field instead of two, and a click means that whole day.
+   *
+   * The value is a period either way — the day's first instant to the next
+   * day's — so a screen can turn this on and off without the thing it is
+   * bound to ever changing shape.
+   */
+  singleDay: boolean;
 
   /**
    * A word or two saying what is being chosen — "Travel dates", "Effective
@@ -153,23 +169,32 @@ export interface RangeFieldSettings {
   /** Nothing is reported until Apply is pressed. For searches that cost. */
   confirm: boolean;
   /**
-   * Arrows that step the whole selection one period at a time, without
-   * opening anything. `false` — the default — draws none: a filter that means
-   * one chosen day has nothing to step through. `'auto'` moves by what is
-   * selected, so a quarter moves by a quarter and seven days by seven days;
-   * a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever
-   * is selected, for a screen whose window is fixed.
+   * How far one press of an arrow moves the period, and whether there are
+   * arrows at all.
    *
-   * A duration may be written short — `'25mn'`, `'1h'`, `'3d'`, `'2w'`,
-   * `'6mo'` — which is how a screen says its step in one word.
+   * `false` — the default — draws none: a field that means one chosen period
+   * has nothing to step through. `true` draws them and follows what is being
+   * chosen: an hour for a period, a day when `singleDay` says it is one date.
    *
-   * A list of `{ step, label }` instead puts a menu between the arrows and
-   * lets the reader choose, for a page used to sweep both weeks and quarters.
+   * A step imposes it. A plain number is minutes — `15`, `60`, `1440` — which
+   * is what most screens want; anything a number cannot say is said in full:
+   * `{ days: 1, minutes: 30 }`, `{ months: 1, hours: 1, minutes: 45 }`, or the
+   * short form `'45mn'`. A list offers several and lets the reader pick
+   * between them — see `showStep` for whether that picker is on screen.
    *
-   * A period open at one end has no length, so `'auto'` moves it by a day
-   * there — the unit the calendar itself works in.
+   * Shortcuts never change it. A shortcut computes a value; a step moves one.
    */
-  shift: ShiftStep | readonly ShiftOption[] | false;
+  shift: boolean | ShiftStep | readonly ShiftOption[];
+  /**
+   * Whether the step sits between the arrows, where the reader can read it and
+   * press it.
+   *
+   * It appears when `shift` is a list, which is also what lets the reader
+   * change it. A list of one is how a screen shows the step without handing it
+   * over: the button reads it and does not take a press. `false` hides it even
+   * then — the step is the developer's, and the reader only moves.
+   */
+  showStep: boolean;
   /** How many months the panel shows side by side. */
   months: number;
   weekNumbers: boolean;
@@ -292,6 +317,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     value: EMPTY,
     timeZone: Temporal.Now.timeZoneId(),
     presets: BUILT_IN,
+    showPresets: true,
+    singleDay: false,
+    showStep: true,
     title: undefined,
     timeLayout: 'select',
     openEnded: false,
@@ -413,6 +441,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   let range: DateRangeInstance | null = null;
   let presetList: HTMLElement | null = null;
+  /** Kept so the column can be hidden and shown again without losing the list. */
+  let presetColumn: HTMLElement | null = null;
+  /** The second field and the mark between, hidden together when one day is chosen. */
+  let endField: HTMLElement | null = null;
+  let betweenMark: HTMLElement | null = null;
   let panelShift: { row: HTMLElement; label: HTMLElement; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
     null;
   type Reading = { instant: Instant; name: string; full: string };
@@ -448,6 +481,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * else, which is the whole point of having two.
    */
   let armedByHand = false;
+  /**
+   * Arm the end the next time the panel opens.
+   *
+   * Turning singleDay off closes the panel — the switch is outside it — and
+   * opening again arms the start, which is what made the next click throw the
+   * chosen day away and begin a new selection. The intent has to outlive the
+   * close.
+   */
+  let armEndNext = false;
   /**
    * The panel putting the cursor somewhere is not the reader choosing.
    *
@@ -647,32 +689,27 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * they have in mind. Choosing days by hand on the calendar clears it, and
    * the arrows go back to following the length of what is selected.
    */
-  let presetShift: ShiftStep | null = null;
 
   /** The offered steps, when the reader is given the choice. */
   const stepMenu = (): readonly ShiftOption[] | null => (Array.isArray(s.shift) && s.shift.length > 0 ? s.shift : null);
   /** Which of them is chosen. Kept by position, so a relabelled menu is harmless. */
   let stepIndex = 0;
+  /**
+   * What one press of an arrow moves.
+   *
+   * `true` asks for arrows without naming a step, and the answer follows what
+   * the field is choosing: an hour for a period, a day when it is one date.
+   * Shortcuts never change it — they compute a value, which is a different
+   * job.
+   */
   const currentStep = (): ShiftStep | null => {
     const menu = stepMenu();
     if (menu) return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
-    if (s.shift === false) return null;
-    // 'auto' means "follow what is selected", and a preset says what that is
-    // better than the value can.
-    if (s.shift === 'auto' && presetShift !== null) return presetShift;
+    if (s.shift === false || Array.isArray(s.shift)) return null;
+    if (s.shift === true) return s.singleDay ? { days: 1 } : { hours: 1 };
     return s.shift as ShiftStep;
   };
 
-  /** True when there is a whole period to move, and something to move it by. */
-  /**
-   * What one press moves, with 'auto' resolved.
-   *
-   * A period open at one end has no length to follow, and refusing to move at
-   * all was the wrong answer: nothing stops someone wanting "from the 18th"
-   * to become "from the 17th" without reopening the calendar. A day is the
-   * unit the calendar itself works in, so that is the fallback; anything else
-   * is imposed with a step of its own.
-   */
   /**
    * A step as Temporal can use it.
    *
@@ -681,7 +718,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * same words the documentation shows.
    */
   const asStep = (step_: ShiftStep | null): ShiftStep | null => {
-    if (typeof step_ !== 'string' || step_ === 'auto') return step_;
+    if (typeof step_ !== 'string') return step_;
     const short = parseDuration(step_);
     if (short) return short;
     try {
@@ -693,12 +730,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
   };
 
-  const effectiveStep = (): ShiftStep | null => {
-    const step_ = asStep(currentStep());
-    if (step_ !== 'auto') return step_;
-    const { start, end } = days(s.value);
-    return start !== null && end !== null ? 'auto' : { days: 1 };
-  };
+  const effectiveStep = (): ShiftStep | null => asStep(currentStep());
 
   /**
    * True for a step shorter than a day.
@@ -710,7 +742,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * throw, it adds nothing.
    */
   const subDay = (step_: ShiftStep): boolean => {
-    if (step_ === 'auto') return false;
     // A duration counted in months or weeks cannot be measured in hours
     // without a point to measure from, and Temporal says so rather than
     // guessing. Today in the zone is as good a point as any for "is this
@@ -724,11 +755,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const canShift = () => {
     const step_ = effectiveStep();
     if (step_ === null || off()) return false;
-    // A quarter of an hour cannot be said in dates: refused only when the
-    // screen shows no hours *and* the period has none of its own — a
-    // quarter-hour shortcut on a day-only screen still writes its times, so
-    // it can still be stepped.
-    if (!s.showTime && coversWholeDays(s.value) && subDay(step_)) return false;
     const { start, end } = days(s.value);
     return start !== null || end !== null;
   };
@@ -744,54 +770,74 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function step(direction: 1 | -1): void {
     const by = effectiveStep();
     if (!canShift() || by === null) return;
+    const moveBy = Temporal.Duration.from(asShiftStep(by));
+    const anchor = s.value.start ?? s.value.end;
 
-    // A period with times moves as moments when the step is shorter than a
-    // day: fifteen minutes cannot be said in dates. Longer than a day, it
-    // moves as days and the hours come along unchanged — someone comparing
-    // one working week with the next means 09:00 to 17:00 again, not the same
-    // number of hours counted from wherever the first one ended.
-    if (!coversWholeDays(s.value) && s.value.start && s.value.end) {
-      const own = s.value.start.until(s.value.end);
-      const moveBy = by === 'auto' ? own : Temporal.Duration.from(by);
-      const shortHop = moveBy.total({ unit: 'hour', relativeTo: zoned(s.value.start) }) < 24;
-      if (shortHop) {
-        draft = s.value;
-        const next = {
-          start: shiftInstant(s.value.start, moveBy, direction, s.timeZone),
-          end: shiftInstant(s.value.end, moveBy, direction, s.timeZone),
-        };
-        if (panel.isOpen) choose(next);
-        else commit(next);
-        return;
-      }
+    /*
+     * Shorter than a day: the two ends move as moments.
+     *
+     * Not because a period of whole days may not be stepped by fifteen
+     * minutes — it may, and the field then writes the hours it gained — but
+     * because dates cannot hold the answer. PlainDate.add({ minutes: 15 })
+     * does not throw; it adds nothing, and the arrow sits there doing nothing
+     * with it.
+     */
+    if (anchor && moveBy.total({ unit: 'hour', relativeTo: zoned(anchor) }) < 24) {
+      draft = s.value;
+      const next: RangeFieldValue = {
+        start: s.value.start ? shiftInstant(s.value.start, moveBy, direction, s.timeZone) : null,
+        end: s.value.end ? shiftInstant(s.value.end, moveBy, direction, s.timeZone) : null,
+      };
+      if (panel.isOpen) choose(next);
+      else commit(next);
+      return;
     }
 
+    // A day or longer: the days move and the times come along unchanged.
+    // Someone comparing one working week with the next means 09:00 to 17:00
+    // again, not the same number of hours counted from where the first ended.
     const shown = days(s.value);
+    draft = s.value; // so the times carry over into fromDays
     if (!shown.start || !shown.end) {
-      // One end only: the bound that exists moves, and the open side stays
-      // open. A step shorter than a day moves the moment — "from the 18th at
-      // 10:00" to 09:45 — and anything longer moves the day, hours and all.
-      const only = s.value.start ?? s.value.end!;
-      const moveBy = Temporal.Duration.from(by === 'auto' ? { days: 1 } : by);
-      draft = s.value;
-      let next: RangeFieldValue;
-      if (moveBy.total({ unit: 'hour', relativeTo: zoned(only) }) < 24) {
-        const moved = shiftInstant(only, moveBy, direction, s.timeZone);
-        next = s.value.start ? { start: moved, end: null } : { start: null, end: moved };
-      } else {
-        const day = shown.start ?? shown.end!;
-        const moved = shiftDayRange({ start: day, end: day }, moveBy, direction);
-        next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
-      }
+      const day = shown.start ?? shown.end!;
+      const moved = shiftDayRange({ start: day, end: day }, moveBy, direction);
+      const next = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
       if (panel.isOpen) choose(next);
       else commit(next);
       return;
     }
     const moved = shiftDayRange({ start: shown.start, end: shown.end }, by, direction);
-    draft = s.value; // so the times carry over into fromDays
     const next = fromDays({ start: moved.start, end: moved.end });
     if (panel.isOpen) choose(next);
     else commit(next);
+  }
+
+
+  /**
+   * Turning singleDay on or off, with a value already in hand.
+   *
+   * Going to one day, the start's day is kept and the end becomes its next
+   * midnight: the reader loses the rest of their period, which is the price
+   * of asking for one day and is visible at once.
+   *
+   * Coming back, the end is armed rather than the start. The reader has their
+   * day already and is switching precisely to add an end — arming the start
+   * would make their next click throw that day away and begin again.
+   */
+  function crossOver(wasSingle: boolean): void {
+    const { start } = days(s.value);
+    if (s.singleDay) {
+      armed = 'start';
+      armedByHand = false;
+      armEndNext = false;
+      if (start) choose(fromDays({ start, end: start }), { close: false });
+      return;
+    }
+    if (wasSingle && start) {
+      armed = 'end';
+      armedByHand = true;
+      armEndNext = true;
+    }
   }
 
   /**
@@ -940,7 +986,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         ? {
             name: preset,
             label: s.messages.presets[preset],
-            step: presetStep(preset),
             range: (today: PlainDate, at_: { now: Instant; timeZone: string }) =>
               isSubDayPreset(preset)
                 ? presetMoments(preset, at_)
@@ -954,7 +999,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     armed = 'start';
     armedByHand = false;
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
-    presetShift = preset.step ?? (isMoments(picked) ? picked.start.until(picked.end) : 'auto');
     if (isMoments(picked)) {
       choose({ start: picked.start, end: picked.end }, { close: !s.confirm });
       return;
@@ -972,9 +1016,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   function paintPresets(): void {
+    if (presetColumn) presetColumn.hidden = !s.showPresets;
+    if (endField) endField.hidden = s.singleDay;
+    if (betweenMark) betweenMark.hidden = s.singleDay;
     if (!presetList) return;
     const chosen = days(draft);
-    const offered = presets();
+    const offered = s.singleDay ? presets().filter(fitsOneDay) : presets();
     // Repainted, not rebuilt. Pressing Enter on a shortcut repaints the panel,
     // and replaceChildren then destroyed the very button under the focus —
     // which landed on the body. The same care is taken for the readings and
@@ -1004,6 +1051,19 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * the same day are the same two dates, and comparing dates would tick the
    * wrong one.
    */
+  /**
+   * Whether a shortcut still means something with one day to give.
+   *
+   * "Last 7 days" and "This quarter" have nowhere to go in a field that holds
+   * a single day. They are left out of the column rather than taken out of
+   * `presets`, so turning singleDay off brings them back.
+   */
+  function fitsOneDay(preset: RangePreset): boolean {
+    const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
+    if (isMoments(picked)) return false;
+    return Temporal.PlainDate.compare(picked.start, picked.end) === 0;
+  }
+
   function marks(preset: RangePreset, chosen: { start: PlainDate | null; end: PlainDate | null }): boolean {
     if (isSubDayPreset(preset.name) || !coversWholeDays(draft)) {
       const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
@@ -1169,7 +1229,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     text.textContent = display() || s.placeholder || s.messages.chooseRange;
     const menu = stepMenu();
     host.classList.toggle('tz-field--shift', currentStep() !== null);
-    stepPicker.hidden = menu === null;
+    stepPicker.hidden = menu === null || !s.showStep;
     if (menu) {
       const current = menu[Math.min(stepIndex, menu.length - 1)];
       stepIndex = Math.min(stepIndex, menu.length - 1);
@@ -1204,14 +1264,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     label: () => s.ariaLabel ?? s.title ?? s.messages.chooseRange,
     onOpen: () => {
       draft = s.value;
-      armed = off('start') ? 'end' : 'start';
-      armedByHand = false;
+      armed = armEndNext && !off('end') ? 'end' : off('start') ? 'end' : 'start';
+      armedByHand = armEndNext;
+      armEndNext = false;
       render();
       s.onOpen?.();
     },
     onClose: () => {
       range = null;
       presetList = null;
+      presetColumn = null;
+      endField = null;
+      betweenMark = null;
       panelShift = null;
       readingBoxes = null;
       inputs = null;
@@ -1228,7 +1292,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * left the reader outside it.
      */
     initialFocus: (node) => {
-      const field = node.querySelector<HTMLElement>('.tz-dateinput__input:not([readonly])');
+      // The armed field, not simply the first one: coming back from a single
+      // day the end is armed, and focusing the start would arm it again
+      // through its own onFocus — the next click would then throw away the
+      // day just chosen.
+      const wanted = node.querySelector<HTMLElement>(
+        `.tz-rangefield__field--${armed} .tz-dateinput__input:not([readonly])`,
+      );
+      const field = wanted ?? node.querySelector<HTMLElement>('.tz-dateinput__input:not([readonly])');
       if (field) openingFocus = true;
       return (
         field ??
@@ -1270,13 +1341,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         // Whatever the screen wants between the two fields — a dash, a double
         // arrow, nothing. It sits on the line of the fields, not of the labels.
         if (edge === 'end' && s.labels.between !== undefined && s.labels.between !== null) {
-          const between = el('span', 'tz-rangefield__between');
-          between.append(s.labels.between);
-          between.setAttribute('aria-hidden', 'true');
-          pair.append(between);
+          betweenMark = el('span', 'tz-rangefield__between');
+          betweenMark.append(s.labels.between);
+          betweenMark.setAttribute('aria-hidden', 'true');
+          pair.append(betweenMark);
         }
-        const inputHost = doc.createElement('div');
+        const inputHost = el('div', `tz-rangefield__field tz-rangefield__field--${edge}`);
         pair.append(inputHost);
+        if (edge === 'end') endField = inputHost;
         made[edge] = createDateInput(inputHost, {
           injectStyles: false,
           label: labelFor(edge),
@@ -1295,7 +1367,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
             // A date typed by hand replaces whatever rule a shortcut left, but
             // emptying a field is not choosing a date: it opens that end, and
             // the arrows go on moving by the step that was in force.
-            if (typedValue.date !== null) presetShift = null;
             setEdge(edge, typedValue);
           },
         });
@@ -1310,23 +1381,29 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const rangeHost = doc.createElement('div');
       body.append(rangeHost);
       if (s.presets.length > 0) {
-        const column = el('div', 'tz-rangefield__presets');
+        presetColumn = el('div', 'tz-rangefield__presets');
         presetList = el('div', 'tz-rangefield__preset-list');
-        column.append(presetList);
-        body.append(column);
+        presetColumn.append(presetList);
+        body.append(presetColumn);
       }
       node.append(body);
 
       range = createDateRange(rangeHost, {
         injectStyles: false,
         onChange: ({ start, end }) => {
-          presetShift = null; // chosen by hand now, so no preset rule applies
           // Only the armed field is filled. Which day was just pressed is
           // whichever of the two the grid reports as new — it restarts its own
           // selection when the click lands before the start, and that restart
           // is not an instruction to us.
           const clicked = end ?? start;
           if (!clicked) return;
+          if (s.singleDay) {
+            // One field: the day clicked is the whole day, both ends at once.
+            setEdge('start', { date: clicked, time: timeOf('start') ?? defaultTime('start') });
+            setEdge('end', { date: clicked, time: null });
+            paintPanel();
+            return;
+          }
           setEdge(armed, { date: clicked, time: timeOf(armed) ?? defaultTime(armed) });
           // The usual first-then-second flow, kept: a click on the start arms
           // the end. Unless the reader armed a field themselves, in which case
@@ -1378,12 +1455,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       return panel.isOpen;
     },
     update(settings) {
+      const wasSingle = s.singleDay;
       Object.assign(s, settings);
       // Which field is armed is about the panel, not about the value — and a
       // framework hands the value straight back after every change, so
       // resetting it here re-armed the start between two clicks and both of
       // them landed on it.
       if ('value' in settings) draft = s.value;
+      if ('singleDay' in settings && s.singleDay !== wasSingle) crossOver(wasSingle);
       render();
     },
     open: openPanel,

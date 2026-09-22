@@ -3,7 +3,6 @@ import {
   Temporal,
   presetRange,
   presetMoments,
-  presetStep,
   shiftDayRange,
   shiftInstant,
   shiftDate,
@@ -36,24 +35,26 @@ describe('quarters', () => {
 });
 
 describe('an arrow that moves what is selected', () => {
-  it('moves a quarter by a quarter, not by its length in days', () => {
+  it('adds the step as written, so months stay months', () => {
     const q3 = presetRange('thisQuarter', { today });
-    // 92 days back from 1 July is 31 March: the naive answer, and the wrong one.
-    expect(span(shiftDayRange(q3, 'auto', -1))).toBe('2026-04-01…2026-06-30');
-    expect(span(shiftDayRange(q3, 'auto', 1))).toBe('2026-10-01…2026-12-31');
+    // Said in days — 92 of them — this would land on 31 March coming back from
+    // 1 July: a day early, and drifting further on every press. Said in
+    // months, it does not.
+    expect(span(shiftDayRange(q3, { months: 3 }, -1))).toBe('2026-04-01…2026-06-30');
+    expect(span(shiftDayRange(q3, { months: 3 }, 1))).toBe('2026-10-01…2026-12-31');
   });
 
   it('keeps a month on its own last day, however long it is', () => {
     const feb = { start: day('2026-02-01'), end: day('2026-02-28') };
-    expect(span(shiftDayRange(feb, 'auto', -1))).toBe('2026-01-01…2026-01-31');
-    expect(span(shiftDayRange(feb, 'auto', 1))).toBe('2026-03-01…2026-03-31');
+    expect(span(shiftDayRange(feb, { months: 1 }, -1))).toBe('2026-01-01…2026-01-31');
+    expect(span(shiftDayRange(feb, { months: 1 }, 1))).toBe('2026-03-01…2026-03-31');
   });
 
-  it('moves anything else by its own length, so nothing drifts', () => {
+  it('a week moves by a week, and comes back where it started', () => {
     const week = presetRange('last7Days', { today }); // 15–21 September
-    const back = shiftDayRange(week, 'auto', -1);
+    const back = shiftDayRange(week, { days: 7 }, -1);
     expect(span(back)).toBe('2026-09-08…2026-09-14');
-    expect(span(shiftDayRange(back, 'auto', 1))).toBe(span(week)); // and back again
+    expect(span(shiftDayRange(back, { days: 7 }, 1))).toBe(span(week));
   });
 
   it('takes an imposed step when the screen has one', () => {
@@ -118,12 +119,6 @@ describe('the named ranges shorter than a day', () => {
       timeZone: 'Asia/Kathmandu',
     });
     expect(start.toZonedDateTimeISO('Asia/Kathmandu').toPlainTime().toString({ smallestUnit: 'minute' })).toBe('11:00');
-  });
-
-  it('a preset carries the step its reader has in mind', () => {
-    expect(presetStep('thisQuarterHour')).toEqual({ minutes: 15 });
-    expect(presetStep('thisHour')).toEqual({ hours: 1 });
-    expect(presetStep('thisQuarter')).toBe('auto');
   });
 
   it('asking for one of them as days is refused, not fudged', () => {

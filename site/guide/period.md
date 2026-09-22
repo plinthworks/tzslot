@@ -4,7 +4,7 @@
 period: a trigger that reads `18/09/2026 – 24/09/2026`, and a panel holding
 everything needed to change it.
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, showTime: true, openEnded: true, shift: 'auto', weekNumbers: true }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', months: 2, showTime: true, openEnded: true, shift: 60, weekNumbers: true }" />
 
 Everything below is one option, with a working example under it. Each is
 independent: what you see running is the code above it, nothing else.
@@ -238,8 +238,7 @@ would be rounded to somebody else's.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', presets: [], title: 'No shortcuts' }" />
 
-Your own are `{ name, label, range }`, and may return either shape. A `step`
-of its own says what the arrows move by once it has been pressed:
+Your own are `{ name, label, range }`, and may return either shape:
 
 ```js
 presets: [
@@ -247,37 +246,72 @@ presets: [
   {
     name: 'lastFiveMinutes',
     label: 'Last 5 minutes',
-    step: { minutes: 5 },
     range: (today, { now, timeZone }) => ({ start: now.subtract({ minutes: 5 }), end: now }),
   },
 ]
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: 'auto', presets: ['today', { name: 'lastFiveMinutes', label: 'Last 5 minutes', step: { minutes: 5 }, range: (today, ctx) => ({ start: ctx.now.subtract({ minutes: 5 }), end: ctx.now }) }] }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: 5, presets: ['today', { name: 'lastFiveMinutes', label: 'Last 5 minutes', range: (today, ctx) => ({ start: ctx.now.subtract({ minutes: 5 }), end: ctx.now }) }] }" />
+
+### `showPresets`
+
+Whether the column is drawn, without touching the list. `presets: []` empties
+it, and then something else has to remember what was in it to put it back.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', showPresets: false });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, presets: ['today', 'last7Days', 'thisMonth'], showPresets: false, title: 'The list is still there' }" />
 
 ## The arrows
 
 ### `shift`
 
-Off by default, because a field meaning one chosen day has nothing to step
-through. `'auto'` moves by what the reader just asked for: the shortcut they
-pressed, or the length of what is selected.
+The arrows beside the field, and how far one press moves the period. They are
+a fast way to pick: a step, and you are somewhere else.
+
+**Off by default**, because a field meaning one chosen period has nothing to
+step through. Without them, dates are chosen in the calendar or typed — the
+field loses nothing else.
 
 ```js
-createRangeField(element, { timeZone: 'Europe/Paris', shift: 'auto' });
+createRangeField(element, { timeZone: 'Europe/Paris' });        // no arrows
+createRangeField(element, { timeZone: 'Europe/Paris', shift: false });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', shift: 'auto', presets: ['today', 'thisWeek', 'thisMonth', 'thisQuarter'], title: 'auto' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'No arrows' }" />
 
-A duration imposes the step instead, whatever is selected — the way to move a
-three-day period a quarter of an hour at a time:
+`true` draws them and follows what is being chosen: **an hour** for a period,
+**a day** when [`singleDay`](#singleday) says it is one date.
 
 ```js
-shift: { minutes: 15 }
-shift: '15mn'   // the same, and how a screen says it in one word
+createRangeField(element, { timeZone: 'Europe/Paris', shift: true });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: '15mn', title: 'A quarter hour a press' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: true, showTime: true, title: 'An hour a press' }" />
+
+#### A number is minutes
+
+`15` is a quarter of an hour, `60` an hour, `1440` a day. Seconds are not
+offered: an arrow that moves a booking by a second is an arrow nobody presses.
+
+```js
+shift: 15        // a quarter of an hour
+shift: 60        // an hour
+shift: 1440      // a day
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: 15, showTime: true, title: 'Fifteen minutes a press' }" />
+
+Anything a number cannot say is said in full, in whatever shape the business
+needs:
+
+```js
+shift: { days: 1, minutes: 30 }
+shift: { months: 1, hours: 1, minutes: 45 }
+shift: '45mn'                       // the short form, still accepted
+```
 
 | | |
 |---|---|
@@ -290,24 +324,76 @@ shift: '15mn'   // the same, and how a screen says it in one word
 `m` is minutes and never months: `mo` says months, and a screen that read `6m`
 as six months would be wrong by a factor of forty-odd thousand.
 
-A list puts a small button between the arrows and lets the reader choose. The
-labels are yours — a step has no name the library could invent.
+::: tip Months move as months
+A period of whole months stepped by whole months has its end recomputed: added
+to both ends, three months from 1 July – 30 September gives 1 October – 30
+December, and the fourth quarter ends on the 31st. Months are not all the same
+length, so the last day is asked for rather than carried along.
+:::
+
+#### A list, and the reader picks
+
+A small button between the arrows shows the step, and each press moves to the
+next one. The labels are yours — a step has no name the library could invent.
 
 ```js
 shift: [
-  { step: 'auto', label: 'the period' },
-  { step: { minutes: 15 }, label: '15 min' },
-  { step: { days: 1 }, label: '1 day' },
+  { step: 15,   label: '15 min' },
+  { step: 60,   label: '1 h' },
+  { step: 1440, label: '1 day' },
 ]
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: [{ step: 'auto', label: 'the period' }, { step: { minutes: 15 }, label: '15 min' }, { step: { days: 1 }, label: '1 day' }], title: 'Pick the step' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 h' }, { step: 1440, label: '1 day' }], title: 'Pick the step' }" />
 
-Two details that are not guesswork. `'auto'` does not move a quarter by its
-length in days: 92 days back from 1 July is 31 March, one day early and
-drifting further on every press, so a span made of whole months moves by
-months. And a period open at one end has no length at all, so `'auto'` moves
-it by a day — the unit the calendar works in.
+A list of one shows the step without handing it over: the button reads it and
+does not take a press.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }], title: 'Read-only step' }" />
+
+::: warning Shortcuts do not change the step
+A shortcut computes a value; a step moves one. They used to touch — the
+shortcut just pressed decided what an arrow moved by — and that was one
+mechanism too many: the arrows changed meaning under the reader's hand
+depending on what they had pressed a moment earlier.
+:::
+
+### `showStep`
+
+Whether that button is on screen at all. `true` by default, which means it
+appears whenever `shift` is a list. `false` hides it: the step is the
+developer's, and the reader only moves.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: [{ step: 60, label: '1 h' }, { step: 1440, label: '1 day' }], showStep: false, title: 'Arrows, no step shown' }" />
+
+### `singleDay`
+
+One field instead of two, and a click means that whole day — its first instant
+to the next day's. The value is a period either way, so a screen can turn this
+on and off without what it is bound to ever changing shape.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', singleDay: true });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, presets: ['yesterday', 'today', 'tomorrow'], title: 'One day' }" />
+
+Shortcuts that need more than a day are left out of the column while it is on,
+and come back when it is off — `presets` itself is not touched.
+
+Crossing over keeps the start day. Coming back to two fields the **end** is
+armed, not the start: the reader has their day already and is switching
+precisely to add an end, so their next click should extend rather than begin
+again.
+
+```html
+<!-- the checkbox is yours; the field changes shape under it -->
+<tz-range-field [(value)]="period" [singleDay]="oneDay()" />
+```
 
 ## The calendar inside
 

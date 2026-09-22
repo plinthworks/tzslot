@@ -50,7 +50,7 @@ describe('by default', () => {
 
 describe('with shift on', () => {
   it('a quarter steps to the quarter before, and back', () => {
-    make({ shift: 'auto', presets: ['thisQuarter', 'lastQuarter'] });
+    make({ shift: { months: 3 }, presets: ['thisQuarter', 'lastQuarter'] });
     field.update({
       value: {
         start: Temporal.Instant.from('2026-06-30T22:00:00Z'), // 1 July, Paris
@@ -67,7 +67,7 @@ describe('with shift on', () => {
   });
 
   it('reports whole days, still ending at the midnight after the last one', () => {
-    make({ shift: 'auto' });
+    make({ shift: { days: 7 } });
     field.update({
       value: {
         start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
@@ -81,7 +81,7 @@ describe('with shift on', () => {
   });
 
   it('a week that crosses the clocks change keeps its days and gains an hour', () => {
-    make({ shift: 'auto' });
+    make({ shift: { days: 7 } });
     // 12–18 October, then one step forward: 19–25 October, the week the clocks
     // go back in Paris. Still seven whole days — and 169 hours, not 168.
     field.update({
@@ -109,7 +109,7 @@ describe('with shift on', () => {
   });
 
   it('keeps the hours when the period has them', () => {
-    make({ shift: 'auto', showTime: true });
+    make({ shift: { days: 2 }, showTime: true });
     field.update({
       value: {
         start: Temporal.Instant.from('2026-09-14T07:00:00Z'), // 09:00 Paris
@@ -124,14 +124,14 @@ describe('with shift on', () => {
   });
 
   it('is dead while there is nothing to move', () => {
-    make({ shift: 'auto' });
+    make({ shift: { days: 1 } });
     expect([...arrows()].every((a) => a.disabled)).toBe(true);
     arrows()[0]!.click();
     expect(reported).toHaveLength(0);
   });
 
   it('is in the panel too, labelled with the period it would move', () => {
-    make({ shift: 'auto', messages: FR, locale: 'fr-FR' });
+    make({ shift: { months: 3 }, messages: FR, locale: 'fr-FR' });
     field.update({
       value: {
         start: Temporal.Instant.from('2026-06-30T22:00:00Z'),
@@ -146,7 +146,7 @@ describe('with shift on', () => {
   });
 
   it('the quarter presets are offered, and tick when they match', () => {
-    make({ shift: 'auto', presets: ['lastQuarter', 'thisQuarter', 'nextQuarter'], messages: FR });
+    make({ shift: { months: 3 }, presets: ['lastQuarter', 'thisQuarter', 'nextQuarter'], messages: FR });
     field.open();
     const labels = [...panel().querySelectorAll('.tz-rangefield__preset')].map((b) => b.textContent);
     expect(labels).toEqual(['Le trimestre dernier', 'Ce trimestre', 'Le trimestre prochain']);
@@ -216,7 +216,7 @@ describe('a menu of steps, when the reader chooses', () => {
       shift: [
         { step: { days: 7 }, label: '7 days' },
         { step: { months: 1 }, label: 'a month' },
-        { step: 'auto', label: 'the period' },
+        { step: { days: 3 }, label: 'three days' },
       ],
     });
     field.update({
@@ -239,9 +239,9 @@ describe('a menu of steps, when the reader chooses', () => {
     expect(shown()).toBe('21/10/2026 – 23/10/2026'); // a month on
 
     picker.click();
-    expect(picker.textContent).toBe('the period');
+    expect(picker.textContent).toBe('three days');
     arrows()[1]!.click();
-    expect(shown()).toBe('24/10/2026 – 26/10/2026'); // its own three days
+    expect(shown()).toBe('24/10/2026 – 26/10/2026'); // three days on
   });
 
   it('a single duration draws no menu at all', () => {
@@ -249,7 +249,7 @@ describe('a menu of steps, when the reader chooses', () => {
     expect(host.querySelector<HTMLButtonElement>('.tz-field__step')!.hidden).toBe(true);
   });
 
-  it('a moment gets the same menu, and ignores an entry it cannot use', async () => {
+  it('a moment gets the same menu, and cycles back round it', async () => {
     const { createDateTimeField } = await import('../src/index.js');
     const widget = createDateTimeField(host, {
       timeZone: paris,
@@ -258,7 +258,6 @@ describe('a menu of steps, when the reader chooses', () => {
       shift: [
         { step: { minutes: 15 }, label: '15 min' },
         { step: { days: 1 }, label: 'a day' },
-        { step: 'auto', label: 'nonsense here' },
       ],
     });
     const reads = () => host.querySelector<HTMLInputElement>('.tz-field__trigger')!.value;
@@ -272,22 +271,31 @@ describe('a menu of steps, when the reader chooses', () => {
     next().click();
     expect(reads()).toContain('24/09/2026 14:45');
 
-    // 'auto' has no meaning for one moment: the arrows go away rather than lie.
+    // Past the end of the menu it starts again, and every entry is usable:
+    // there is no longer an entry that means "follow the selection", which a
+    // single moment had nothing to answer.
     picker.click();
-    expect(next().hidden).toBe(true);
+    expect(picker.textContent).toBe('15 min');
+    expect(next().hidden).toBe(false);
     widget.destroy();
   });
 });
 
 describe('the row that holds a field, its step and its arrows', () => {
-  it('lets the field shrink, so nothing is pushed off the edge or covered', () => {
+  it('keeps the field, its step and its arrows on one line', () => {
     make({ shift: [{ step: { days: 7 }, label: '7 days' }] });
     const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
-    // A row that cannot wrap puts the forward arrow outside a narrow column,
-    // and a trigger that keeps its minimum width overflows and covers the
-    // step button. Both were seen in a browser; neither is visible to jsdom,
-    // so the rules themselves are what is checked.
-    expect(css).toContain('flex-wrap: wrap');
+    /*
+     * The row wrapped, once, so a narrow column would not push the forward
+     * arrow off the edge. An inline-flex box is sized on its items' basis and
+     * not on their content, so the moment the field held a date the box came
+     * out at that basis and the arrow dropped to a line of its own — at every
+     * width, on a page with room to spare. It shrinks instead.
+     *
+     * Neither the wrap nor the overflow is visible to jsdom, so the rules
+     * themselves are what is checked.
+     */
+    expect(css).toContain('flex-wrap: nowrap');
     expect(css).toContain('.tz-field--shift .tz-field__trigger,\n.tz-field--shift .tz-field__wrap { min-width: 0; }');
   });
 });

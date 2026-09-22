@@ -123,7 +123,7 @@ describe('asking for one end only', () => {
 
     // There is no length to follow here, but refusing to move was worse than
     // choosing the unit the calendar itself works in.
-    field.update({ shift: 'auto' });
+    field.update({ shift: { days: 1 } });
     expect(arrows()[1]!.disabled).toBe(false);
     arrows()[1]!.click();
     expect(shown()).toBe('From 22/09/2026');
@@ -250,7 +250,7 @@ describe('moving a period that is open at one end', () => {
   const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
 
   it('a day at a time, without reopening the calendar', () => {
-    make({ shift: 'auto' });
+    make({ shift: { days: 1 } });
     field.update({
       value: { start: Temporal.Instant.from('2026-09-17T22:00:00Z'), end: null }, // from 18 Sept
     });

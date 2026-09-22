@@ -126,11 +126,20 @@ export class RangeField implements ControlValueAccessor {
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
   /**
-   * Arrows that step the whole period without opening the panel. `false` —
-   * the default — draws none. `'auto'` moves by what is selected; a duration
-   * such as `{ months: 3 }` imposes the step.
+   * Arrows that step the whole period without opening the panel.
+   *
+   * `false` — the default — draws none. `true` draws them and follows what is
+   * being chosen: an hour for a period, a day when `singleDay` says it is one
+   * date. A duration such as `{ months: 3 }` or `'45mn'` imposes the step; a
+   * list offers several and lets the reader pick.
    */
-  readonly shift = input<ShiftStep | readonly ShiftOption[] | false>(false);
+  readonly shift = input<boolean | ShiftStep | readonly ShiftOption[]>(false);
+  /** Whether the column of shortcuts is drawn. The list itself is kept. */
+  readonly showPresets = input(true);
+  /** Whether the step sits between the arrows, to be read and pressed. */
+  readonly showStep = input(true);
+  /** One field instead of two; a click means that whole day. */
+  readonly singleDay = input(false);
   readonly months = input(2);
   readonly weekNumbers = input(false);
   /** Left out, the locale decides — see `provideTzslot` to settle it once. */
@@ -200,6 +209,9 @@ export class RangeField implements ControlValueAccessor {
     minuteStep: this.minuteStep(),
     confirm: this.confirm(),
     shift: this.shift(),
+    showPresets: this.showPresets(),
+    showStep: this.showStep(),
+    singleDay: this.singleDay(),
     months: this.months(),
     weekNumbers: this.weekNumbers(),
     firstDayOfWeek: this.firstDayOfWeek(),

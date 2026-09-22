@@ -70,19 +70,6 @@ export function presetMoments(
   return { start: start.toInstant(), end: start.add({ minutes }).toInstant() };
 }
 
-/**
- * What one press of an arrow should move, having chosen this range.
- *
- * A reader who asks for the current quarter hour and then presses the arrow
- * means the quarter hour before, not the day before — the named range they
- * picked is the rule they have in mind.
- */
-export function presetStep(name: PresetName): ShiftStep {
-  if (name === 'thisQuarterHour') return { minutes: 15 };
-  if (name === 'lastHour' || name === 'thisHour' || name === 'nextHour') return { hours: 1 };
-  if (name === 'yesterday' || name === 'today' || name === 'tomorrow') return { days: 1 };
-  return 'auto';
-}
 
 /** Two days, both included — what a calendar highlights. */
 export interface DayRange {

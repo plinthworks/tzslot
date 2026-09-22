@@ -4,7 +4,7 @@
 toute une période : un déclencheur qui affiche `18/09/2026 – 24/09/2026`, et un
 panneau contenant tout ce qu'il faut pour la changer.
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, openEnded: true, shift: 'auto', weekNumbers: true }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, openEnded: true, shift: 60, weekNumbers: true }" />
 
 Tout ce qui suit est une option, avec un exemple qui tourne dessous. Chacun est
 indépendant : ce que vous voyez fonctionner, c'est le code juste au-dessus, rien
@@ -244,8 +244,7 @@ quart d'heure serait arrondi sur celle de quelqu'un d'autre.
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', presets: [], title: 'Sans raccourcis' }" />
 
 Les vôtres s'écrivent `{ name, label, range }`, et peuvent rendre l'une ou
-l'autre forme. Un `step` propre indique ce que les flèches déplacent une fois le
-raccourci pressé :
+l'autre forme :
 
 ```js
 presets: [
@@ -253,37 +252,73 @@ presets: [
   {
     name: 'lastFiveMinutes',
     label: '5 dernières minutes',
-    step: { minutes: 5 },
     range: (today, { now, timeZone }) => ({ start: now.subtract({ minutes: 5 }), end: now }),
   },
 ]
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: 'auto', presets: ['today', { name: 'lastFiveMinutes', label: '5 dernières minutes', step: { minutes: 5 }, range: (today, ctx) => ({ start: ctx.now.subtract({ minutes: 5 }), end: ctx.now }) }] }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: 5, presets: ['today', { name: 'lastFiveMinutes', label: '5 dernières minutes', range: (today, ctx) => ({ start: ctx.now.subtract({ minutes: 5 }), end: ctx.now }) }] }" />
+
+### `showPresets`
+
+Si la colonne est dessinée, sans toucher à la liste. `presets: []` la vide, et
+il faut alors se souvenir ailleurs de ce qu'elle contenait pour la remettre.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', showPresets: false });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, presets: ['today', 'last7Days', 'thisMonth'], showPresets: false, title: 'La liste est toujours là' }" />
 
 ## Les flèches
 
 ### `shift`
 
-Désactivées par défaut, parce qu'un champ qui désigne un jour choisi n'a rien à
-parcourir. `'auto'` déplace de ce que le lecteur vient de demander : le raccourci
-qu'il a pressé, ou la longueur de ce qui est sélectionné.
+Les flèches à côté du champ, et de combien une pression déplace la période.
+C'est une façon rapide de choisir : un pas, et vous êtes ailleurs.
+
+**Désactivées par défaut**, parce qu'un champ qui désigne une période choisie
+n'a rien à parcourir. Sans elles, les dates se choisissent dans le calendrier
+ou au clavier — le champ ne perd rien d'autre.
 
 ```js
-createRangeField(element, { timeZone: 'Europe/Paris', shift: 'auto' });
+createRangeField(element, { timeZone: 'Europe/Paris' });        // pas de flèches
+createRangeField(element, { timeZone: 'Europe/Paris', shift: false });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', shift: 'auto', presets: ['today', 'thisWeek', 'thisMonth', 'thisQuarter'], title: 'auto' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Sans flèches' }" />
 
-Une durée impose le pas à la place, quelle que soit la sélection — c'est ainsi
-qu'on déplace une période de trois jours par quarts d'heure :
+`true` les dessine et suit ce qui est choisi : **une heure** pour une période,
+**un jour** quand [`singleDay`](#singleday) dit que c'est une date.
 
 ```js
-shift: { minutes: 15 }
-shift: '15mn'   // la même chose, et la façon dont un écran le dit en un mot
+createRangeField(element, { timeZone: 'Europe/Paris', shift: true });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: '15mn', title: 'Un quart d\'heure par pression' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: true, showTime: true, title: 'Une heure par pression' }" />
+
+#### Un nombre, ce sont des minutes
+
+`15` est un quart d'heure, `60` une heure, `1440` une journée. Les secondes ne
+sont pas proposées : une flèche qui déplace un rendez-vous d'une seconde,
+personne ne la presse.
+
+```js
+shift: 15        // un quart d'heure
+shift: 60        // une heure
+shift: 1440      // une journée
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: 15, showTime: true, title: 'Un quart d\'heure par pression' }" />
+
+Ce qu'un nombre ne sait pas dire se dit en entier, dans la forme que le métier
+demande :
+
+```js
+shift: { days: 1, minutes: 30 }
+shift: { months: 1, hours: 1, minutes: 45 }
+shift: '45mn'                       // la forme courte, toujours acceptée
+```
 
 | | |
 |---|---|
@@ -293,30 +328,82 @@ shift: '15mn'   // la même chose, et la façon dont un écran le dit en un mot
 | `2w` `2s` | deux semaines |
 | `6mo` | six mois |
 
-`m`, ce sont des minutes et jamais des mois : `mo` dit les mois, et un écran qui
-lirait `6m` comme six mois se tromperait d'un facteur quarante-et-quelques
+`m`, ce sont des minutes et jamais des mois : `mo` dit les mois, et un écran
+qui lirait `6m` comme six mois se tromperait d'un facteur quarante-et-quelques
 milliers.
 
-Une liste place un petit bouton entre les flèches et laisse le lecteur choisir.
-Les libellés sont les vôtres — un pas n'a pas de nom que la librairie pourrait
-inventer.
+::: tip Les mois se déplacent en mois
+Une période de mois entiers déplacée de mois entiers voit sa fin recalculée :
+ajoutés aux deux bornes, trois mois depuis le 1er juillet – 30 septembre
+donnent le 1er octobre – 30 décembre, et le quatrième trimestre finit le 31.
+Les mois n'ont pas tous la même longueur, donc le dernier jour se redemande au
+lieu de se transporter.
+:::
+
+#### Une liste, et le lecteur choisit
+
+Un petit bouton entre les flèches affiche le pas, et chaque pression passe au
+suivant. Les libellés sont les vôtres — un pas n'a pas de nom que la librairie
+pourrait inventer.
 
 ```js
 shift: [
-  { step: 'auto', label: 'la période' },
-  { step: { minutes: 15 }, label: '15 min' },
-  { step: { days: 1 }, label: '1 jour' },
+  { step: 15,   label: '15 min' },
+  { step: 60,   label: '1 h' },
+  { step: 1440, label: '1 jour' },
 ]
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, shift: [{ step: 'auto', label: 'la période' }, { step: { minutes: 15 }, label: '15 min' }, { step: { days: 1 }, label: '1 jour' }], title: 'Choisir le pas' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 h' }, { step: 1440, label: '1 jour' }], title: 'Choisir le pas' }" />
 
-Deux détails qui ne sont pas du hasard. `'auto'` ne déplace pas un trimestre de
-sa longueur en jours : 92 jours avant le 1er juillet, c'est le 31 mars, un jour
-trop tôt et qui dérive à chaque pression — donc une période faite de mois
-entiers se déplace par mois. Et une période ouverte d'un côté n'a aucune
-longueur, donc `'auto'` la déplace d'un jour, l'unité dans laquelle travaille le
-calendrier.
+Une liste d'un seul élément affiche le pas sans le céder : le bouton le lit et
+ne prend pas de pression.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }], title: 'Pas affiché, non modifiable' }" />
+
+::: warning Les raccourcis ne changent pas le pas
+Un raccourci calcule une valeur ; un pas en déplace une. Les deux se
+touchaient — le raccourci pressé décidait de ce qu'une flèche déplaçait — et
+c'était un mécanisme de trop : les flèches changeaient de sens sous la main du
+lecteur selon ce qu'il avait pressé un instant plus tôt.
+:::
+
+### `showStep`
+
+Si ce bouton est à l'écran. `true` par défaut, donc il apparaît dès que `shift`
+est une liste. `false` le cache : le pas appartient au développeur, et le
+lecteur ne fait que se déplacer.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, shift: [{ step: 60, label: '1 h' }, { step: 1440, label: '1 jour' }], showStep: false, title: 'Des flèches, sans le pas' }" />
+
+### `singleDay`
+
+Un seul champ au lieu de deux, et un clic vaut toute la journée — son premier
+instant jusqu'à celui du lendemain. La valeur reste une période dans les deux
+cas, donc un écran peut l'activer et le désactiver sans que ce à quoi il est
+lié change jamais de forme.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', singleDay: true });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, presets: ['yesterday', 'today', 'tomorrow'], title: 'Un seul jour' }" />
+
+Les raccourcis qui demandent plus d'un jour sortent de la colonne tant que
+c'est actif, et reviennent ensuite — `presets` lui-même n'est pas touché.
+
+La bascule garde le jour de début. Au retour à deux champs, c'est la **fin**
+qui est armée, pas le début : le lecteur a déjà son jour et bascule justement
+pour ajouter une fin, donc son clic suivant doit allonger et non recommencer.
+
+```html
+<!-- la case est la vôtre ; le champ change de forme dessous -->
+<tz-range-field [(value)]="periode" [singleDay]="unSeulJour()" />
+```
 
 ## Le calendrier à l'intérieur
 

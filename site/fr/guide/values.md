@@ -124,9 +124,7 @@ c’est tout l’intérêt de la garder.
 
 Les flèches fonctionnent aussi sur une telle période, et ça compte : « à
 partir du 18 » devient « à partir du 17 » d’un clic, sans rouvrir le
-calendrier. Il n’y a pas de longueur à suivre, donc `shift: 'auto'` la décale
-d’un jour — l’unité dans laquelle le calendrier travaille — et un pas imposé
-l’emporte, jusqu’au quart d’heure.
+calendrier. Le pas réglé par l’écran s’applique, jusqu’au quart d’heure.
 
 Les deux bornes nulles signifient que rien n’a encore été choisi. C’est le
 seul cas qu’un écran doit encore distinguer, et c’est le cas évident.

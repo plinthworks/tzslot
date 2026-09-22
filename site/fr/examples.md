@@ -141,55 +141,47 @@ createRangeField(element, {
   timeZone: 'Europe/Paris',
   locale: 'fr-FR',
   presets: ['thisQuarter', 'lastQuarter', 'nextQuarter'],
-  shift: 'auto',
+  shift: { months: 3 },
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', months: 2, shift: 'auto', presets: ['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth'] }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', months: 2, shift: { months: 3 }, presets: ['thisQuarter', 'lastQuarter', 'nextQuarter', 'last7Days', 'thisMonth'] }" />
 
 Un rapport se lit en comparant : ce trimestre et le précédent, cette semaine
 et la dernière. Par le calendrier, c’est quatre clics. Les flèches en font un
 seul, et elles n’apparaissent que si on les demande — un champ qui désigne un
 seul jour choisi n’a rien à parcourir.
 
-`'auto'` décale de ce qui est sélectionné, et ce n’est pas la même chose que
-décaler de sa longueur en jours. Le troisième trimestre 2026 fait 92 jours ;
+Un pas exprimé en mois décale en mois, et ce n’est pas la même chose qu’un
+décalage d’une longueur en jours. Le troisième trimestre 2026 fait 92 jours ;
 reculer de 92 jours depuis le 1er juillet tombe sur le 31 mars — un jour trop
-tôt, et la dérive s’aggrave à chaque appui. Une période faite de mois entiers
-se décale donc en mois : un trimestre reste un trimestre et un mois garde son
-propre dernier jour. Tout le reste se décale de sa longueur, où rien ne peut
-dériver.
+tôt, et la dérive s’aggrave à chaque appui. Dit en mois, il ne peut pas
+dériver, et la fin est recalculée pour qu’un trimestre finisse sur son propre
+dernier jour.
 
-### Le raccourci donne le pas
+### Les raccourcis plus courts qu'un jour
 
-Avec `shift: 'auto'`, le raccourci qu’on vient de presser devient la règle :
-demandez le quart d’heure courant et les flèches avancent de quinze minutes ;
-demandez ce trimestre et elles avancent de trimestre en trimestre. Choisir des
-jours à la main dans le calendrier efface la règle, et les flèches reprennent
-la longueur de ce qui est sélectionné.
-
-Deux des raccourcis sont plus courts qu’un jour, et ceux-là sont deux
-*moments*, pas deux dates — 21/09/2026 11:00 à 11:15, comptés sur l’horloge du
-fuseau du composant :
+Deux des raccourcis sont plus courts qu'un jour, et ceux-là sont deux
+*moments*, pas deux dates — 21/09/2026 11:00 à 11:15, comptés sur l'horloge du
+fuseau du composant. Un raccourci calcule une valeur ; le pas des flèches
+appartient à l'écran, et presser l'un ne change jamais l'autre.
 
 ```js
 createRangeField(element, {
   timeZone: 'Europe/Paris',
-  shift: 'auto',
+  shift: 15,
   presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'],
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', months: 2, shift: 'auto', showTime: true, presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'] }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', months: 2, shift: 15, showTime: true, presets: ['thisQuarterHour', 'thisHour', 'thisQuarter', 'last7Days'] }" />
 
-Un raccourci à vous peut faire les deux — rendre deux moments, et annoncer le
-pas qu’il laisse derrière lui :
+Un raccourci à vous rend deux moments de la même façon :
 
 ```js
 {
   name: 'lastFiveMinutes',
   label: 'Dernières 5 minutes',
-  step: { minutes: 5 },
   range: (today, { now, timeZone }) => ({ start: now.subtract({ minutes: 5 }), end: now }),
 }
 ```
@@ -216,7 +208,6 @@ affiche le pas courant et passe au suivant à chaque appui.
 createRangeField(element, {
   timeZone: 'Europe/Paris',
   shift: [
-    { step: 'auto', label: 'la période' },
     { step: '7d',   label: '7 jours' },
     { step: '3mo',  label: 'un trimestre' },
   ],

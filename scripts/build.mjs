@@ -24,7 +24,7 @@ const repository = (name) => ({
 const shared = (name) => ({
   license: read(join(pkg(name), 'package.json')).license,
   repository: repository(name),
-  homepage: 'https://github.com/plinthworks/tzslot#readme',
+  homepage: 'https://plinthworks.github.io/tzslot/',
   bugs: { url: 'https://github.com/plinthworks/tzslot/issues' },
   keywords: ['date', 'time', 'datepicker', 'timezone', 'dst', 'temporal', 'calendar', 'time-slots'],
 });

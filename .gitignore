@@ -5,3 +5,4 @@ dist/
 packed/
 site/.vitepress/dist/
 site/.vitepress/cache/
+.idea/

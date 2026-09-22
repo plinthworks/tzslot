@@ -43,12 +43,27 @@ when the clocks move during it.
 
 Optional. Nine colours written `light-dark(…)`, so `data-theme` on any element
 themes everything inside it and `--tz-accent` recolours what follows from it.
-`contrast.css` follows `prefers-contrast: more`, `tailwind.css` maps the palette
-to a Tailwind v4 theme, and the whole thing is authored in Sass.
+`contrast.css` follows `prefers-contrast: more`, and the whole thing is authored
+in Sass. Two bridges map the palette to a Tailwind theme: `tailwind.css` reads
+v4's CSS theme variables, `tailwind3.css` resolves v3's through `theme()`. They
+cannot be one file — v4 publishes its theme as CSS, v3 keeps it in JavaScript —
+and pointing v4's at v3 compiles without a word and paints nothing, which is
+what the v3 bridge exists to avoid.
+
+With the class dark-mode strategy the line to add is
+`:root:not(.dark) { --tz-color-scheme: light; }`. The `:not()` is required:
+`:root` and `.dark` weigh the same, so a bare `:root` written after the bridge
+wins on source order and holds the widgets in light on a dark page.
 
 ### Requirements
 
-Angular 18 to 21 for the wrappers; nothing but a DOM for the rest. The theme
+Angular 18 to 22 for the wrappers; nothing but a DOM for the rest. Angular 22
+was checked the only way that counts: a throwaway application on 22.1.7 with
+TypeScript 6.0.3, `strictTemplates` on, six widgets bound in a template —
+`ngc` clean — and the published bundle run through Angular 22's own linker,
+which resolved all 27 partial declarations. Nothing in the wrappers is
+deprecated there; the peer range simply had not been widened, and npm refuses
+an install over a peer range, it does not warn. The theme
 uses `light-dark()` and `color-mix()`: Chrome 123, Safari 17.5, Firefox 120.
 Temporal is used natively where it exists and polyfilled where it does not.
 

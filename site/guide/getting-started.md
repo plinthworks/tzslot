@@ -8,7 +8,7 @@ tzslot is four packages, published together and versioned together.
 |---|---|
 | `@tzslot/core` | The arithmetic. No DOM, no framework — usable on a server too. |
 | `@tzslot/dom` | Every widget, in plain DOM. Any framework, or none. |
-| `@tzslot/angular` | Angular 18 to 21 components over `@tzslot/dom`. |
+| `@tzslot/angular` | Angular 18 to 22 components over `@tzslot/dom`. |
 | `@tzslot/theme` | Optional. The colours, in CSS or Sass. |
 
 ## Install
@@ -50,7 +50,7 @@ year.
 
 ## Requirements
 
-- **Angular 18 to 21** for `@tzslot/angular`; nothing but a DOM for the rest.
+- **Angular 18 to 22** for `@tzslot/angular`; nothing but a DOM for the rest.
 - **Chrome 123, Safari 17.5, Firefox 120** or later for the theme, which uses
   `light-dark()` and `color-mix()`.
 - **Temporal** is used natively where it exists and polyfilled where it does

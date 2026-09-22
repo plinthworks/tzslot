@@ -1,6 +1,6 @@
 # Angular
 
-Standalone components over `@tzslot/dom`, for Angular 18 to 21. Signals,
+Standalone components over `@tzslot/dom`, for Angular 18 to 22. Signals,
 forms, zoneless or not, no design system and no CDK.
 
 ## Setting up

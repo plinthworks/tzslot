@@ -1,6 +1,6 @@
 # Angular
 
-Des composants standalone posés sur `@tzslot/dom`, pour Angular 18 à 21.
+Des composants standalone posés sur `@tzslot/dom`, pour Angular 18 à 22.
 Signaux, formulaires, zoneless ou non, aucun design system et aucun CDK.
 
 ## Mise en place

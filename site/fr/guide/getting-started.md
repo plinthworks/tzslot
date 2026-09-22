@@ -6,7 +6,7 @@ tzslot, ce sont quatre paquets, publiés ensemble et versionnés ensemble.
 |---|---|
 | `@tzslot/core` | Le calcul. Aucun DOM, aucun framework — utilisable sur un serveur aussi. |
 | `@tzslot/dom` | Tous les composants, en DOM simple. N’importe quel framework, ou aucun. |
-| `@tzslot/angular` | Les composants Angular 18 à 21, posés sur `@tzslot/dom`. |
+| `@tzslot/angular` | Les composants Angular 18 à 22, posés sur `@tzslot/dom`. |
 | `@tzslot/theme` | Facultatif. Les couleurs, en CSS ou en Sass. |
 
 ## Installer
@@ -49,7 +49,7 @@ fuseau, à un changement de règles, et à une relecture l’année suivante.
 
 ## Ce qu’il faut
 
-- **Angular 18 à 21** pour `@tzslot/angular` ; rien d’autre qu’un DOM pour le
+- **Angular 18 à 22** pour `@tzslot/angular` ; rien d’autre qu’un DOM pour le
   reste.
 - **Chrome 123, Safari 17.5, Firefox 120** ou plus récent pour le thème, qui
   utilise `light-dark()` et `color-mix()`.

@@ -231,16 +231,28 @@ export function createDateTimeField(
   const iconButton = doc.createElement('button');
   iconButton.type = 'button';
   iconButton.className = 'tz-field__icon-button';
+  /**
+   * Declared here rather than beside the other listeners: the arrows and the
+   * step button are built above, and they were the only handlers in the
+   * library that destroy() could not take away.
+   */
+  const listening = new AbortController();
+  const on = { signal: listening.signal };
+
   /** One of the two arrows that step the moment. */
   function arrow(direction: 1 | -1, className: string): HTMLButtonElement {
     const node = doc.createElement('button');
     node.type = 'button';
     node.className = className;
     node.textContent = direction === -1 ? '‹' : '›';
-    node.addEventListener('click', (event) => {
-      event.stopPropagation();
-      step(direction);
-    });
+    node.addEventListener(
+      'click',
+      (event) => {
+        event.stopPropagation();
+        step(direction);
+      },
+      on,
+    );
     return node;
   }
 
@@ -259,13 +271,17 @@ export function createDateTimeField(
   const stepPicker = doc.createElement('button');
   stepPicker.type = 'button';
   stepPicker.className = 'tz-field__step';
-  stepPicker.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const menu = stepMenu();
-    if (!menu) return;
-    stepIndex = (stepIndex + 1) % menu.length;
-    render();
-  });
+  stepPicker.addEventListener(
+    'click',
+    (event) => {
+      event.stopPropagation();
+      const menu = stepMenu();
+      if (!menu) return;
+      stepIndex = (stepIndex + 1) % menu.length;
+      render();
+    },
+    on,
+  );
   host.append(back, wrap, stepPicker, forward);
 
   /** The offered steps, when the reader is given the choice. */
@@ -654,7 +670,9 @@ export function createDateTimeField(
   }
 
   const panel = createPanel({
-    trigger,
+    // A getter, because this field swaps its trigger between a button and an
+    // input whenever `editable` changes, and the panel kept the old one.
+    trigger: () => trigger,
     source: host,
     container,
     mode: () => s.mode,
@@ -756,8 +774,6 @@ export function createDateTimeField(
     if (!s.disabled) panel.open();
   };
 
-  const listening = new AbortController();
-  const on = { signal: listening.signal };
   button.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
   iconButton.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
   // Typing opens the panel, so the calendar follows along as the text changes.
@@ -865,7 +881,12 @@ export function createDateTimeField(
       draft = { date: null, time: null };
       readings = [];
       notice = null;
+      // Reported even when it was already empty. commit() suppresses an
+      // unchanged value — right for a re-read of the text, wrong here: the
+      // reader pressed Clear, and the documented contract says so.
+      const was = s.value;
       commit(null);
+      if (was === null) s.onChange?.(null);
     },
     setIcon(next) {
       iconSlot.replaceChildren(next);

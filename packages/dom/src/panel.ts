@@ -4,8 +4,17 @@ import { FIELD_CSS, ensureStyles } from './styles.js';
 export type FieldMode = 'popup' | 'dialog';
 
 export interface PanelOptions {
-  /** The element the panel hangs from, and returns the focus to. */
-  trigger: HTMLElement;
+  /**
+   * The element the panel hangs from, and returns the focus to.
+   *
+   * Asked for each time rather than kept: a field that swaps its trigger —
+   * `<tz-datetime-field>` does, between a button and an input, whenever
+   * `editable` changes — left the panel holding a node no longer in the
+   * document. It then measured a zero rectangle and landed in the corner of
+   * the viewport, treated the real trigger as "outside" so a click closed and
+   * reopened it, and returned the focus to nothing at all.
+   */
+  trigger: HTMLElement | (() => HTMLElement);
   /** Where the theme is read from — usually the field itself. */
   source: HTMLElement;
   /** Where the panel is attached. The body by default. */
@@ -87,8 +96,9 @@ function carryTheme(field: HTMLElement, panel: HTMLElement): void {
  * goes when they close.
  */
 export function createPanel(options: PanelOptions): PanelController {
-  const { trigger, source, container } = options;
-  const doc = trigger.ownerDocument;
+  const { source, container } = options;
+  const trigger = () => (typeof options.trigger === 'function' ? options.trigger() : options.trigger);
+  const doc = trigger().ownerDocument;
   const win = doc.defaultView!;
 
   let opened: {
@@ -109,7 +119,7 @@ export function createPanel(options: PanelOptions): PanelController {
     const { panel } = opened;
     const gap = 4;
     const edge = 8;
-    const field = trigger.getBoundingClientRect();
+    const field = trigger().getBoundingClientRect();
     const height = panel.offsetHeight;
     const below = win.innerHeight - field.bottom;
     const flip = below < height + gap && field.top > below;
@@ -182,7 +192,7 @@ export function createPanel(options: PanelOptions): PanelController {
       'pointerdown',
       (event) => {
         const where = event.target as Node;
-        if (!dialog && !panel.contains(where) && !trigger.contains(where)) {
+        if (!dialog && !panel.contains(where) && !trigger().contains(where)) {
           close({ restoreFocus: false });
         }
       },
@@ -226,7 +236,7 @@ export function createPanel(options: PanelOptions): PanelController {
     // and Escape closes nothing.
     options.onClose?.();
     // Back to the field, or the keyboard user lands at the top of the document.
-    if (restoreFocus) trigger.focus();
+    if (restoreFocus) trigger().focus();
   }
 
   return {

@@ -257,12 +257,15 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       // twice told apart by its offset, so nothing is left to ask afterwards.
       const offered = realHours(slots);
       // The later of two readings of the same clock face: the one a star marks.
-      const starred = new Set(
-        offered
-          .filter(({ hour: h, offset }) => offset !== null && offered.filter((o) => o.hour === h).length === 2)
-          .slice(1)
-          .map(({ hour: h, offset }) => `${h}|${offset}`),
-      );
+      // Per hour, not across the whole list. A two-hour transition — Troll in
+      // October — repeats 01:00 *and* 02:00, and slicing the flat list starred
+      // both readings of the second hour and neither of the first, so the mark
+      // stopped distinguishing anything.
+      const starred = new Set<string>();
+      for (const { hour: h } of offered) {
+        const pair = offered.filter((o) => o.hour === h && o.offset !== null);
+        if (pair.length === 2) starred.add(`${pair[1]!.hour}|${pair[1]!.offset}`);
+      }
       fillKeyed(
         hour,
         offered.map(({ hour: h, offset, name }) => {

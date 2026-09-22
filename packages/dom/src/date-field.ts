@@ -235,6 +235,9 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     toggle: () => (panel.isOpen ? panel.close() : openPanel()),
     clear() {
       s.value = null;
+      // The open panel is part of "everything": it went on showing the day
+      // that had just been cleared.
+      calendar?.update({ value: null });
       render();
       s.onChange?.(null);
     },

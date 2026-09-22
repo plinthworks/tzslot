@@ -100,7 +100,7 @@ describe('createDateRange', () => {
 
 describe('createDateTimeRange', () => {
   const box = (leg: 0 | 1) =>
-    host.querySelectorAll<HTMLInputElement>('tz-datetime-field input.tz-field__trigger')[leg]!;
+    host.querySelectorAll<HTMLInputElement>('.tz-dtr__field input.tz-field__trigger')[leg]!;
 
   it('reports the night the clocks go back as seven hours, in words', () => {
     widget = createDateTimeRange(host, {
@@ -111,7 +111,7 @@ describe('createDateTimeRange', () => {
     expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('7h');
     expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7h');
     // Each end is a whole date-and-time field, showing what it holds.
-    expect(host.querySelectorAll('tz-datetime-field')).toHaveLength(2);
+    expect(host.querySelectorAll('.tz-dtr__field')).toHaveLength(2);
     expect(box(0).value).toBe('24/10/2026 23:00');
     expect(box(1).value).toBe('25/10/2026 05:00');
   });
@@ -299,5 +299,68 @@ describe('several months side by side', () => {
     (widget as DateRangeInstance).update({ months: 1 });
     expect(host.querySelectorAll('.tz-range__month')).toHaveLength(1);
     expect(host.querySelectorAll('.tz-range__day')).toHaveLength(42);
+  });
+});
+
+describe('clear means one thing', () => {
+  it('empties, repaints the open panel, and reports — on every widget', async () => {
+    const { createDateField, createDateTimeField, createDateTimeRange, createRangeField } = await import(
+      '../src/index.js'
+    );
+    const host = document.createElement('div');
+    document.body.append(host);
+
+    // A field whose panel is open must not go on showing what was cleared.
+    const reported: unknown[] = [];
+    const field = createDateField(host, {
+      locale: 'en-GB',
+      value: Temporal.PlainDate.from('2026-09-14'),
+      onChange: (v) => reported.push(v),
+    });
+    field.open();
+    field.clear();
+    expect(document.querySelector('.tz-field__panel .tz-cal__day--selected')).toBe(null);
+    expect(reported).toEqual([null]);
+    field.destroy();
+    document.querySelectorAll('.tz-field__panel').forEach((n) => n.remove());
+
+    // Clearing an already-empty field still says so: the reader pressed it.
+    const moments: unknown[] = [];
+    const at = createDateTimeField(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      onChange: (v) => moments.push(v),
+    });
+    at.clear();
+    expect(moments).toEqual([null]);
+    at.destroy();
+
+    // And clearing whole days leaves them whole days.
+    const spans: { allDay?: boolean }[] = [];
+    const interval = createDateTimeRange(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      allDay: true,
+      value: {
+        start: Temporal.Instant.from('2026-09-13T22:00:00Z'),
+        end: Temporal.Instant.from('2026-09-20T22:00:00Z'),
+        allDay: true,
+      },
+      onChange: (v) => spans.push(v),
+    });
+    interval.clear();
+    expect(spans.at(-1)!.allDay).toBe(true);
+    interval.destroy();
+
+    const periods: { allDay?: boolean }[] = [];
+    const period = createRangeField(host, {
+      timeZone: 'Europe/Paris',
+      locale: 'en-GB',
+      onChange: (v) => periods.push(v),
+    });
+    period.clear();
+    expect(periods).toHaveLength(1);
+    period.destroy();
+    host.remove();
   });
 });

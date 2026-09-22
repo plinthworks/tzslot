@@ -32,7 +32,7 @@ beforeEach(async () => {
 describe('the page', () => {
   it('opens on the interval, which is the thing to look at first', () => {
     expect(el().querySelector('tz-datetime-range')).not.toBeNull();
-    expect(el().querySelectorAll('tz-datetime-field').length).toBeGreaterThanOrEqual(2); // the two ends
+    expect(el().querySelectorAll('.tz-dtr__field').length).toBeGreaterThanOrEqual(2); // the two ends
     expect(el().querySelector('tz-calendar')).toBeNull(); // another tab
   });
 

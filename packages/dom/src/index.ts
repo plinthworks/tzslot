@@ -46,7 +46,10 @@ export type {
   DateTimeRangeValue,
 } from './datetime-range.js';
 export { formatWith, parseWith, patternFor, maskWith } from './format.js';
-export { zoneName, summerFirst } from './zone-names.js';
+// readingName and seasonNames are what the widgets use to write "(été)" after
+// a repeated hour; without them a consumer's own displayWith could not say the
+// same thing the field says.
+export { zoneName, summerFirst, readingName, seasonNames } from './zone-names.js';
 export { createTimeSelect } from './time-select.js';
 export type {
   TimeSelectInstance,
@@ -101,4 +104,8 @@ export {
   TIMESELECT_CSS,
   RANGEFIELD_CSS,
   DATETIME_CSS,
+  // The period field's two date fields are styled by this one, and it was the
+  // only sheet left out: under a Content-Security-Policy that forbids inline
+  // styles, `injectStyles: false` left that panel bare with no way to dress it.
+  DATEINPUT_CSS,
 } from './styles.js';

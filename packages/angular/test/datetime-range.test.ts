@@ -102,7 +102,7 @@ describe('an end before its start', () => {
 describe('inside a form', () => {
   it('renders two legs, each a whole date-and-time field', () => {
     expect(el().querySelectorAll('.tz-dtr__leg')).toHaveLength(2);
-    expect(el().querySelectorAll('tz-datetime-field')).toHaveLength(2);
+    expect(el().querySelectorAll('.tz-dtr__field')).toHaveLength(2);
   });
 
   it('each leg shows the moment it holds, in the locale\u2019s own form', () => {

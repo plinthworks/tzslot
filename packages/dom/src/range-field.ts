@@ -348,16 +348,28 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   iconSlot.append(icon ?? '▾');
   trigger.append(text, iconSlot);
 
+  /**
+   * Declared here rather than beside the other listeners: the arrows and the
+   * step button are built above, and they were the only handlers in the
+   * library that destroy() could not take away.
+   */
+  const listening = new AbortController();
+  const on = { signal: listening.signal };
+
   /** One of the two arrows that step the selection. */
   function arrow(direction: 1 | -1, className: string): HTMLButtonElement {
     const button = doc.createElement('button');
     button.type = 'button';
     button.className = className;
     button.textContent = direction === -1 ? '‹' : '›';
-    button.addEventListener('click', (event) => {
-      event.stopPropagation(); // on the field the arrows sit beside a trigger
-      step(direction);
-    });
+    button.addEventListener(
+      'click',
+      (event) => {
+        event.stopPropagation(); // on the field the arrows sit beside a trigger
+        step(direction);
+      },
+      on,
+    );
     return button;
   }
 
@@ -376,13 +388,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const stepPicker = doc.createElement('button');
   stepPicker.type = 'button';
   stepPicker.className = 'tz-field__step';
-  stepPicker.addEventListener('click', (event) => {
-    event.stopPropagation();
-    const menu = stepMenu();
-    if (!menu) return;
-    stepIndex = (stepIndex + 1) % menu.length;
-    render();
-  });
+  stepPicker.addEventListener(
+    'click',
+    (event) => {
+      event.stopPropagation();
+      const menu = stepMenu();
+      if (!menu) return;
+      stepIndex = (stepIndex + 1) % menu.length;
+      render();
+    },
+    on,
+  );
   host.append(back, trigger, stepPicker, forward);
 
   let range: DateRangeInstance | null = null;
@@ -1289,10 +1305,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (!off()) panel.open();
   };
 
-  const listening = new AbortController();
-  trigger.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), {
-    signal: listening.signal,
-  });
+  
+  trigger.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
 
   render();
 

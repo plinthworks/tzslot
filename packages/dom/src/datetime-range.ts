@@ -190,7 +190,11 @@ export function createDateTimeRange(
     const section = el('div', 'tz-dtr__leg');
     section.setAttribute('role', 'group');
     const legend = el('h3', 'tz-dtr__legend');
-    const host_ = doc.createElement('tz-datetime-field');
+    // A div with a class, not an element named after a component. If anyone
+    // ever registers <tz-datetime-field> as a real custom element — a
+    // web-component wrapper is a plausible next package — createElement would
+    // upgrade it and build a second widget inside this one.
+    const host_ = el('div', 'tz-dtr__field');
     section.append(legend, host_);
     legsBox.append(section);
     return { key, section, legend, host: host_, field: null };
@@ -424,7 +428,9 @@ export function createDateTimeRange(
       render();
     },
     clear() {
-      commit(EMPTY);
+      // Emptied, not switched: clearing a period of whole days used to turn
+      // the whole-day mode off on the way out.
+      commit({ ...EMPTY, allDay: wholeDays() });
     },
     destroy() {
       for (const leg of legs) leg.field?.destroy();

@@ -122,11 +122,15 @@ export function createPanel(options: PanelOptions): PanelController {
   /** Tab stays inside a panel that is open; leaving it would strand the keyboard. */
   function trapTab(panel: HTMLElement, event: KeyboardEvent): void {
     if (event.key !== 'Tab') return;
+    // Every kind of stop, not two of them. The list said button and input,
+    // and the period field's default time layout builds <select> elements —
+    // six of them in an open panel, none of them in the trap, so Tab walked
+    // straight out of a panel that was supposed to hold it.
     const stops = Array.from(
       panel.querySelectorAll<HTMLElement>(
-        'button:not(:disabled):not([tabindex="-1"]), input:not(:disabled):not([tabindex="-1"])',
+        'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]',
       ),
-    );
+    ).filter((node) => node.getAttribute('tabindex') !== '-1' && !node.hasAttribute('hidden'));
     const first = stops[0];
     const last = stops[stops.length - 1];
     if (!first || !last) return;
@@ -197,11 +201,15 @@ export function createPanel(options: PanelOptions): PanelController {
 
     opened = { panel, backdrop, dispose, listening, overflow };
     place();
+    // Painted before it is focused. onOpen is what fills the panel from the
+    // value, and focusing an empty field first meant its blur — a moment
+    // later, as the reader moved on — read the empty text back as a cleared
+    // value.
+    options.onOpen?.();
     const landing = options.initialFocus
       ? options.initialFocus(panel)
       : panel.querySelector<HTMLElement>('button:not(:disabled)');
     landing?.focus();
-    options.onOpen?.();
   }
 
   function close({ restoreFocus = true }: { restoreFocus?: boolean } = {}): void {

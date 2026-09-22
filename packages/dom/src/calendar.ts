@@ -322,7 +322,11 @@ export function mountGrid<V>(
     const inMonth = dates.filter((d) => d.year === year && d.month === month && !blocked(d));
     const candidates = [focusedIso, ...mode.dates(s.value).map(String), s.today.toString()];
     for (const iso of candidates) {
-      if (iso && dates.some((d) => d.toString() === iso)) return iso;
+      // Usable, not merely present. A disabled <button> cannot take focus, so
+      // marking one as the tab stop left a bounded calendar — min in the
+      // future, today outside it — with no way in at all: Tab skipped the
+      // whole grid and the arrow keys need focus inside it.
+      if (iso && dates.some((d) => d.toString() === iso) && !blocked(Temporal.PlainDate.from(iso))) return iso;
     }
     return inMonth[0]?.toString() ?? null;
   };

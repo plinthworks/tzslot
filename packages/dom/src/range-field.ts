@@ -422,6 +422,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * else, which is the whole point of having two.
    */
   let armedByHand = false;
+  /**
+   * The panel putting the cursor somewhere is not the reader choosing.
+   *
+   * Opening focuses the first field so the keyboard lands inside the panel;
+   * treating that as "they armed this one themselves" broke the ordinary
+   * two-click flow, because the second click then corrected the start again
+   * instead of filling the end.
+   */
+  let openingFocus = false;
 
   /**
    * Whether the period is whole days. Said by the screen through showTime,
@@ -892,19 +901,27 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function paintPresets(): void {
     if (!presetList) return;
     const chosen = days(draft);
-    presetList.replaceChildren(
-      ...presets().map((preset) => {
-        const button = el('button', 'tz-rangefield__preset');
+    const offered = presets();
+    // Repainted, not rebuilt. Pressing Enter on a shortcut repaints the panel,
+    // and replaceChildren then destroyed the very button under the focus —
+    // which landed on the body. The same care is taken for the readings and
+    // the day cells; this column was missed.
+    const existing = [...presetList.children] as HTMLButtonElement[];
+    offered.forEach((preset, index) => {
+      let button = existing[index];
+      if (!button) {
+        button = el('button', 'tz-rangefield__preset');
         button.type = 'button';
-        button.textContent = preset.label;
-        const on = marks(preset, chosen);
-        button.classList.toggle('tz-rangefield__preset--on', on);
-        button.setAttribute('aria-pressed', String(on));
-        button.disabled = off();
-        button.onclick = () => applyPreset(preset);
-        return button;
-      }),
-    );
+        presetList!.append(button);
+      }
+      const on = marks(preset, chosen);
+      if (button.textContent !== preset.label) button.textContent = preset.label;
+      button.classList.toggle('tz-rangefield__preset--on', on);
+      button.setAttribute('aria-pressed', String(on));
+      button.disabled = off();
+      button.onclick = () => applyPreset(preset);
+    });
+    for (const extra of existing.slice(offered.length)) extra.remove();
   }
 
   /**
@@ -1125,7 +1142,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       render();
       s.onClose?.();
     },
-    initialFocus: (node) => node.querySelector<HTMLElement>('.tz-range__day[tabindex="0"], button'),
+    /**
+     * The first field, which is what the panel is for.
+     *
+     * It looked for a day cell the range calendar never marks as tabbable and
+     * fell back to "the first button", which is the start field's clear cross
+     * — hidden unless openEnded, and focusing a hidden element does nothing.
+     * The focus stayed on the body, so opening the panel with the keyboard
+     * left the reader outside it.
+     */
+    initialFocus: (node) => {
+      const field = node.querySelector<HTMLElement>('.tz-dateinput__input:not([readonly])');
+      if (field) openingFocus = true;
+      return (
+        field ??
+        node.querySelector<HTMLElement>('.tz-range__day[tabindex="0"]') ??
+        node.querySelector<HTMLElement>('button:not([hidden]):not(:disabled)')
+      );
+    },
     content: (node) => {
       node.classList.add('tz-rangefield__panel');
       ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
@@ -1176,7 +1210,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           onFocus: () => {
             if (off(edge)) return; // locked: it stays where the screen put it
             armed = edge;
-            armedByHand = true;
+            if (openingFocus) openingFocus = false;
+            else armedByHand = true;
             paintPanel();
           },
           onChange: (typedValue) => {

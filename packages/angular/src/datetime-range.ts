@@ -15,9 +15,10 @@ import {
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 import { TZSLOT_DEFAULTS } from './defaults.js';
+import { pairIn, pairOut } from './shapes.js';
 
 import { Temporal } from '@tzslot/core';
-import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
+import type { PlainDate, PlainTime, Slot, ValueShape } from '@tzslot/core';
 import {
   createDateTimeRange,
   type DateTimeRangeInstance,
@@ -64,6 +65,11 @@ export class DateTimeRange implements ControlValueAccessor {
    * Whole days rather than moments. Two-way: the switch inside the widget
    * sets it, and so can you.
    */
+  /**
+   * What the form control holds. `'utc'` gives two ISO strings; the default
+   * gives the library's own moments.
+   */
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
   readonly allDay = model(false);
 
   /** Whether that switch is shown at all. */
@@ -174,11 +180,21 @@ export class DateTimeRange implements ControlValueAccessor {
   private onChange: (value: DateTimeRangeValue) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: DateTimeRangeValue | null): void {
-    this.value.set(value ?? EMPTY);
+  /**
+   * Typed `unknown` because that is what a form control holds: a string from
+   * a back end, a Date from older code, or the library's own objects.
+   */
+  writeValue(value: unknown): void {
+    if (value === null || value === undefined) {
+      this.value.set({ start: null, end: null });
+      return;
+    }
+    const pair = pairIn(value);
+    const allDay = (value as { allDay?: boolean }).allDay;
+    this.value.set(allDay === undefined ? pair : { ...pair, allDay });
   }
-  registerOnChange(fn: (value: DateTimeRangeValue) => void): void {
-    this.onChange = fn;
+  registerOnChange(fn: (value: unknown) => void): void {
+    this.onChange = (next) => fn(pairOut(next, this.valueAs(), { allDay: next.allDay === true }));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;

@@ -163,7 +163,14 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
 
   const pattern = () => s.format ?? patternFor(s.locale);
   const written = () => (s.value.date ? formatWith(pattern(), { date: s.value.date }, s.locale) : '');
-  const beingTyped = () => doc.activeElement === input;
+  /**
+   * Whether the reader is in the middle of writing something here.
+   *
+   * Not "does this field have focus": the panel focuses its first field when
+   * it opens, so a field nobody had touched counted as being typed into and
+   * never showed the value it was given.
+   */
+  let editing = false;
 
   function settle(value: WallValue): void {
     const same =
@@ -221,7 +228,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     else if (caption.firstChild !== s.label) caption.replaceChildren(s.label);
     caption.hidden = caption.childNodes.length === 0;
     // Never rewritten under the fingers: the text belongs to whoever is typing.
-    if (!beingTyped()) input.value = written();
+    if (!editing) input.value = written();
     input.placeholder = s.placeholder ?? '';
     // Read-only rather than disabled: a locked end is still something to read,
     // and a disabled input is skipped by the keyboard and unreadable by a
@@ -294,6 +301,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
           input.setSelectionRange(helped.length, helped.length);
         }
       }
+      editing = true;
       read(false);
     },
     on,
@@ -303,13 +311,17 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     (event) => {
       if (event.key !== 'Enter') return;
       event.preventDefault();
-      if (read(true)) input.value = written();
+      if (read(true)) {
+        editing = false;
+        input.value = written();
+      }
     },
     on,
   );
   input.addEventListener(
     'blur',
     () => {
+      editing = false;
       if (read(true)) input.value = written();
     },
     on,

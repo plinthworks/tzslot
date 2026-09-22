@@ -18,7 +18,8 @@ import { TZSLOT_MESSAGES } from './messages.js';
 import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal } from '@tzslot/core';
-import type { PlainDate, PresetName, Weekday } from '@tzslot/core';
+import type { PlainDate, PresetName, ValueShape, Weekday } from '@tzslot/core';
+import { pairIn, pairOut } from './shapes.js';
 import {
   createRangeField,
   type FieldMode,
@@ -54,6 +55,14 @@ export class RangeField implements ControlValueAccessor {
   private readonly defaults = inject(TZSLOT_DEFAULTS);
 
   readonly value = model<RangeFieldValue>(EMPTY);
+
+  /**
+   * What the form control holds. `'utc'` gives two ISO strings; the default
+   * gives the library's own moments. Settled for a whole application with
+   * provideTzslot(), which documents it as applying to every component — and
+   * this one did not listen.
+   */
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
 
   /**
    * An IANA identifier. Required in spirit: given here, it wins; left out, it
@@ -263,11 +272,22 @@ export class RangeField implements ControlValueAccessor {
   private onChange: (value: RangeFieldValue) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: RangeFieldValue | null): void {
-    this.value.set(value ?? EMPTY);
+  /**
+   * Typed `unknown` because that is what a form control holds: a string from
+   * a back end, a Date from older code, or the library's own objects. It was
+   * typed `RangeFieldValue | null` and threw on the first of those.
+   */
+  writeValue(value: unknown): void {
+    if (value === null || value === undefined) {
+      this.value.set(EMPTY);
+      return;
+    }
+    const pair = pairIn(value);
+    const allDay = (value as { allDay?: boolean }).allDay;
+    this.value.set({ start: pair.start, end: pair.end, allDay: allDay ?? true });
   }
-  registerOnChange(fn: (value: RangeFieldValue) => void): void {
-    this.onChange = fn;
+  registerOnChange(fn: (value: unknown) => void): void {
+    this.onChange = (next) => fn(pairOut(next, this.valueAs(), { allDay: next.allDay === true }));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;

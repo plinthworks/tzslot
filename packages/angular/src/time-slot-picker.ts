@@ -16,8 +16,8 @@ import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
 import { TZSLOT_MESSAGES } from './messages.js';
 import { TZSLOT_DEFAULTS } from './defaults.js';
 
-import { Temporal } from '@tzslot/core';
-import type { Instant, PlainDate, Slot } from '@tzslot/core';
+import { Temporal, toInstant, fromInstant } from '@tzslot/core';
+import type { Instant, InstantLike, PlainDate, Slot, ValueShape } from '@tzslot/core';
 import {
   createTimeSlots,
   getSlotChoices,
@@ -48,6 +48,12 @@ export class TimeSlotPicker implements ControlValueAccessor {
   private readonly defaults = inject(TZSLOT_DEFAULTS);
 
   /** The day to list, as a PlainDate or an ISO date string. */
+  /**
+   * What the form control holds. `'utc'` gives an ISO string; the default
+   * gives an Instant.
+   */
+  readonly valueAs = input<ValueShape>(this.defaults.valueAs ?? 'temporal');
+
   readonly date = input.required<PlainDate | string>();
 
   /**
@@ -144,11 +150,12 @@ export class TimeSlotPicker implements ControlValueAccessor {
   private onChange: (value: Instant | null) => void = () => {};
   private onTouched: () => void = () => {};
 
-  writeValue(value: Instant | null): void {
-    this.value.set(value ?? null);
+  /** Typed `unknown`: a form holds what the application put there. */
+  writeValue(value: unknown): void {
+    this.value.set(value === null || value === undefined ? null : toInstant(value as InstantLike));
   }
-  registerOnChange(fn: (value: Instant | null) => void): void {
-    this.onChange = fn;
+  registerOnChange(fn: (value: unknown) => void): void {
+    this.onChange = (next) => fn(fromInstant(next, this.valueAs()));
   }
   registerOnTouched(fn: () => void): void {
     this.onTouched = fn;

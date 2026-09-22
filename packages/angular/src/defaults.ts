@@ -16,10 +16,15 @@ import { TZSLOT_MESSAGES } from './messages.js';
  */
 export interface TzslotDefaults {
   /**
-   * What every component hands to its form control. `'utc'` is the useful one
-   * here: an instant, written as an ISO string ending in Z, whatever the
-   * widget is. A date-only field gives the midnight that opens that day in
-   * `timeZone`, so a back end that stores instants gets one from it too.
+   * What every component that holds a moment or a day hands to its form
+   * control. `'utc'` is the useful one here: an instant, written as an ISO
+   * string ending in Z, whatever the widget is. A date-only field gives the
+   * midnight that opens that day in `timeZone`, so a back end that stores
+   * instants gets one from it too.
+   *
+   * `<tz-daily-range>` is the exception, and not an oversight: its value is a
+   * *pattern* — two days and two clock faces repeated over them — which is
+   * not a moment and has no UTC form. It always hands out Temporal objects.
    */
   readonly valueAs?: ValueShape;
   /**

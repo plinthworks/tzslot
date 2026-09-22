@@ -147,7 +147,11 @@ describe('the two fields decide which end a click is about', () => {
     day('2026-09-14').click();
     day('2026-09-20').click();
 
-    input(0).focus(); // arm the start again
+    // Dispatched rather than called: the panel already focused this field when
+    // it opened, and focus() on the focused element fires nothing. In a
+    // browser the day cells take the focus in between, so the click back into
+    // the field is a real focus event.
+    input(0).dispatchEvent(new Event('focus'));
     day('2026-09-16').click();
     expect(shown()).toBe('16/09/2026 – 20/09/2026'); // the end survived
     expect(armed()).toBe(0); // and the end was not armed behind our back

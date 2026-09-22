@@ -128,19 +128,24 @@ si.
 
 ## Niveau 2 — accessibilité
 
-9. Un calendrier borné peut n'avoir **aucun point d'entrée clavier** : `tabbableIso` ne filtre pas les jours bloqués, et un `<button>` désactivé n'est pas focalisable. `calendar.ts:321-328`
+☑ 9. Un calendrier borné peut n'avoir **aucun point d'entrée clavier** : `tabbableIso` ne filtre pas les jours bloqués, et un `<button>` désactivé n'est pas focalisable. `calendar.ts:321-328`
+   > **Corrigé : le point d'entrée clavier doit être une case **utilisable**, pas seulement présente. Retenu par `packages/dom/test/keyboard.test.ts`.**
 10. `createDateRange` n'a **aucun support clavier** : pas de `keydown`, pas de tabindex tournant, 42 arrêts de tabulation par mois (84 dans le champ période), et l'aperçu de la plage ne répond qu'à la souris.
-11. Le panneau du champ période est **en pratique à la souris** : son `initialFocus` cherche un jour focalisable que `createDateRange` ne marque jamais, et retombe sur un bouton `hidden`. Le focus n'entre jamais dans le panneau. `range-field.ts:991`
-12. Le piège à tabulation du panneau **ignore `<select>`** — or c'est le défaut du champ période. Six menus dans le panneau, zéro dans le piège. `panel.ts:125-128`
+☑ 11. Le panneau du champ période est **en pratique à la souris** : son `initialFocus` cherche un jour focalisable que `createDateRange` ne marque jamais, et retombe sur un bouton `hidden`. Le focus n'entre jamais dans le panneau. `range-field.ts:991`
+   > **Corrigé : le panneau est peint **avant** d'être focalisé, et il vise le premier champ. Trois défauts en sont sortis : un champ focalisé se croyait en cours de saisie et n'affichait plus sa valeur ; son blur lisait le texte vide comme un effacement ; et le focus d'ouverture passait pour un armement volontaire, ce qui cassait l'enchaînement à deux clics.**
+☑ 12. Le piège à tabulation du panneau **ignore `<select>`** — or c'est le défaut du champ période. Six menus dans le panneau, zéro dans le piège. `panel.ts:125-128`
+   > **Corrigé : le piège connaît maintenant `select`, `textarea`, `a[href]` et `[tabindex]`, et ignore ce qui est `hidden`.**
 13. `createDateTimeField` en mode saisissable (le défaut) n'a pas de chemin clavier vers son panneau. `datetime-field.ts:667,788`
-14. Entrée sur un raccourci **détruit le bouton sous le focus** : `paintPresets` fait `replaceChildren` à chaque peinture. La même précaution est prise ailleurs dans le fichier. `range-field.ts:758`
+☑ 14. Entrée sur un raccourci **détruit le bouton sous le focus** : `paintPresets` fait `replaceChildren` à chaque peinture. La même précaution est prise ailleurs dans le fichier. `range-field.ts:758`
+   > **Corrigé : la colonne des raccourcis est repeinte, plus reconstruite. Le bouton survit à l'appui et garde le focus.**
 15. `createTimeSlots` annonce `role="listbox"` et n'implémente rien du modèle clavier. Idem `daily-range.ts`.
 16. `role="grid"` sans `role="row"` dans les vues mois et année, et aucune flèche clavier.
 
 ## Niveau 3 — surface d'API que la 1.0.0 figerait
 
 17. `DATEINPUT_CSS` et `readingName`/`seasonNames` ne sont **pas exportés**, alors que leurs voisins le sont. Sous CSP stricte, le panneau du champ période est sans style et sans recours.
-18. `valueAs` / `valueTimeZone` manquent sur **quatre composants Angular** (`RangeField`, `DateTimeRange`, `DailyRange`, `TimeSlotPicker`) alors que le provider les documente comme valant pour *tous*. Leur `writeValue` ne convertit rien et lève sur une chaîne ISO.
+☑ 18. `valueAs` / `valueTimeZone` manquent sur **quatre composants Angular** (`RangeField`, `DateTimeRange`, `DailyRange`, `TimeSlotPicker`) alors que le provider les documente comme valant pour *tous*. Leur `writeValue` ne convertit rien et lève sur une chaîne ISO.
+   > **Corrigé : `valueAs` est honoré par `<tz-range-field>`, `<tz-datetime-range>` et `<tz-time-slots>`, et leur `writeValue` accepte ce qu'un formulaire contient vraiment — une chaîne ISO, un `Date` — au lieu de lever. `<tz-daily-range>` tient un *motif* (jours + heures d'horloge), qui n'a pas de forme UTC : c'est documenté comme tel sur `TzslotDefaults`, plus laissé implicite. Retenu par `packages/angular/test/value-shapes.test.ts`.**
 19. Le panneau capture son déclencheur **par valeur** : basculer `editable` laisse le panneau accroché à un nœud détaché. `datetime-field.ts:292,646`
 20. `readingStyle: 'marked'` étoile les mauvaises options quand **deux** heures se répètent (Antarctica/Troll). `time-select.ts:259-265`
 21. Trois écouteurs contournent l'`AbortController` (les flèches et le bouton de pas).

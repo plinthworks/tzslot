@@ -140,6 +140,11 @@ export class DailyRange implements ControlValueAccessor {
   private onChange: (value: DailyRangeValue) => void = () => {};
   private onTouched: () => void = () => {};
 
+  /**
+   * A pattern, not a moment: two days and the clock faces repeated over them.
+   * `valueAs` has nothing to convert here, which is why this component does
+   * not take it — see the note on TzslotDefaults.
+   */
   writeValue(value: DailyRangeValue | null): void {
     this.value.set(value ?? EMPTY);
   }

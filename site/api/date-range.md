@@ -7,7 +7,7 @@
 | Option | Type | Default | |
 |---|---|---|---|
 | `value` | `DateRangeValue` | `EMPTY` | The two ends. Either may be unset while a range is being chosen. |
-| `firstDayOfWeek` | `Weekday` | `1` | Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday. |
+| `firstDayOfWeek` | `Weekday \| undefined` | — | Where the week starts, 1 for Monday through 7 for Sunday. Left out, the locale decides — Monday in France, Sunday in the United States. Set it only where a business disagrees with its own locale. |
 | `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out. |
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |

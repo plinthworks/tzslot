@@ -25,18 +25,29 @@ mois et l’ordre des jours suivent.
 
 <Live widget="Calendar" :options="{ timeZone: 'Asia/Tokyo', locale: 'ja-JP', months: 1 }" />
 
-::: warning La semaine commence le lundi, quelle que soit la locale
-`locale` décide des *noms*, pas du début de la semaine. `firstDayOfWeek` vaut
-`1` — lundi, comme ISO-8601 numérote la semaine — tant qu’une application n’en
-décide pas autrement : le calendrier `en-US` ci-dessus commence donc le lundi,
-là où un lecteur américain attend dimanche. Réglez-le :
+Le début de la semaine vient aussi de la locale — lundi en France et au
+Royaume-Uni, **dimanche** aux États-Unis et au Japon, samedi dans une grande
+partie du monde arabe. Rien ci-dessus ne l’a demandé ; regardez le calendrier
+`en-US` et celui en `ja-JP`.
+
+C’est `Intl` qu’on interroge, pas une table tenue ici : une table de deux
+cents locales est une table qui se périme. Là où le navigateur est trop ancien
+pour répondre — vieux Safari, vieux Firefox — la semaine commence le lundi,
+comme le dit ISO-8601.
+
+`firstDayOfWeek` passe outre, pour l’entreprise qui n’est pas d’accord avec sa
+propre locale :
 
 ```js
-createCalendar(element, { locale: 'en-US', firstDayOfWeek: 7 });
+createCalendar(element, { locale: 'en-US', firstDayOfWeek: 1 });
 ```
-:::
 
-<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7, months: 1 }" />
+<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 1, months: 1 }" />
+
+Les raccourcis suivent la même réponse. *Cette semaine* en `fr-FR` commence le
+lundi ; en `en-US`, le dimanche d’avant — un calendrier et un raccourci qui ne
+seraient pas d’accord sur le début d’une semaine seraient pires que l’un ou
+l’autre choix.
 
 Et un champ horaire suit la locale vers douze heures, ou non :
 

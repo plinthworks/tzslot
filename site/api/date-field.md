@@ -11,7 +11,7 @@
 | `placeholder` | `string \| undefined` | — | What the field shows while it holds nothing. |
 | `ariaLabel` | `string \| undefined` | — | The trigger's and the panel's accessible name. Defaults to messages.chooseDate. |
 | `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out. |
-| `firstDayOfWeek` | `Weekday` | `1` | Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday. |
+| `firstDayOfWeek` | `Weekday \| undefined` | — | Where the week starts, 1 for Monday through 7 for Sunday. Left out, the locale decides — Monday in France, Sunday in the United States. Set it only where a business disagrees with its own locale. |
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |

@@ -70,7 +70,8 @@ export class DailyRange implements ControlValueAccessor {
   /** The first and last times offered. */
   readonly minTime = input<string | undefined>(undefined);
   readonly maxTime = input<string | undefined>(undefined);
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
   readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);

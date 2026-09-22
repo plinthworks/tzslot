@@ -1,4 +1,4 @@
-import { Temporal, getMonthGrid, getWeekdayOrder } from '@tzslot/core';
+import { Temporal, getMonthGrid, getWeekdayOrder, firstDayFor } from '@tzslot/core';
 import type { PlainDate, Weekday } from '@tzslot/core';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
@@ -14,7 +14,13 @@ export interface DateRangeValue {
 export interface DateRangeSettings {
   /** The two ends. Either may be unset while a range is being chosen. */
   value: DateRangeValue;
-  firstDayOfWeek: Weekday;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: Weekday | undefined;
   locale: string | undefined;
   min: PlainDate | null;
   max: PlainDate | null;
@@ -76,7 +82,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
   const s: DateRangeSettings = {
     value: EMPTY,
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     locale: undefined,
     min: null,
     max: null,
@@ -92,6 +98,9 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     onChange: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   /** Days renderCell ruled out on the last paint. */
   let renderedOut = new Set<string>();
@@ -286,11 +295,11 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     blocks.forEach((block, index) => {
       const on = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 }).add({ months: index });
       block.title.textContent = blocks.length > 1 ? monthName(on.year, on.month) : '';
-      getWeekdayOrder(s.firstDayOfWeek).forEach((weekday, i) => {
+      getWeekdayOrder(firstDay()).forEach((weekday, i) => {
         block.weekdayCells[i]!.textContent = short.format(new Date(Date.UTC(1970, 0, 4 + weekday)));
       });
 
-      const month = getMonthGrid(on.year, on.month, s.firstDayOfWeek);
+      const month = getMonthGrid(on.year, on.month, firstDay());
       block.weekHeading.textContent = s.weekNumbers ? s.messages.weekShort : '';
       block.weekHeading.setAttribute('aria-label', s.messages.weekLabel);
       if (s.weekNumbers) {
@@ -417,7 +426,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     if (event.key === 'Enter' || event.key === ' ') return; // the button does it
 
     const from = Temporal.PlainDate.from(current ?? s.value.start?.toString() ?? s.today.toString());
-    const intoWeek = (from.dayOfWeek - s.firstDayOfWeek + 7) % 7;
+    const intoWeek = (from.dayOfWeek - firstDay() + 7) % 7;
     const moves: Record<string, () => PlainDate> = {
       ArrowLeft: () => from.subtract({ days: 1 }),
       ArrowRight: () => from.add({ days: 1 }),

@@ -9,7 +9,7 @@
 | `value` | `readonly PlainDate[]` | `[]` | The chosen days, always in date order. |
 | `view` | `CalendarView` | `'days'` | Which level the grid is choosing between. |
 | `minView` | `CalendarView` | `'days'` | How far down the view may go. 'months' turns this into a month picker, 'years' into a year picker, with no further code. |
-| `firstDayOfWeek` | `Weekday` | `1` | Monday by default, as ISO-8601 numbers the week. |
+| `firstDayOfWeek` | `Weekday \| undefined` | — | Where the week starts, 1 for Monday through 7 for Sunday. Left out, the locale decides — Monday in France, Sunday in the United States. Set it only where a business disagrees with its own locale. |
 | `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names. Defaults to the browser's. |
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |

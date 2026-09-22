@@ -1,4 +1,4 @@
-import { Temporal, getDailyWindows, formatDuration } from '@tzslot/core';
+import { Temporal, getDailyWindows, formatDuration, firstDayFor } from '@tzslot/core';
 import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
@@ -46,7 +46,13 @@ export interface DailyRangeSettings {
   /** The first and last times offered in the two lists. */
   minTime: PlainTime | string | undefined;
   maxTime: PlainTime | string | undefined;
-  firstDayOfWeek: Weekday;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: Weekday | undefined;
   locale: string | undefined;
   min: PlainDate | null;
   max: PlainDate | null;
@@ -94,7 +100,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     stepMinutes: 30,
     minTime: undefined,
     maxTime: undefined,
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     locale: undefined,
     min: null,
     max: null,
@@ -109,6 +115,9 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     onChange: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   let stylesPending = injectStyles;
   let summary: DailyWindowsSummary | null = null;
@@ -375,7 +384,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
 
     range.update({
       value: { start: s.value.start, end: s.value.end },
-      firstDayOfWeek: s.firstDayOfWeek,
+      firstDayOfWeek: firstDay(),
       locale: s.locale,
       min: s.min,
       max: s.max,

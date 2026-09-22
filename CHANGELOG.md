@@ -38,6 +38,12 @@ when the clocks move during it.
   leave in for a whole application; `valueAs: 'utc'` hands out an instant
   whatever the widget, a date-only field included.
 - Words come from one bundle, English and French included.
+- **The week starts where the locale says it does** — Monday in France, Sunday
+  in the United States and Japan, Saturday in much of the Arab world — asked of
+  `Intl` rather than kept in a table here. The week-long shortcuts follow the
+  same answer, so the grid and *This week* cannot disagree. `firstDayOfWeek`
+  overrides it for a business that disagrees with its own locale, and a browser
+  too old to answer gets Monday, as ISO-8601 says.
 
 ### The theme
 

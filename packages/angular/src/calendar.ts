@@ -61,7 +61,8 @@ export class Calendar implements ControlValueAccessor, AfterViewInit, OnDestroy 
   readonly value = model<PlainDate | null>(null);
 
   /** Monday by default, as ISO-8601 numbers the week. */
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
 
   /** A BCP-47 tag for the month and weekday names. Defaults to the browser's. */
   readonly locale = input<string | undefined>(this.defaults.locale);

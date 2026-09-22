@@ -339,14 +339,19 @@ createRangeField(element, { timeZone: 'Europe/Paris', weekNumbers: true });
 
 ### `firstDayOfWeek`
 
-`1` is Monday through `7` Sunday. Left out, the locale decides — which is
-right far more often than a hard-coded Monday.
+`1` is Monday through `7` Sunday. Left out, the locale decides — Sunday in the
+United States, Monday in France — and so do the week-long shortcuts, so the
+grid and *This week* never disagree.
 
 ```js
-createRangeField(element, { timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7 });
+createRangeField(element, { timeZone: 'America/New_York', locale: 'en-US' });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7, title: 'Weeks start Sunday' }" />
+<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', presets: ['thisWeek', 'lastWeek'], title: 'en-US: weeks start Sunday by themselves' }" />
+
+Set it only where a business disagrees with its own locale:
+
+<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 1, presets: ['thisWeek', 'lastWeek'], title: 'en-US, forced to Monday' }" />
 
 ### `min` and `max`
 

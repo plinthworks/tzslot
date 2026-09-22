@@ -4,6 +4,7 @@ import {
   getWeekdayOrder,
   getDecadeYears,
   isOutsideDecade,
+  firstDayFor,
 } from '@tzslot/core';
 import type { PlainDate, Weekday } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
@@ -33,8 +34,13 @@ export interface CalendarSettings {
    * 'years' into a year picker, with no further code.
    */
   minView: CalendarView;
-  /** Monday by default, as ISO-8601 numbers the week. */
-  firstDayOfWeek: Weekday;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: Weekday | undefined;
   /** A BCP-47 tag for the month and weekday names. Defaults to the browser's. */
   locale: string | undefined;
   min: PlainDate | null;
@@ -177,7 +183,7 @@ export function mountGrid<V>(
     value: mode.empty,
     view: 'days',
     minView: 'days',
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     locale: undefined,
     min: null,
     max: null,
@@ -192,6 +198,9 @@ export function mountGrid<V>(
     onViewChange: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   /** Days renderCell ruled out on the last paint, so keyboard selection respects them too. */
   let renderedOut = new Set<string>();
@@ -394,7 +403,7 @@ export function mountGrid<V>(
   function paintDays(at: YearMonth, off: boolean): void {
     const short = formatter({ weekday: 'short' });
     const long = formatter({ weekday: 'long' });
-    getWeekdayOrder(s.firstDayOfWeek).forEach((weekday, i) => {
+    getWeekdayOrder(firstDay()).forEach((weekday, i) => {
       // 4 January 1970 was a Sunday, so ISO weekday n falls on 4 + n.
       const reference = new Date(Date.UTC(1970, 0, 4 + weekday));
       const cell = weekdayCells[i]!;
@@ -402,7 +411,7 @@ export function mountGrid<V>(
       cell.setAttribute('aria-label', long.format(reference));
     });
 
-    const grid = getMonthGrid(at.year, at.month, s.firstDayOfWeek);
+    const grid = getMonthGrid(at.year, at.month, firstDay());
     const dates = grid.flat();
 
     // The week number of each row, taken from its first day.
@@ -603,7 +612,7 @@ export function mountGrid<V>(
     }
 
     const from = focusedIso ? Temporal.PlainDate.from(focusedIso) : (mode.dates(s.value)[0] ?? s.today);
-    const intoWeek = (from.dayOfWeek - s.firstDayOfWeek + 7) % 7;
+    const intoWeek = (from.dayOfWeek - firstDay() + 7) % 7;
     const moves: Record<string, () => PlainDate> = {
       ArrowLeft: () => from.subtract({ days: 1 }),
       ArrowRight: () => from.add({ days: 1 }),

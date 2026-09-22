@@ -1,5 +1,5 @@
-import { Temporal, resolveWallTime, shiftInstant, snapTime } from '@tzslot/core';
-import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, Slot } from '@tzslot/core';
+import { Temporal, resolveWallTime, shiftInstant, snapTime, firstDayFor } from '@tzslot/core';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, Slot, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
@@ -29,7 +29,13 @@ export interface DateTimeFieldSettings {
   placeholder: string | undefined;
   ariaLabel: string | undefined;
   locale: string | undefined;
-  firstDayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined;
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
@@ -156,7 +162,7 @@ export function createDateTimeField(
     placeholder: undefined,
     ariaLabel: undefined,
     locale: undefined,
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     min: null,
     max: null,
     isDateDisabled: undefined,
@@ -188,6 +194,9 @@ export function createDateTimeField(
     onClose: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   let stylesPending = injectStyles;
   /** The day and time being built, which exist before a moment does. */
@@ -586,7 +595,7 @@ export function createDateTimeField(
     calendar?.update({
       value: draft.date,
       locale: s.locale,
-      firstDayOfWeek: s.firstDayOfWeek,
+      firstDayOfWeek: firstDay(),
       min: s.min,
       max: s.max,
       isDateDisabled: s.isDateDisabled,

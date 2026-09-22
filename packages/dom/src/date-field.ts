@@ -1,4 +1,4 @@
-import { Temporal } from '@tzslot/core';
+import { Temporal, firstDayFor } from '@tzslot/core';
 import type { PlainDate, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import type { RenderCell } from './cells.js';
@@ -16,7 +16,13 @@ export interface DateFieldSettings {
   /** The trigger's and the panel's accessible name. Defaults to messages.chooseDate. */
   ariaLabel: string | undefined;
   locale: string | undefined;
-  firstDayOfWeek: Weekday;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: Weekday | undefined;
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
@@ -88,7 +94,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     placeholder: undefined,
     ariaLabel: undefined,
     locale: undefined,
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     min: null,
     max: null,
     isDateDisabled: undefined,
@@ -104,6 +110,9 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     onClose: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   let stylesPending = injectStyles;
 
@@ -173,7 +182,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
       calendar = createCalendar(calendarHost, {
         value: s.value,
         locale: s.locale,
-        firstDayOfWeek: s.firstDayOfWeek,
+        firstDayOfWeek: firstDay(),
         min: s.min,
         max: s.max,
         isDateDisabled: s.isDateDisabled,
@@ -218,7 +227,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
       calendar?.update({
         value: s.value,
         locale: s.locale,
-        firstDayOfWeek: s.firstDayOfWeek,
+        firstDayOfWeek: firstDay(),
         min: s.min,
         max: s.max,
         isDateDisabled: s.isDateDisabled,

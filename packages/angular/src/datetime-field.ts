@@ -76,7 +76,8 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
   readonly locale = input<string | undefined>(this.defaults.locale);
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);

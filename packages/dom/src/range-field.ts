@@ -10,8 +10,10 @@ import {
   shiftInstant,
   snapTime,
   resolveWallTime,
+  firstDayFor,
 } from '@tzslot/core';
 import type {
+  Weekday,
   DayRange,
   DurationLike,
   MomentRange,
@@ -172,7 +174,13 @@ export interface RangeFieldSettings {
   /** How many months the panel shows side by side. */
   months: number;
   weekNumbers: boolean;
-  firstDayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7;
+  /**
+   * Where the week starts, 1 for Monday through 7 for Sunday.
+   *
+   * Left out, the locale decides — Monday in France, Sunday in the United
+   * States. Set it only where a business disagrees with its own locale.
+   */
+  firstDayOfWeek: 1 | 2 | 3 | 4 | 5 | 6 | 7 | undefined;
   mode: FieldMode;
   placeholder: string | undefined;
   ariaLabel: string | undefined;
@@ -299,7 +307,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     shift: false,
     months: 2,
     weekNumbers: false,
-    firstDayOfWeek: 1,
+    firstDayOfWeek: undefined,
     mode: 'popup',
     placeholder: undefined,
     ariaLabel: undefined,
@@ -323,6 +331,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     onClose: undefined,
     ...initial,
   };
+
+  /** The week's first day: what the screen asked for, or what the locale says. */
+  const firstDay = (): Weekday => s.firstDayOfWeek ?? firstDayFor(s.locale);
 
   let stylesPending = injectStyles;
   /** What the panel is showing. The same as the value unless Apply is awaited. */
@@ -886,7 +897,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
             range: (today: PlainDate, at_: { now: Instant; timeZone: string }) =>
               isSubDayPreset(preset)
                 ? presetMoments(preset, at_)
-                : presetRange(preset, { today, firstDayOfWeek: s.firstDayOfWeek }),
+                : presetRange(preset, { today, firstDayOfWeek: firstDay() }),
           }
         : preset,
     );
@@ -965,7 +976,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (isBuiltIn(preset.name) && !(s.presets as readonly unknown[]).includes(preset)) {
       return matchesPreset(preset.name, { start: chosen.start, end: chosen.end }, {
         today: s.today,
-        firstDayOfWeek: s.firstDayOfWeek,
+        firstDayOfWeek: firstDay(),
       });
     }
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
@@ -996,7 +1007,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       value: only ? { start: only, end: only } : { start: shown.start, end: shown.end },
       months: s.months,
       weekNumbers: s.weekNumbers,
-      firstDayOfWeek: s.firstDayOfWeek,
+      firstDayOfWeek: firstDay(),
       locale: s.locale,
       min: s.min,
       max: s.max,

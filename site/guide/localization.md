@@ -23,18 +23,29 @@ weekday order and the first day of the week all follow.
 
 <Live widget="Calendar" :options="{ timeZone: 'Asia/Tokyo', locale: 'ja-JP', months: 1 }" />
 
-::: warning The week starts on Monday, whatever the locale
-`locale` decides the *names*, not where the week begins. `firstDayOfWeek` is
-`1` — Monday, as ISO-8601 numbers the week — until an application says
-otherwise, so the `en-US` calendar above starts on Monday where an American
-reader expects Sunday. Set it:
+Where the week starts comes from the locale too — Monday in France and the
+United Kingdom, **Sunday** in the United States and Japan, Saturday in much of
+the Arab world. Nothing above asked for it; look at the `en-US` calendar and
+the `ja-JP` one.
+
+It is `Intl` that is asked, not a table kept here: a table of two hundred
+locales is a table that goes out of date. Where the browser is too old to
+answer — older Safari, older Firefox — the week starts on Monday, as
+ISO-8601 says.
+
+`firstDayOfWeek` overrides it, for the business that disagrees with its own
+locale:
 
 ```js
-createCalendar(element, { locale: 'en-US', firstDayOfWeek: 7 });
+createCalendar(element, { locale: 'en-US', firstDayOfWeek: 1 });
 ```
-:::
 
-<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7, months: 1 }" />
+<Live widget="Calendar" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 1, months: 1 }" />
+
+The shortcuts follow the same answer. *This week* in `fr-FR` starts on the
+Monday; in `en-US` it starts on the Sunday before it — a calendar and a
+shortcut that disagreed about where a week begins would be worse than either
+choice.
 
 And a time field follows the locale into twelve hours, or not:
 

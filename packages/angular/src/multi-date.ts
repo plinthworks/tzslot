@@ -56,7 +56,8 @@ export class MultiDate implements ControlValueAccessor, AfterViewInit {
   /** Once this many are chosen, the other days stop taking clicks. */
   readonly maxDates = input<number | undefined>(undefined);
 
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
   readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);

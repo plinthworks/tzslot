@@ -133,7 +133,8 @@ export class RangeField implements ControlValueAccessor {
   readonly shift = input<ShiftStep | readonly ShiftOption[] | false>(false);
   readonly months = input(2);
   readonly weekNumbers = input(false);
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
   readonly mode = input<FieldMode>('popup');
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);

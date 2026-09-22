@@ -348,14 +348,20 @@ createRangeField(element, { timeZone: 'Europe/Paris', weekNumbers: true });
 
 ### `firstDayOfWeek`
 
-`1` pour lundi jusqu'à `7` pour dimanche. Omis, c'est la locale qui décide — ce
-qui est bien plus souvent juste qu'un lundi écrit en dur.
+`1` pour lundi jusqu'à `7` pour dimanche. Omis, c'est la locale qui décide —
+dimanche aux États-Unis, lundi en France — et les raccourcis d'une semaine
+aussi, pour que la grille et *Cette semaine* ne soient jamais en désaccord.
 
 ```js
-createRangeField(element, { timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7 });
+createRangeField(element, { timeZone: 'America/New_York', locale: 'en-US' });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 7, title: 'Semaines commençant le dimanche' }" />
+<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', presets: ['thisWeek', 'lastWeek'], title: 'en-US : la semaine commence dimanche toute seule' }" />
+
+Ne le réglez que là où une entreprise n'est pas d'accord avec sa propre
+locale :
+
+<Live widget="RangeField" :options="{ timeZone: 'America/New_York', locale: 'en-US', firstDayOfWeek: 1, presets: ['thisWeek', 'lastWeek'], title: 'en-US, forcé au lundi' }" />
 
 ### `min` et `max`
 

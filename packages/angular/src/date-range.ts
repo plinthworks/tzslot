@@ -51,7 +51,8 @@ export class DateRange implements ControlValueAccessor, AfterViewInit {
 
   readonly value = model<DateRangeValue>(EMPTY);
 
-  readonly firstDayOfWeek = input<Weekday>(this.defaults.firstDayOfWeek ?? 1);
+  /** Left out, the locale decides — see `provideTzslot` to settle it once. */
+  readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
   readonly locale = input<string | undefined>(this.defaults.locale);
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);

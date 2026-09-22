@@ -18,7 +18,7 @@ export type {
 } from './temporal.js';
 export { getDaySlots, resolve as resolveWallTime } from './slots.js';
 export type { Slot, DaySlotsOptions, ResolvedTime } from './slots.js';
-export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade } from './grid.js';
+export { getMonthGrid, getWeekdayOrder, getDecadeYears, isOutsideDecade, firstDayFor } from './grid.js';
 export { getRangeInfo, isRangeProblem, formatDuration } from './range.js';
 export { getDailyWindows } from './daily.js';
 export {

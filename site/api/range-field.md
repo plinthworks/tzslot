@@ -23,7 +23,7 @@
 | `shift` | `ShiftStep \| readonly ShiftOption[] \| false` | `false` | Arrows that step the whole selection one period at a time, without opening anything. `false` — the default — draws none: a filter that means one chosen day has nothing to step through. `'auto'` moves by what is selected, so a quarter moves by a quarter and seven days by seven days; a duration — `{ months: 3 }`, `{ days: 7 }` — imposes the step whatever is selected, for a screen whose window is fixed. A duration may be written short — `'25mn'`, `'1h'`, `'3d'`, `'2w'`, `'6mo'` — which is how a screen says its step in one word. A list of `{ step, label }` instead puts a menu between the arrows and lets the reader choose, for a page used to sweep both weeks and quarters. A period open at one end has no length, so `'auto'` moves it by a day there — the unit the calendar itself works in. |
 | `months` | `number` | `2` | How many months the panel shows side by side. |
 | `weekNumbers` | `boolean` | `false` |  |
-| `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7` | `1` | Which day a week starts on, as ISO-8601 numbers them: 1 is Monday, 7 is Sunday. |
+| `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7 \| undefined` | — | Where the week starts, 1 for Monday through 7 for Sunday. Left out, the locale decides — Monday in France, Sunday in the United States. Set it only where a business disagrees with its own locale. |
 | `mode` | `FieldMode` | `'popup'` | 'popup' hangs the panel under the field; 'dialog' centres it over the page. |
 | `placeholder` | `string \| undefined` | — | What the field shows while it holds nothing. |
 | `ariaLabel` | `string \| undefined` | — | The accessible name, for a screen reader. |

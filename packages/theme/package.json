@@ -1,6 +1,6 @@
 {
   "name": "@tzslot/theme",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "An optional stylesheet for the tzslot components. Plain CSS, no framework.",
   "license": "MIT",
   "main": "./tzslot.css",

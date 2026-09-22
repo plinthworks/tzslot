@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.0.1
+
+**The hour menu of `<tz-datetime-field>` was blank on every ordinary day.**
+With `timeLayout: 'select'`, a field reading `22/09/2026 10:15` opened a panel
+whose hour menu showed nothing at all — the minutes were right, the hour was
+empty, and picking one moved a time the reader had not asked to move.
+
+Its options are keyed by hour *and* reading: `10|` where a clock face happens
+once, `2|+02:00` and `2|+01:00` the morning one happens twice. The field named
+a reading unconditionally, so on an ordinary day it asked for `10|+02:00`,
+which matches no option. The interval field carries exactly this guard, with a
+comment predicting the blank; this one never got it.
+
+Found by a reader migrating a flatpickr screen, in a screenshot, an hour after
+1.0.0 went out. Four tests hold it, two of which were watched failing first.
+
 ## 1.0.0
 
 The first stable release. Four packages, published together and versioned

@@ -610,7 +610,13 @@ export function createDateTimeField(
       // The menus show the day they are choosing a time on, as the zone has it.
       date: draft.date,
       timeZone: s.timeZone,
-      offset: s.value && draft.date ? s.value.toZonedDateTimeISO(s.timeZone).offset : null,
+      // Only where there are two identical clock faces to tell apart. On an
+      // ordinary day the hour is offered without an offset, so naming one
+      // matches no option at all and the menu shows a blank.
+      offset:
+        s.value && draft.date && readingOf(s.value)
+          ? s.value.toZonedDateTimeISO(s.timeZone).offset
+          : null,
       minuteStep: s.minuteStep,
       minTime: s.minTime,
       maxTime: s.maxTime,

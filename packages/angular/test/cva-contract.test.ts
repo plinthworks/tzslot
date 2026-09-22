@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { DateTimeRange, RangeField } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
+import type { Instant } from '@tzslot/core';
 
 /**
  * A programmatic write is not the user typing.
@@ -60,7 +61,7 @@ describe('writing a value into the form', () => {
     expect(emissions).toBe(0);
     expect(control.pristine).toBe(true);
     // The instants the application set, not a whole-day rewrite of them.
-    const held = control.value as { start: Temporal.Instant; end: Temporal.Instant };
+    const held = control.value as { start: Instant; end: Instant };
     expect(held.start.toString()).toBe('2026-09-01T00:00:00Z');
     expect(held.end.toString()).toBe('2026-09-03T00:00:00Z');
   });

@@ -39,11 +39,19 @@ export function toPlainDate(value: DateLike, timeZone: string): PlainDate {
       .toPlainDate();
   }
   if (typeof value === 'string') {
-    // An ISO instant carries a zone offset and must be resolved through one;
-    // a plain '2026-06-15' is already a calendar day and must not be.
-    return /[TZ+]|\d{2}:\d{2}/.test(value)
-      ? Temporal.Instant.from(value).toZonedDateTimeISO(timeZone).toPlainDate()
-      : Temporal.PlainDate.from(value);
+    // Three shapes, and they are not interchangeable.
+    //
+    // '2026-06-15T10:00Z' or '…+02:00' is an instant: which day it falls on
+    // depends on where you stand, so it is resolved through the zone.
+    // '2026-06-15T10:00' is a wall time with no zone at all — what a Java or
+    // .NET back end sends, and what a datetime-local input holds — and its
+    // day is written in it. Sending that through Instant.from threw.
+    // '2026-06-15' is already a calendar day.
+    if (/[Zz]$|[+-]\d{2}:?\d{2}$/.test(value)) {
+      return Temporal.Instant.from(value).toZonedDateTimeISO(timeZone).toPlainDate();
+    }
+    if (value.includes('T')) return Temporal.PlainDateTime.from(value).toPlainDate();
+    return Temporal.PlainDate.from(value);
   }
   return value;
 }

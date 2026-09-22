@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createCalendar, type CalendarInstance } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
+import type { PlainDate } from '@tzslot/core';
 
 /**
  * A month or year picker obeys the same bounds a day picker does.
@@ -55,7 +56,7 @@ describe('a month picker with bounds', () => {
     make({
       minView: 'months',
       view: 'months',
-      isDateDisabled: (day) => day.month % 2 === 0, // even months are closed
+      isDateDisabled: (day: PlainDate) => day.month % 2 === 0, // even months are closed
     });
     expect(cells().map((c) => c.disabled)).toEqual([
       false, true, false, true, false, true, false, true, false, true, false, true,

@@ -61,9 +61,14 @@ function localeUses12Hour(locale: string | undefined): boolean {
  * and wheel included.
  *
  * It holds a wall time, not a moment: what a clock shows. Which instant that
- * is depends on the day and the zone, and that is the caller's to resolve —
- * `<tz-datetime-field>` and `createDailyRange` do it, and say when the answer
- * is surprising.
+ * is depends on the day and the zone, and that is the caller's to resolve.
+ *
+ * Given `date` and `timeZone` it also shows that one day as it really is: the
+ * arrows step over an hour the clocks skip. `<tz-datetime-field>` passes them,
+ * because it is choosing one moment. `createDailyRange` deliberately does not:
+ * it holds a pattern repeated over many days, and 02:00 exists on all of them
+ * but one — hiding it everywhere would be a lie about the other days. It names
+ * the odd day instead.
  *
  * Two text fields rather than `<input type="time">`: the native one cannot be
  * stepped by anything but its own rules, cannot show a zone's oddities, and

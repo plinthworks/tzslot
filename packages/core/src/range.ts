@@ -102,7 +102,11 @@ export function formatDuration(
   duration: Duration,
   { days: inDays = true }: { days?: boolean } = {},
 ): string {
-  const total = Math.round(duration.total({ unit: 'minute' }));
+  const signed = Math.round(duration.total({ unit: 'minute' }));
+  // Signed once, at the front. Carrying the sign into every part gave
+  // "-1d 22h -30m" for minus ninety minutes: three numbers, two of them
+  // wrong, and no reading of it that means anything.
+  const total = Math.abs(signed);
   // Forty hours of work is "40h", not "1d 16h": days are optional.
   const days = inDays ? Math.floor(total / 1440) : 0;
   const hours = Math.floor((total - days * 1440) / 60);
@@ -112,5 +116,5 @@ export function formatDuration(
   if (days) parts.push(`${days}d`);
   if (hours) parts.push(`${hours}h`);
   if (minutes || parts.length === 0) parts.push(`${minutes}m`);
-  return parts.join(' ');
+  return (signed < 0 ? '-' : '') + parts.join(' ');
 }

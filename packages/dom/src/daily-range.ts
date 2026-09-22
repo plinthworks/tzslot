@@ -208,6 +208,9 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       minuteStep: s.minuteStep,
       minTime: s.minTime,
       maxTime: s.maxTime,
+      // Honoured by the figures and dropped here, so the same option meant
+      // two different things depending on the layout.
+      hour12: s.hour12,
       locale: s.locale,
       disabled: s.disabled,
       messages: s.messages,

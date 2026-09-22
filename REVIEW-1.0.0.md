@@ -7,6 +7,8 @@ indépendamment, avant d'être retenus.
 
 État : ☐ à faire · ☑ corrigé, avec le test qui le retient
 
+**Niveau 1 : 8 sur 8 traités** (7 corrigés, 1 partiellement rejeté après vérification).
+
 ---
 
 ## Niveau 1 — correctness. Les corriger après la 1.0.0 change un comportement observable.
@@ -85,7 +87,9 @@ Vérifié : sous `minView: 'months'` et `min: juin 2026`, la case de janvier
 n'est pas désactivée et son clic émet `2026-01-01`. Même trou dans
 `goToday()`.
 
-### ☐ 6. `toPlainDate` lève sur une date-heure sans décalage
+### ☑ 6. `toPlainDate` lève sur une date-heure sans décalage
+
+> **Corrigé : trois formes distinguées, pas deux. Une chaîne qui se termine par `Z` ou un décalage est un instant et passe par le fuseau ; une chaîne avec un `T` mais sans décalage est une heure d'horloge dont le jour est écrit dedans ; le reste est déjà un jour. Retenu par `packages/core/test/interop-strings.test.ts`.**
 `packages/core/src/interop.ts:44`
 
 La regex envoie tout ce qui contient une heure vers `Temporal.Instant.from`,
@@ -97,7 +101,9 @@ Vérifié : `toPlainDate('2026-06-15T10:00', 'Europe/Paris')` →
 `'2026-06-15T10:00'` est exactement ce que rend un back-end Java ou un champ
 `datetime-local`.
 
-### ☐ 7. `createDailyRange` ne transmet ni le jour ni le fuseau à son sélecteur d'heure
+### ☑ 7. `createDailyRange` ne transmet ni le jour ni le fuseau à son sélecteur d'heure
+
+> ****Partiellement rejeté, après vérification.** `createDailyRange` tient un motif répété sur plusieurs jours : lui passer *un* jour cacherait l'heure manquante **tous** les jours, alors qu'elle existe sur tous sauf un. Le noyau la traite au bon niveau et le composant **nomme le jour concerné** — vérifié : « Sun 29 Mar : a time falls in the hour the clocks skip ». Ce qui était vraiment faux : le commentaire de `time-input.ts` prétendait le contraire (corrigé), et `hour12` était honoré par les chiffres et ignoré par les menus (corrigé).**
 `packages/dom/src/daily-range.ts:240-249` et `:206-214`
 
 Le commentaire de `time-input.ts` affirme que `createDailyRange` résout
@@ -108,7 +114,9 @@ Vérifié : à Paris le 29 mars 2026, partant de 03:00, la flèche du bas donne
 **02:00** — une heure d'horloge qui n'existe pas ce matin-là, enregistrée en
 silence. Les menus, eux, ignorent en plus `hour12`.
 
-### ☐ 8. `formatDuration` rend n'importe quoi pour une durée négative
+### ☑ 8. `formatDuration` rend n'importe quoi pour une durée négative
+
+> **Corrigé : le signe est porté une fois, en tête. `-1d 22h -30m` devient `-1h 30m`. Retenu par `interop-strings.test.ts`.**
 `packages/core/src/range.ts:107-114`
 
 Vérifié : `formatDuration(Duration.from({ minutes: -90 }))` → `-1d 22h -30m`.

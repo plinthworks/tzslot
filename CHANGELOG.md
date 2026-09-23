@@ -1,3 +1,19 @@
+## 1.2.0
+
+**`messages` is an input on every Angular component.** It arrived only through
+injection, which Angular reads once, so a screen with a language switch saw its
+month names change and the widget's own words stay put — `locale` was an input
+and `messages` was not, the one asymmetry left in the wrappers. The provider is
+still the right place for an application that speaks one language, and is what
+the input falls back to; written on a tag it wins.
+
+```html
+<tz-range-field [messages]="words()" [locale]="lang()" />
+```
+
+Found by someone asking whether their language switch would work. It did, for
+half of what is on screen.
+
 # Changelog
 
 ## 1.1.0

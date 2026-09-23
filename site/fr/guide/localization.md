@@ -78,6 +78,17 @@ createCalendar(element, { locale: 'fr-FR', messages: FR });
 ```
 :::
 
+Une application parle une langue, donc le dire une fois est la façon
+habituelle. Un écran qui change de langue **pendant qu'il tourne** passe le jeu
+sur la balise : une valeur injectée est lue une seule fois et ne change plus,
+donc les noms de mois suivraient la bascule et les boutons non.
+
+```html
+<tz-range-field [messages]="mots()" [locale]="langue()" />
+```
+
+Ce qu'écrit la balise l'emporte ; ce que fournit l'application est le repli.
+
 La locale et le jeu de messages sont distincts, et les mélanger exprès montre
 pourquoi ils doivent l’être. Une locale française avec le jeu anglais — mois
 français, boutons anglais :

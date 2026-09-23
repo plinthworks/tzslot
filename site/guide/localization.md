@@ -75,6 +75,17 @@ createCalendar(element, { locale: 'fr-FR', messages: FR });
 ```
 :::
 
+An application speaks one language, so saying it once is the usual way. A
+screen that switches language **while it runs** passes the bundle on the tag
+instead — an injected value is read once and never changes again, so the month
+names would follow the switch and the buttons would not:
+
+```html
+<tz-range-field [messages]="words()" [locale]="lang()" />
+```
+
+What a tag says wins; what the application provided is the fallback.
+
 The locale and the bundle are separate, and mixing them deliberately shows why
 they have to be. A French locale with the English bundle — French months,
 English buttons:

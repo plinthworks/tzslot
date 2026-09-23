@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
-import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_MESSAGES, type TzslotMessages } from './messages.js';
 import { TZSLOT_DEFAULTS } from './defaults.js';
 import { pairIn, pairOut } from './shapes.js';
 
@@ -114,7 +114,17 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly endBeforeStartMessage = input<string | undefined>(undefined);
 
   protected readonly formDisabled = signal(false);
-  private readonly messages = inject(TZSLOT_MESSAGES);
+  /**
+   * The words the widget says itself — not the month names, which come from
+   * `locale`.
+   *
+   * An application speaks one language, so the usual place to say it once is
+   * `provideTzslotMessages(FR)` or `provideTzslot({ messages: FR })`, and that
+   * is what this falls back to. Written on the tag it wins, which is what a
+   * screen switching language while it runs needs: an injected value is read
+   * once and never changes again.
+   */
+  readonly messages = input<TzslotMessages>(inject(TZSLOT_MESSAGES));
 
   private readonly settings = computed<Partial<DateTimeRangeSettings>>(() => ({
     value: this.value(),
@@ -144,12 +154,12 @@ export class DateTimeRange implements ControlValueAccessor {
     startLabel: this.startLabel(),
     endLabel: this.endLabel(),
     endBeforeStartMessage: this.endBeforeStartMessage(),
-    messages: this.messages,
+    messages: this.messages(),
   }));
 
   /** Created before the required timeZone is bound; the first change detection fills it in. */
   private readonly range: DateTimeRangeInstance = createDateTimeRange(inject(ElementRef).nativeElement, {
-    messages: this.messages,
+    messages: this.messages(),
     onChange: (next) => {
       this.allDay.set(next.allDay === true);
       this.value.set(next);

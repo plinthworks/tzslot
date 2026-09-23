@@ -13,7 +13,7 @@ import {
   untracked,
 } from '@angular/core';
 import { NG_VALUE_ACCESSOR, type ControlValueAccessor } from '@angular/forms';
-import { TZSLOT_MESSAGES } from './messages.js';
+import { TZSLOT_MESSAGES, type TzslotMessages } from './messages.js';
 import { TZSLOT_DEFAULTS } from './defaults.js';
 
 import { Temporal, toInstant, fromInstant } from '@tzslot/core';
@@ -97,7 +97,17 @@ export class TimeSlotPicker implements ControlValueAccessor {
   );
 
   protected readonly formDisabled = signal(false);
-  private readonly messages = inject(TZSLOT_MESSAGES);
+  /**
+   * The words the widget says itself — not the month names, which come from
+   * `locale`.
+   *
+   * An application speaks one language, so the usual place to say it once is
+   * `provideTzslotMessages(FR)` or `provideTzslot({ messages: FR })`, and that
+   * is what this falls back to. Written on the tag it wins, which is what a
+   * screen switching language while it runs needs: an injected value is read
+   * once and never changes again.
+   */
+  readonly messages = input<TzslotMessages>(inject(TZSLOT_MESSAGES));
 
   private readonly settings = computed<Partial<TimeSlotsSettings>>(() => ({
     date: this.date(),
@@ -112,7 +122,7 @@ export class TimeSlotPicker implements ControlValueAccessor {
     ariaLabel: this.ariaLabel(),
     missingLabel: this.missingLabel(),
     emptyLabel: this.emptyLabel(),
-    messages: this.messages,
+    messages: this.messages(),
   }));
 
   /**
@@ -120,7 +130,7 @@ export class TimeSlotPicker implements ControlValueAccessor {
    * read before they are bound. The first change detection fills it in.
    */
   private readonly slots: TimeSlotsInstance = createTimeSlots(inject(ElementRef).nativeElement, {
-    messages: this.messages,
+    messages: this.messages(),
     onChange: (instant) => {
       this.value.set(instant);
       this.onChange(instant);

@@ -163,6 +163,14 @@ import { provideTzslotMessages, FR } from '@tzslot/angular';
 bootstrapApplication(App, { providers: [provideTzslotMessages(FR)] });
 ```
 
+Every component also takes `messages` on the tag, which wins over that and is
+what a language switch needs: an injected value is read once, so without it the
+month names followed the switch and the widget's own words did not.
+
+```html
+<tz-range-field [messages]="words()" [locale]="lang()" />
+```
+
 See [Localization](./localization).
 
 ## Zoneless

@@ -164,6 +164,15 @@ import { provideTzslotMessages, FR } from '@tzslot/angular';
 providers: [provideTzslotMessages(FR)];
 ```
 
+Chaque composant prend aussi `messages` sur la balise, ce qui l'emporte et ce
+dont a besoin un changement de langue à chaud : une valeur injectée est lue une
+seule fois, donc sans ça les noms de mois suivaient la bascule et les mots du
+composant restaient en place.
+
+```html
+<tz-range-field [messages]="mots()" [locale]="langue()" />
+```
+
 ## Zoneless
 
 Rien dans ces composants n’a besoin de `zone.js` : ils lisent des signaux et

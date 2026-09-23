@@ -729,18 +729,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   /**
    * Where a menu starts, before anyone has chosen.
    *
-   * The exact entry if the menu has it; otherwise the shortest entry that is
-   * not *shorter* than the shape can hold, because a day-only field moved by
-   * an hour stops being a day — it turned `22/09/2026` into
-   * `22/09/2026 01:00 – 23/09/2026 01:00` over controls that cannot show an
-   * hour. Months and years count as long enough: they cannot be measured in
-   * minutes but they never cut a day in half.
+   * The first entry the shape can take. The order is the screen's and it is
+   * kept — picking the closest match instead would reorder a list someone
+   * wrote deliberately, and a menu reading `a week, 1 day` opened on the day.
+   *
+   * What is skipped is a step *shorter* than the shape holds, because a
+   * day-only field moved by an hour stops being a day: it turned `22/09/2026`
+   * into `22/09/2026 01:00 – 23/09/2026 01:00` over controls that cannot show
+   * an hour. Months and years count as long enough — they cannot be measured
+   * in minutes, but they never cut a day in half.
    */
   const defaultStep = (menu: readonly ShiftOption[]): number => {
-    const wanted = shapeStep();
-    const exact = menu.findIndex((o) => stepMinutes(o.step) === wanted);
-    if (exact >= 0) return exact;
-    const enough = menu.findIndex((o) => (stepMinutes(o.step) ?? Infinity) >= wanted);
+    const enough = menu.findIndex((o) => !tooShort(o.step));
     return enough >= 0 ? enough : 0;
   };
 

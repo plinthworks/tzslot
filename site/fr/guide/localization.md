@@ -88,6 +88,29 @@ donc les noms de mois suivraient la bascule et les boutons non.
 ```
 
 Ce qu'écrit la balise l'emporte ; ce que fournit l'application est le repli.
+Pressez les boutons sous celui-ci — les noms de mois et les mots du composant
+changent ensemble, et le champ garde ce qui était choisi :
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, months: 1, presets: ['today', 'thisWeek'] }"
+  :controls="[
+    { label: 'Français', run: (f) => f.update({ locale: 'fr-FR', messages: FR }) },
+    { label: 'English', run: (f) => f.update({ locale: 'en-GB', messages: EN }) },
+  ]"
+/>
+
+Ne changer que la locale, c'est ce que laisse un jeu de messages injecté : les
+mois bougent et les mots restent.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, months: 1, presets: ['today', 'thisWeek'] }"
+  :controls="[
+    { label: 'fr-FR seule', run: (f) => f.update({ locale: 'fr-FR' }) },
+    { label: 'en-GB seule', run: (f) => f.update({ locale: 'en-GB' }) },
+  ]"
+/>
 
 La locale et le jeu de messages sont distincts, et les mélanger exprès montre
 pourquoi ils doivent l’être. Une locale française avec le jeu anglais — mois

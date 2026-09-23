@@ -84,7 +84,30 @@ names would follow the switch and the buttons would not:
 <tz-range-field [messages]="words()" [locale]="lang()" />
 ```
 
-What a tag says wins; what the application provided is the fallback.
+What a tag says wins; what the application provided is the fallback. Press the
+buttons under this one — the month names and the widget's own words change
+together, and the field keeps what was chosen:
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', messages: EN, months: 1, presets: ['today', 'thisWeek'] }"
+  :controls="[
+    { label: 'English', run: (f) => f.update({ locale: 'en-GB', messages: EN }) },
+    { label: 'Français', run: (f) => f.update({ locale: 'fr-FR', messages: FR }) },
+  ]"
+/>
+
+Switching only the locale is what an injected bundle leaves you with: the
+months move and the words do not.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', locale: 'en-GB', messages: EN, months: 1, presets: ['today', 'thisWeek'] }"
+  :controls="[
+    { label: 'en-GB only', run: (f) => f.update({ locale: 'en-GB' }) },
+    { label: 'fr-FR only', run: (f) => f.update({ locale: 'fr-FR' }) },
+  ]"
+/>
 
 The locale and the bundle are separate, and mixing them deliberately shows why
 they have to be. A French locale with the English bundle — French months,

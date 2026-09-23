@@ -366,9 +366,15 @@ depending on what they had pressed a moment earlier.
 
 ### `showStep`
 
-Whether that button is on screen at all. `true` by default, which means it
-appears whenever `shift` is a list. `false` hides it: the step is the
-developer's, and the reader only moves.
+Whether the step is offered at all — the button beside the field, and the
+column inside the panel. `true` by default, which means both appear whenever
+`shift` is a list. `false` hides them: the step is the developer's, and the
+reader only moves.
+
+Putting the column away narrows the panel to the width of the calendar, and
+the two fields then stack instead of sharing a line. Nothing declares that:
+they wrap when the line is too short for both, which is also what happens in
+a panel too narrow for them.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

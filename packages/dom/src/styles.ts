@@ -845,12 +845,43 @@ export const RANGEFIELD_CSS = `
 }
 .tz-rangefield__head {
   display: flex;
-  flex-wrap: wrap;
+  /* The arrows stay on the line of the fields. Wrapping put one above and one
+     below them, because the two fields together ask for more than the line
+     has; it is the fields that wrap inside their own box, not this row. */
+  flex-wrap: nowrap;
   align-items: flex-start;
   gap: 0.75rem 1rem;
   padding-bottom: 0.75rem;
   border-bottom: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+  /* The head asks for nothing and takes what the row below settles on. Left
+     to its natural width it made the panel as wide as two fields side by
+     side, so hiding the column of steps narrowed the calendar and not the
+     panel. Zero width with a 100% floor is what lets the body decide: with
+     the column, the line holds both fields; without it, the panel is the
+     width of one calendar and the fields wrap on their own. */
+  width: 0;
+  min-width: 100%;
 }
+/* With the column of steps there is room to spare, so the head takes back its
+   natural width and the two fields share one line — measured, two fields need
+   512px and a calendar beside one column offers 413. Without the column the
+   rule above holds and they stack, which is what a panel the width of a
+   calendar can carry. */
+.tz-rangefield__panel:has(.tz-rangefield__steps:not([hidden])) .tz-rangefield__head {
+  width: auto;
+  /* max-content, not 0: the panel is a grid whose single column takes the
+     widest item, and letting the head merely *allow* more width was not
+     enough — the body still settled it, and the two fields went on wrapping.
+     Asking for the head's own intrinsic width is what widens the column. */
+  min-width: max-content;
+}
+/* The arrows stand on the line of the fields, not of the words above them. */
+.tz-rangefield__head > .tz-rangefield__shift-arrow { margin-top: 1.35rem; }
+/* The box of fields takes what it needs and no more, so the far arrow stays
+   beside the fields instead of being pushed to the edge of a panel whose
+   width the calendar below has settled — which is what one field, in
+   singleDay, looked like. */
+.tz-rangefield__head > .tz-rangefield__inputs { flex: 0 1 auto; }
 /* The two fields sit side by side, with whatever separates them between
    them — a word, an arrow, nothing. They drop onto two lines only when the
    panel is too narrow to hold them. */
@@ -858,6 +889,13 @@ export const RANGEFIELD_CSS = `
    chosen. Said explicitly because a display on the element beats [hidden]. */
 .tz-rangefield__field[hidden],
 .tz-rangefield__between[hidden] { display: none; }
+/* Inside a range panel the date box holds a date and nothing else — the hours
+   are in the menus beside it — so 8.5rem left a blank half the width of the
+   field, and two fields no longer fitted on one line. Measured in Chrome:
+   288px a field before, 256 after, which is what puts them side by side. */
+.tz-rangefield__field .tz-dateinput__input {
+  width: var(--tz-rangefield-date-width, 6.5rem);
+}
 .tz-rangefield__inputs {
   display: flex;
   flex-wrap: wrap;
@@ -950,8 +988,18 @@ export const RANGEFIELD_CSS = `
 .tz-rangefield__shift-arrow:disabled { opacity: 0.4; cursor: not-allowed; }
 .tz-rangefield__body {
   display: flex;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 1rem;
+}
+/* The calendar sits in the middle of whatever the head leaves over, rather
+   than pinned to one side with a hole beside it. It has a box of its own for
+   this: the element createDateRange is given becomes the calendar, so a rule
+   meant to place it in the row would land on its own layout instead. */
+.tz-rangefield__calendar {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 /* display on the element itself beats [hidden]'s display:none, so it has to be
    said again here or showPresets would set an attribute nothing obeys. */
@@ -966,6 +1014,53 @@ export const RANGEFIELD_CSS = `
   order: var(--tz-rangefield-presets-order, 1);
 }
 .tz-rangefield__preset-list { display: flex; flex-direction: column; gap: 0.125rem; }
+/* The column of steps: a heading, then the choices sharing the height the
+   calendar sets. They stretch rather than sit at the top because four entries
+   at their natural height left a hole under them, and a hole beside a
+   calendar reads as something missing. */
+.tz-rangefield__steps[hidden] { display: none; }
+.tz-rangefield__steps {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  flex: 0 0 auto;
+  width: var(--tz-rangefield-steps-width, 9rem);
+  padding-left: 1rem;
+  border-left: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+}
+.tz-rangefield__steps-label {
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.tz-rangefield__step-list {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.tz-rangefield__step-choice {
+  flex: 1;
+  border: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+  border-radius: var(--tz-radius, 0.375rem);
+  padding: 0.35rem 0.6rem;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-size: 0.875em;
+  cursor: pointer;
+}
+.tz-rangefield__step-choice:hover:not(:disabled):not(.tz-rangefield__step-choice--on) {
+  background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent));
+}
+.tz-rangefield__step-choice--on {
+  border-color: transparent;
+  background: var(--tz-accent, currentColor);
+  color: var(--tz-accent-fg, canvas);
+  font-weight: 600;
+}
+.tz-rangefield__step-choice:disabled { opacity: 0.4; cursor: not-allowed; }
 .tz-rangefield__preset {
   border: 0;
   border-radius: var(--tz-radius, 0.375rem);

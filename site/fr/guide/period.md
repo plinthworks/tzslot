@@ -376,9 +376,15 @@ lecteur selon ce qu'il avait pressé un instant plus tôt.
 
 ### `showStep`
 
-Si ce bouton est à l'écran. `true` par défaut, donc il apparaît dès que `shift`
-est une liste. `false` le cache : le pas appartient au développeur, et le
-lecteur ne fait que se déplacer.
+Si le pas est proposé du tout — le bouton à côté du champ, et la colonne dans
+le panneau. `true` par défaut, donc les deux apparaissent dès que `shift` est
+une liste. `false` les cache : le pas appartient au développeur, et le lecteur
+ne fait que se déplacer.
+
+Ranger la colonne ramène le panneau à la largeur du calendrier, et les deux
+champs s'empilent alors au lieu de partager une ligne. Rien ne le déclare :
+ils passent à la ligne quand elle est trop courte pour les deux, ce qui arrive
+aussi dans un panneau trop étroit pour eux.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

@@ -1,5 +1,57 @@
 # Changelog
 
+## 1.3.0
+
+### The panel says how far, not which range
+
+A screen read by comparing asks *how far to travel* far more often than it
+asks for a named range, so the choice of step takes the place the shortcuts
+had — a column beside the calendar, one entry per step, the one in force
+filled in.
+
+```js
+createRangeField(element, {
+  shift: [
+    { step: 15,    label: '15 min' },
+    { step: 60,    label: '1 hour' },
+    { step: 1440,  label: '1 day' },
+    { step: 10080, label: '1 week' },
+  ],
+});
+```
+
+**The arrows moved with it.** They stood on a line of their own above the
+fields, next to a label naming the period — over two fields already showing
+it. They now stand either side of those fields, which is what they move.
+
+**The step a panel opens on follows the shape of the field**: a quarter of an
+hour for a period, a day when it holds one day. A step shorter than the shape
+can take is offered and refused rather than hidden, with the reason in its
+title — a menu that loses entries when a checkbox is ticked reads as a bug.
+Once a reader has chosen, their choice stands.
+
+**`showStep: false` puts the column away**, and the panel then narrows to the
+calendar, so the two fields stack. `shift: false` still removes the arrows and
+the column together.
+
+### The panel, measured
+
+- **The date box inside the panel was 8.5rem for a date that draws 75px.** The
+  blank was half the width of each field, and it is why two fields could not
+  share a line: 288px each against 413 of room. At 6.5rem a field is 256 and
+  they sit side by side. `--tz-rangefield-date-width` moves it.
+- **The head no longer decides the panel's width** — the calendar below does,
+  except when the column of steps gives it room to spare. Hiding the column
+  used to narrow the calendar instead of the panel.
+- **The calendar has a box of its own** so it can be centred in whatever the
+  head leaves over. Placing it directly made its header a column beside its
+  grid: `createDateRange` puts its class on the host it is given, so the host
+  *is* the calendar, and a rule meant to position it landed on its own layout.
+
+Measured in Chrome, one month with the column: panel 627 × 427 where it was
+500 × 541 — wider, and a quarter shorter. Without the column: 278 wide, the
+two fields stacked.
+
 ## 1.2.0
 
 **An open panel kept the old language in its accessible name.** It is labelled

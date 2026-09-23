@@ -427,7 +427,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       event.stopPropagation();
       const menu = stepMenu();
       if (!menu) return;
-      stepIndex = (stepIndex + 1) % menu.length;
+      // Cycling past a step the shape cannot take would undo the shape, so
+      // those entries are stepped over rather than offered.
+      let next = stepAt(menu);
+      for (let i = 0; i < menu.length; i += 1) {
+        next = (next + 1) % menu.length;
+        if (!tooShort(menu[next]!.step)) break;
+      }
+      stepIndex = next;
+      stepPicked = true;
       render();
     },
     on,
@@ -438,10 +446,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let presetList: HTMLElement | null = null;
   /** Kept so the column can be hidden and shown again without losing the list. */
   let presetColumn: HTMLElement | null = null;
+  /** The same, for the column of steps. */
+  let stepList: HTMLElement | null = null;
+  let stepColumn: HTMLElement | null = null;
   /** The second field and the mark between, hidden together when one day is chosen. */
   let endField: HTMLElement | null = null;
   let betweenMark: HTMLElement | null = null;
-  let panelShift: { row: HTMLElement; label: HTMLElement; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
+  let panelShift: { row: HTMLElement; label: HTMLElement | null; back: HTMLButtonElement; forward: HTMLButtonElement } | null =
     null;
   type Reading = { instant: Instant; name: string; full: string };
 
@@ -690,6 +701,56 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   /** Which of them is chosen. Kept by position, so a relabelled menu is harmless. */
   let stepIndex = 0;
   /**
+   * Whether that position was chosen by the reader.
+   *
+   * Until it is, the step follows the shape of the field rather than sitting
+   * on the first entry of the menu: a quarter of an hour for a period, a day
+   * for one day. Once a reader has picked, their choice stands — changing the
+   * shape under them and silently moving their step is worse than either.
+   */
+  let stepPicked = false;
+
+  /** A step counted in minutes, where it can be. Months and years cannot. */
+  const stepMinutes = (step_: ShiftStep): number | null => {
+    const ready = asStep(step_);
+    if (ready === null) return null;
+    if (typeof ready === 'number') return ready;
+    // asStep has already turned '25mn' and 'PT1H' into a duration; a string
+    // reaching here is one it could not read, and it counts as unmeasurable.
+    if (typeof ready === 'string') return null;
+    const d = ready;
+    if (d.years || d.months) return null;
+    return (d.weeks ?? 0) * 7 * 1440 + (d.days ?? 0) * 1440 + (d.hours ?? 0) * 60 + (d.minutes ?? 0);
+  };
+
+  /** What one press is worth on a field of this shape, in minutes. */
+  const shapeStep = (): number => (s.singleDay || !s.showTime ? 1440 : 15);
+
+  /**
+   * Where a menu starts, before anyone has chosen.
+   *
+   * The exact entry if the menu has it; otherwise the shortest entry that is
+   * not *shorter* than the shape can hold, because a day-only field moved by
+   * an hour stops being a day — it turned `22/09/2026` into
+   * `22/09/2026 01:00 – 23/09/2026 01:00` over controls that cannot show an
+   * hour. Months and years count as long enough: they cannot be measured in
+   * minutes but they never cut a day in half.
+   */
+  const defaultStep = (menu: readonly ShiftOption[]): number => {
+    const wanted = shapeStep();
+    const exact = menu.findIndex((o) => stepMinutes(o.step) === wanted);
+    if (exact >= 0) return exact;
+    const enough = menu.findIndex((o) => (stepMinutes(o.step) ?? Infinity) >= wanted);
+    return enough >= 0 ? enough : 0;
+  };
+
+  /** The entry in force: the reader's, or the one the shape asks for. */
+  const stepAt = (menu: readonly ShiftOption[]): number =>
+    stepPicked ? Math.min(stepIndex, menu.length - 1) : defaultStep(menu);
+
+  /** A step this field's shape cannot take — an hour inside a single day. */
+  const tooShort = (step_: ShiftStep): boolean => (stepMinutes(step_) ?? Infinity) < shapeStep();
+  /**
    * What one press of an arrow moves.
    *
    * `true` asks for arrows without naming a step, and the answer follows what
@@ -699,7 +760,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   const currentStep = (): ShiftStep | null => {
     const menu = stepMenu();
-    if (menu) return menu[Math.min(stepIndex, menu.length - 1)]?.step ?? null;
+    if (menu) return menu[stepAt(menu)]?.step ?? null;
     if (s.shift === false || Array.isArray(s.shift)) return null;
     /*
      * `true` asks for arrows without naming a step, and the answer follows
@@ -1015,6 +1076,47 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     );
   }
 
+  /**
+   * The column of steps, repainted the way the shortcuts are.
+   *
+   * Rebuilt with replaceChildren it would destroy the button under the focus
+   * on every press — the shortcut column was fixed for exactly that, and this
+   * one is built the same way rather than learning it again.
+   */
+  function paintSteps(): void {
+    const menu = stepMenu();
+    if (stepColumn) stepColumn.hidden = menu === null || !s.showStep;
+    if (!stepList || !menu) return;
+    const chosen = stepAt(menu);
+    const existing = [...stepList.children] as HTMLButtonElement[];
+    menu.forEach((option, index) => {
+      let button = existing[index];
+      if (!button) {
+        button = el('button', 'tz-rangefield__step-choice');
+        button.type = 'button';
+        stepList!.append(button);
+      }
+      const on = index === chosen;
+      if (button.textContent !== option.label) button.textContent = option.label;
+      button.classList.toggle('tz-rangefield__step-choice--on', on);
+      button.setAttribute('aria-pressed', String(on));
+      // A step shorter than the shape can hold is shown and refused rather
+      // than hidden: a menu that loses entries when a checkbox is ticked
+      // reads as a bug, and the reason is worth saying in the title.
+      const short = tooShort(option.step);
+      button.disabled = off() || short;
+      if (short) button.title = s.messages.stepTooShort;
+      else button.removeAttribute('title');
+      button.onclick = () => {
+        stepIndex = index;
+        stepPicked = true;
+        render();
+        paintPanel();
+      };
+    });
+    for (const extra of existing.slice(menu.length)) extra.remove();
+  }
+
   function paintPresets(): void {
     if (presetColumn) presetColumn.hidden = !s.showPresets;
     if (endField) endField.hidden = s.singleDay;
@@ -1214,10 +1316,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       }
     }
     if (panelShift) {
-      panelShift.label.textContent = display(draft) || s.messages.chooseRange;
       for (const button of [panelShift.back, panelShift.forward]) button.disabled = !canShift();
     }
     paintPresets();
+    paintSteps();
     panel.place();
   }
 
@@ -1278,6 +1380,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       range = null;
       presetList = null;
       presetColumn = null;
+      stepList = null;
+      stepColumn = null;
       endField = null;
       betweenMark = null;
       panelShift = null;
@@ -1326,18 +1430,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         node.append(heading);
       }
 
-      if (currentStep() !== null) {
-        const row = el('div', 'tz-rangefield__shift');
-        const label = el('span', 'tz-rangefield__shift-label');
-        const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
-        const forwardButton = arrow(1, 'tz-rangefield__shift-arrow');
-        backButton.setAttribute('aria-label', s.messages.previousPeriod);
-        forwardButton.setAttribute('aria-label', s.messages.nextPeriod);
-        row.append(backButton, label, forwardButton);
-        node.append(row);
-        panelShift = { row, label, back: backButton, forward: forwardButton };
-      }
-
       const head = el('div', 'tz-rangefield__head');
       const pair = el('div', 'tz-rangefield__inputs');
       const made: Partial<Record<Edge, DateInputInstance>> = {};
@@ -1377,13 +1469,54 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       }
       inputs = { start: made.start!, end: made.end! };
       readingBoxes = { start: made.start!.extra, end: made.end!.extra };
-      head.append(pair);
+
+      /*
+       * The arrows stand on either side of the two fields rather than on a
+       * line of their own above them. They move what those fields hold, and a
+       * reader asked where they were: a row that named the period again, over
+       * two fields already showing it, said nothing the fields did not.
+       */
+      if (currentStep() !== null) {
+        const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
+        const forwardButton = arrow(1, 'tz-rangefield__shift-arrow');
+        backButton.setAttribute('aria-label', s.messages.previousPeriod);
+        forwardButton.setAttribute('aria-label', s.messages.nextPeriod);
+        head.append(backButton, pair, forwardButton);
+        panelShift = { row: head, label: null, back: backButton, forward: forwardButton };
+      } else head.append(pair);
 
       node.append(head);
 
       const body = el('div', 'tz-rangefield__body');
+      /*
+       * The calendar goes inside a box of its own rather than straight into
+       * the row. createDateRange puts its class on the host it is given, so
+       * the host *is* the calendar: anything set on it to place it in the row
+       * lands on its own layout instead — a `display: flex` meant to centre it
+       * turned its header into a column beside the grid.
+       */
+      const rangeBox = el('div', 'tz-rangefield__calendar');
       const rangeHost = doc.createElement('div');
-      body.append(rangeHost);
+      rangeBox.append(rangeHost);
+      body.append(rangeBox);
+      /*
+       * How far one press moves, as a column beside the calendar.
+       *
+       * A screen that reads by comparing wants to say how far to travel far
+       * more often than it wants a named range, so the choice of step takes
+       * the place the shortcuts had. `showStep: false` puts it away, and the
+       * panel then narrows to the calendar — the two fields stack on their
+       * own, because they wrap when the line is too short for both.
+       */
+      const menuNow = stepMenu();
+      if (menuNow && s.showStep) {
+        stepColumn = el('div', 'tz-rangefield__steps');
+        const heading = el('span', 'tz-rangefield__steps-label');
+        heading.textContent = s.messages.stepLabel;
+        stepList = el('div', 'tz-rangefield__step-list');
+        stepColumn.append(heading, stepList);
+        body.append(stepColumn);
+      }
       if (s.presets.length > 0) {
         presetColumn = el('div', 'tz-rangefield__presets');
         presetList = el('div', 'tz-rangefield__preset-list');

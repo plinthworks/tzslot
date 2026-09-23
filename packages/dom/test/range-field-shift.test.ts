@@ -30,6 +30,11 @@ const make = (options = {}) => {
 const shown = () => host.querySelector('.tz-field__text')!.textContent;
 const arrows = () => host.querySelectorAll<HTMLButtonElement>('.tz-field__shift');
 const panel = () => document.querySelector('.tz-field__panel')!;
+/** What the two fields in the panel read, which is where the period now shows. */
+const panelDates = () =>
+  [...panel().querySelectorAll<HTMLInputElement>('.tz-rangefield__field .tz-dateinput__input')].map(
+    (i) => i.value,
+  );
 
 beforeEach(() => {
   host = document.createElement('div');
@@ -130,7 +135,7 @@ describe('with shift on', () => {
     expect(reported).toHaveLength(0);
   });
 
-  it('is in the panel too, labelled with the period it would move', () => {
+  it('is in the panel too, on the line of the two fields it moves', () => {
     make({ shift: { months: 3 }, messages: FR, locale: 'fr-FR' });
     field.update({
       value: {
@@ -139,9 +144,17 @@ describe('with shift on', () => {
       },
     });
     field.open();
-    expect(panel().querySelector('.tz-rangefield__shift-label')!.textContent).toBe('01/07/2026 – 30/09/2026');
-    panel().querySelector<HTMLButtonElement>('.tz-rangefield__shift-arrow')!.click();
-    expect(panel().querySelector('.tz-rangefield__shift-label')!.textContent).toBe('01/04/2026 – 30/06/2026');
+    // The arrows stand inside the head, either side of the fields. There is no
+    // line naming the period over them any more: the two fields say it, and a
+    // row repeating it underneath said nothing they did not.
+    const head = panel().querySelector('.tz-rangefield__head')!;
+    const inPanel = [...head.querySelectorAll<HTMLButtonElement>('.tz-rangefield__shift-arrow')];
+    expect(inPanel).toHaveLength(2);
+    expect(head.querySelector('.tz-rangefield__shift-label')).toBe(null);
+    expect(panelDates()).toEqual(['01/07/2026', '30/09/2026']);
+    inPanel[0]!.click();
+    expect(panelDates()).toEqual(['01/04/2026', '30/06/2026']);
+    expect(shown()).toBe('01/04/2026 – 30/06/2026');
     expect(field.isOpen).toBe(true); // stepping is not choosing: the panel stays
   });
 

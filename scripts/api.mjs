@@ -42,8 +42,8 @@ export const WIDGETS = [
   { name: 'createTimeSlots', file: 'time-slots.ts', settings: 'TimeSlotsSettings', angular: 'tz-time-slots' },
   { name: 'createDateTimeRange', file: 'datetime-range.ts', settings: 'DateTimeRangeSettings', angular: 'tz-datetime-range' },
   { name: 'createDailyRange', file: 'daily-range.ts', settings: 'DailyRangeSettings', angular: 'tz-daily-range' },
-  { name: 'createTimeInput', file: 'time-input.ts', settings: 'TimeInputSettings', angular: null },
-  { name: 'createTimeSelect', file: 'time-select.ts', settings: 'TimeSelectSettings', angular: null },
+  { name: 'createTimeInput', file: 'time-input.ts', settings: 'TimeInputSettings', angular: 'tz-time-input' },
+  { name: 'createTimeSelect', file: 'time-select.ts', settings: 'TimeSelectSettings', angular: 'tz-time-select' },
 ];
 
 /**

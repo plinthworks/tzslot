@@ -9,7 +9,14 @@ Chaque option des trois a un exemple qui tourne dessous.
 
 ## Un champ compact — `createTimeInput`
 
-En Angular : `<tz-time-input>`, un `ControlValueAccessor` comme les autres.
+En Angular c'est `<tz-time-input>`, un `ControlValueAccessor` comme les
+autres — il entre donc directement dans un formulaire réactif :
+
+```html
+<tz-time-input formControlName="startTime" [stepMinutes]="15" [date]="jour()" [timeZone]="zone" />
+```
+
+Le contrôle porte un `PlainTime` : un cadran, sans jour ni fuseau.
 
 
 `timeLayout: 'input'`. Les flèches, la molette, les touches haut et bas, et la
@@ -98,7 +105,22 @@ createTimeInput(element, { disabled: true });
 
 ## Deux menus — `createTimeSelect`
 
-En Angular : `<tz-time-select>`, avec `offsetChange` pour la lecture retenue.
+En Angular c'est `<tz-time-select>`, avec une sortie de plus que la version
+DOM rend en second argument :
+
+```html
+<tz-time-select
+  formControlName="startTime"
+  [date]="jour()"
+  [timeZone]="zone"
+  [minuteStep]="15"
+  (offsetChange)="form.get('startOffset')?.setValue($event)" />
+```
+
+`offsetChange` dit **quelle lecture** d'une heure répétée a été retenue —
+`+02:00` ou `+01:00`. Sur une heure ordinaire elle ne veut rien dire ; le 25
+octobre, c'est la différence entre deux moments distants d'une heure, donc un
+formulaire qui enregistre des instants doit la porter.
 
 
 `timeLayout: 'select'`. Un menu d'heures et un menu de minutes. Ce sont de vrais

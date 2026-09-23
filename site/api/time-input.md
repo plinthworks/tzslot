@@ -1,6 +1,6 @@
 <!-- Written by scripts/api.mjs from packages/dom/src/time-input.ts. Do not edit. -->
 
-# createTimeInput
+# createTimeInput · `<tz-time-input>`
 
 ### Options
 

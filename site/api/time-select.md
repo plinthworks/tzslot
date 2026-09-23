@@ -1,6 +1,6 @@
 <!-- Written by scripts/api.mjs from packages/dom/src/time-select.ts. Do not edit. -->
 
-# createTimeSelect
+# createTimeSelect · `<tz-time-select>`
 
 ### Options
 

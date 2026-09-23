@@ -741,11 +741,14 @@ export const TIMESELECT_CSS = `
 /** The range field's panel: the calendar, the named ranges beside it, a footer. */
 export const DATEINPUT_CSS = `
 .tz-dateinput { display: inline-flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
+/* FROM and TO name the two ends, so they have to be read, not merely sensed:
+   at 0.6 of the text colour and a normal weight they were barely there. */
 .tz-dateinput__label {
   font-size: 0.7rem;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .tz-dateinput__label[hidden] { display: none; }
 /* The same field as everywhere else in the library — same border, same
@@ -875,8 +878,15 @@ export const RANGEFIELD_CSS = `
      Asking for the head's own intrinsic width is what widens the column. */
   min-width: max-content;
 }
-/* The arrows stand on the line of the fields, not of the words above them. */
-.tz-rangefield__head > .tz-rangefield__shift-arrow { margin-top: 1.35rem; }
+/* The arrows stand on the line of the fields, not of the words above them.
+   Centred in the box and then pushed down by the height the label takes:
+   measured in Chrome, a field is 69px of which the label and its gap are 27,
+   so the input's middle sits 13.5px below the box's. A flat 1.35rem left them
+   12px high. */
+.tz-rangefield__head > .tz-rangefield__shift-arrow {
+  align-self: center;
+  margin-top: var(--tz-rangefield-label-block, 1.7rem);
+}
 /* The box of fields takes what it needs and no more, so the far arrow stays
    beside the fields instead of being pushed to the edge of a panel whose
    width the calendar below has settled — which is what one field, in
@@ -894,8 +904,18 @@ export const RANGEFIELD_CSS = `
    field, and two fields no longer fitted on one line. Measured in Chrome:
    288px a field before, 256 after, which is what puts them side by side. */
 .tz-rangefield__field .tz-dateinput__input {
-  width: var(--tz-rangefield-date-width, 6.5rem);
+  /* 7.25rem is 116px, and 08/09/2026 measures 91 in this font with 18 of
+     padding either side: 109 needed. At 6.5rem it had 104 and the last digit
+     of the year was cut off. A format that writes the month in words is far
+     wider than any default can be — that is what the property is for. */
+  width: var(--tz-rangefield-date-width, 7.25rem);
+  /* A row of 2.5rem for a date and two short menus is taller than it needs to
+     be, and two of them stacked over a calendar is where that shows. The menus
+     beside it are brought down with the same lever, so the row stays one
+     height rather than the box growing around the tallest thing in it. */
+  padding-block: var(--tz-rangefield-field-pad, 0.3rem);
 }
+.tz-rangefield__field { --tz-time-pad-y: var(--tz-rangefield-field-pad, 0.3rem); }
 .tz-rangefield__inputs {
   display: flex;
   flex-wrap: wrap;

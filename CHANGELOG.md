@@ -34,6 +34,27 @@ Once a reader has chosen, their choice stands.
 calendar, so the two fields stack. `shift: false` still removes the arrows and
 the column together.
 
+### The two fields, measured again
+
+Four things a reader saw that the first pass did not, each measured in Chrome
+before and after:
+
+- **The arrows sat 12px above the line they move.** They were pushed down by a
+  flat `1.35rem`, guessed rather than measured; a field is 69px of which the
+  label and its gap take 27, so the input's middle is 13.5px below the box's.
+  They are centred and offset by the label's own height now —
+  `--tz-rangefield-label-block`.
+- **FROM and TO were barely there**, at 0.6 of the text colour and a normal
+  weight. They name the two ends, so they have to be read: 0.8 and 600.
+- **The row was 42px tall** for a date and two short menus. It is 36 now, and
+  the menus follow the same lever as the box — `--tz-rangefield-field-pad` —
+  so the row keeps one height rather than growing around the tallest thing in
+  it.
+- **The last digit of the year was cut off.** The date box was 104px and
+  `08/09/2026` measures 91 with 18 of padding either side: 109 needed. It is
+  7.25rem, and `--tz-rangefield-date-width` moves it for a format that writes
+  the month in words.
+
 ### The panel, measured
 
 - **The date box inside the panel was 8.5rem for a date that draws 75px.** The

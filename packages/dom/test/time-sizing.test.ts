@@ -32,3 +32,40 @@ describe('the two time controls are sized together', () => {
     expect(TIME_CSS).toContain('font-size: var(--tz-time-arrow-size, 0.6rem)');
   });
 });
+
+/**
+ * The range panel's two fields, and the arrows beside them.
+ *
+ * Measured in Chrome each time: the arrows sat 12px above the middle of the
+ * line they move, FROM and TO were barely legible at 0.6 of the text colour
+ * and a normal weight, the row was 42px tall for a date and two short menus,
+ * and the date box was 104px for a date that needs 109 — so the last digit of
+ * the year was cut off.
+ */
+describe('the two fields inside a range panel', () => {
+  it('centres the arrows on the line of the fields', async () => {
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    expect(RANGEFIELD_CSS).toContain('align-self: center');
+    expect(RANGEFIELD_CSS).toContain('margin-top: var(--tz-rangefield-label-block, 1.7rem)');
+  });
+
+  it('gives the date box room for the year', async () => {
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    expect(RANGEFIELD_CSS).toContain('width: var(--tz-rangefield-date-width, 7.25rem)');
+  });
+
+  it('brings the row and the menus down together', async () => {
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    const pad = 'var(--tz-rangefield-field-pad, 0.3rem)';
+    expect(RANGEFIELD_CSS).toContain(`padding-block: ${pad}`);
+    // The menus follow the same lever, so the row keeps one height instead of
+    // growing around the tallest thing in it.
+    expect(RANGEFIELD_CSS).toContain(`--tz-time-pad-y: ${pad}`);
+  });
+
+  it('makes the two labels legible', async () => {
+    const { DATEINPUT_CSS } = await import('../src/styles.js');
+    expect(DATEINPUT_CSS).toContain('font-weight: 600');
+    expect(DATEINPUT_CSS).toContain('opacity: 0.8');
+  });
+});

@@ -389,3 +389,62 @@ taillé pour que l'étoile tienne dedans, ce qui garde les deux menus à une
 seule largeur tous les jours de l'année. Un menu à qui on demande de nommer
 ses lectures en toutes lettres — `readingStyle: 'named'`, qui écrit
 `02 — été` — est plus large que le plancher, exprès.
+
+## La hauteur d'un champ
+
+`--tz-field-padding` est le levier, et il déplace ensemble le déclencheur, les
+deux champs de date du panneau et les flèches à côté — les flèches sont
+étirées par la ligne, donc elles suivent sans qu'on leur dise.
+
+```css
+.mon-formulaire { --tz-field-padding: 0.85rem 0.75rem; }
+```
+
+Mesuré dans Chrome : le champ passe de 42 px à 53,2 px de haut, et les boutons
+flèches avec lui. Pour les deux contrôles d'heure, le levier est
+`--tz-time-pad-y`, plus haut ; ils sont séparés parce qu'un menu et un champ
+de saisie veulent des marges horizontales différentes à hauteur égale.
+
+## Vos propres icônes sur les flèches
+
+Les flèches sont écrites `‹` et `›`, en texte. Il n'y a pas de réglage pour
+elles, et remplacer ce texte depuis JavaScript ne tient pas — le panneau
+reconstruit sa ligne à chaque ouverture. La CSS, elle, tient : on fait taire
+le signe avec `font-size: 0` et on dessine l'icône dans `::before` sous forme
+de masque, ce qui lui garde la couleur que le thème emploie déjà.
+
+```css
+:root {
+  /* Lucide chevron-left et chevron-right, en ligne. Un fichier marche aussi :
+     url('assets/icons/chevron-left.svg'). */
+  --chevron-left:  url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>');
+  --chevron-right: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+}
+
+/* .tz-field__shift est la paire à côté du champ,
+   .tz-rangefield__shift-arrow celle dans le panneau. */
+.tz-field__shift,
+.tz-rangefield__shift-arrow { font-size: 0; line-height: 0; }
+
+.tz-field__shift::before,
+.tz-rangefield__shift-arrow::before {
+  content: "";
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-color: currentColor;   /* l'icône prend la couleur du thème */
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.tz-field__shift--prev::before,
+.tz-rangefield__shift-arrow:first-child::before { --icon: var(--chevron-left); }
+.tz-field__shift--next::before,
+.tz-rangefield__shift-arrow:last-child::before  { --icon: var(--chevron-right); }
+```
+
+Pourquoi un masque plutôt qu'une `<img>` : un masque est peint en
+`currentColor`, donc un seul fichier sert le thème clair et le sombre, et
+l'état désactivé garde son `opacity: 0.4` sans second fichier. Piloté dans
+Chrome ensuite : l'icône mesure 17,6 px, et un clic dessus déplace toujours la
+période — le bouton est intact, seul son visage a changé.

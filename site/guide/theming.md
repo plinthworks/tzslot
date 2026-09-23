@@ -371,3 +371,62 @@ under the reader as the day changed. The floor is sized so that star fits
 inside it, which holds both menus at one width on every day of the year. A
 menu asked to name its readings in full — `readingStyle: 'named'`, which
 writes `02 — summer` — is wider than the floor on purpose.
+
+## The height of a field
+
+`--tz-field-padding` is the lever, and it moves the trigger, the two date
+inputs inside a range panel and the arrows beside them together — the arrows
+are stretched by the row, so they follow without being told.
+
+```css
+.my-form { --tz-field-padding: 0.85rem 0.75rem; }
+```
+
+Measured in Chrome: the field goes from 42px tall to 53.2px, and the arrow
+buttons with it. For the two time controls the lever is `--tz-time-pad-y`,
+above; they are separate because a menu and a text field want different
+horizontal padding for the same height.
+
+## Your own icons on the shift arrows
+
+The arrows are written `‹` and `›` as text. There is no setting for them, and
+replacing the text from JavaScript does not hold — the panel builds its row
+again each time it opens. CSS does hold, so that is the way in: silence the
+glyph with `font-size: 0` and draw the icon in `::before` as a mask, which
+keeps it the colour the theme is already using.
+
+```css
+:root {
+  /* Lucide chevron-left and chevron-right, inline. A file works too:
+     url('assets/icons/chevron-left.svg'). */
+  --chevron-left:  url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>');
+  --chevron-right: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>');
+}
+
+/* .tz-field__shift is the pair beside the field, .tz-rangefield__shift-arrow
+   the pair inside the panel. */
+.tz-field__shift,
+.tz-rangefield__shift-arrow { font-size: 0; line-height: 0; }
+
+.tz-field__shift::before,
+.tz-rangefield__shift-arrow::before {
+  content: "";
+  display: block;
+  width: 1.1rem;
+  height: 1.1rem;
+  background-color: currentColor;   /* the icon takes the theme's colour */
+  -webkit-mask: var(--icon) center / contain no-repeat;
+  mask: var(--icon) center / contain no-repeat;
+}
+
+.tz-field__shift--prev::before,
+.tz-rangefield__shift-arrow:first-child::before { --icon: var(--chevron-left); }
+.tz-field__shift--next::before,
+.tz-rangefield__shift-arrow:last-child::before  { --icon: var(--chevron-right); }
+```
+
+Why a mask rather than an `<img>`: a mask is painted in `currentColor`, so one
+file serves the light theme and the dark one, and the disabled state keeps its
+`opacity: 0.4` without a second asset. Driven in Chrome afterwards: the icon
+measured 17.6px, and a click on it still moved the period — the button is
+untouched, only its face changed.

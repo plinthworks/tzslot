@@ -1333,7 +1333,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     host.classList.toggle('tz-field--shift', currentStep() !== null);
     stepPicker.hidden = menu === null || !s.showStep;
     if (menu) {
-      const current = menu[Math.min(stepIndex, menu.length - 1)];
+      // The same entry the panel fills in. Reading the raw index here showed
+      // '15 min' on the button while the column had '1 day' picked out, on a
+      // field holding one day — two places naming the same step differently.
+      const current = menu[stepAt(menu)];
       stepIndex = Math.min(stepIndex, menu.length - 1);
       stepPicker.textContent = current?.label ?? '';
       stepPicker.disabled = off() || menu.length < 2;

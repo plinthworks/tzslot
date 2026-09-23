@@ -80,6 +80,15 @@ describe('the column of steps', () => {
     expect(field.value.start!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-23');
   });
 
+  it('says the same step on the trigger as in the column', () => {
+    // They read the same list from two places, and only the column had been
+    // taught that the shape decides before anyone chooses: a field holding one
+    // day filled in '1 jour' inside and showed '15 min' on its own button.
+    make({ shift: steps, singleDay: true });
+    expect(chosen()).toBe('1 jour');
+    expect(host.querySelector('.tz-field__step')!.textContent).toBe('1 jour');
+  });
+
   it('is put away by showStep: false, arrows kept', () => {
     make({ shift: steps, showTime: true, showStep: false });
     expect(column()).toBe(null);

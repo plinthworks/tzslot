@@ -389,7 +389,8 @@ createRangeField(element, {
 });
 ```
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'De combien un clic déplace' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'De combien un clic déplace' }"
+  :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
 
 Il s'ouvre sur le quart d'heure, parce que c'est ce que la forme de ce champ
 peut porter. Le champ suivant tient une journée, et trois choses changent d'un
@@ -400,13 +401,15 @@ réglage vient de retirer de l'écran. Ils sont montrés et refusés plutôt que
 cachés : une liste qui perd des entrées quand on coche une case se lit comme
 un défaut.
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'Une journée' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'Une journée' }"
+  :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
 
 Et avec `showStep: false` la colonne s'en va. Le panneau revient alors à la
 largeur du calendrier, donc les deux champs s'empilent — rien ne le déclare,
 ils passent à la ligne quand elle est trop courte pour les deux.
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 heure' }], title: 'Les flèches seules' }" />
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 heure' }], title: 'Les flèches seules' }"
+  :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
 
 ::: warning Les raccourcis ne changent pas le pas
 Un raccourci calcule une valeur ; un pas en déplace une. Les deux se

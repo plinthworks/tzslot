@@ -1,5 +1,12 @@
 ## 1.2.0
 
+**An open panel kept the old language in its accessible name.** It is labelled
+when it opens and lives on the body, so a change of words while it was open
+left a `role="dialog"` announcing itself in the language before — the trigger
+was repainted on every change, the panel was not. The same staleness applied
+to `title` and `ariaLabel`, which have been settings all along. Found by a
+review of the change above, which is what made it reachable more often.
+
 **`<tz-time-select>` and `<tz-time-input>`.** The two time controls were the
 only widgets without an Angular wrapper, so a form choosing an hour fell back
 to a list built by hand — walking a day hour by hour and guessing the

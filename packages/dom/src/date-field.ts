@@ -155,6 +155,10 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
     trigger.setAttribute('aria-label', label());
+    // The panel is labelled when it opens and lives on the body, so a change
+    // of words while it is open left a dialog announcing itself in the
+    // language before. The trigger was repainted; this was not.
+    panel.element?.setAttribute('aria-label', label());
     trigger.disabled = s.disabled;
     if (s.disabled) panel.close({ restoreFocus: false });
   }

@@ -266,6 +266,17 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
         const pair = offered.filter((o) => o.hour === h && o.offset !== null);
         if (pair.length === 2) starred.add(`${pair[1]!.hour}|${pair[1]!.offset}`);
       }
+      // A reading only means anything while the day still offers it. A value
+      // moved to another day, or moved onto an ordinary hour, leaves the old
+      // offset behind: the key asked for was `9|+01:00` among options keyed
+      // `9|`, nothing matched, and the menu came up blank with the form still
+      // holding a time. An offset the day does not have is not obeyed.
+      const reading =
+        time !== null &&
+        s.offset !== null &&
+        offered.some((o) => o.hour === time.hour && o.offset === s.offset)
+          ? s.offset
+          : null;
       fillKeyed(
         hour,
         offered.map(({ hour: h, offset, name }) => {
@@ -280,11 +291,11 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
                   : `${shownHour(h)} — ${name}`,
           };
         }),
-        time === null ? null : `${time.hour}|${s.offset ?? ''}`,
+        time === null ? null : `${time.hour}|${reading ?? ''}`,
       );
       fillKeyed(
         minute,
-        (time === null ? [] : realMinutes(slots, time.hour, s.offset)).map((m) => ({
+        (time === null ? [] : realMinutes(slots, time.hour, reading)).map((m) => ({
           value: String(m),
           label: pad(m),
         })),

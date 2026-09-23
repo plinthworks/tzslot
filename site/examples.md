@@ -262,6 +262,13 @@ and the ends become moments again, at the midnights they were.
 `[allDaySwitch]="false"` hides the switch, for a screen that only ever deals
 in whole days — or only in intervals.
 
+**This is the only widget with that switch.** The field in
+[Choosing a period](./guide/period) has none: it reads whole days off the two
+moments, `end` being
+[the midnight after the last day](./guide/values#whole-days-and-the-end-you-don-t-see).
+Take this one when the flag itself has to travel to a back end; take that one
+when the two moments are allowed to say it on their own.
+
 ## The same hours every day
 
 ```js

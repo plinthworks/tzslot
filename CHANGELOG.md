@@ -1,3 +1,5 @@
+# Changelog
+
 ## 1.2.0
 
 **An open panel kept the old language in its accessible name.** It is labelled
@@ -5,7 +7,7 @@ when it opens and lives on the body, so a change of words while it was open
 left a `role="dialog"` announcing itself in the language before — the trigger
 was repainted on every change, the panel was not. The same staleness applied
 to `title` and `ariaLabel`, which have been settings all along. Found by a
-review of the change above, which is what made it reachable more often.
+review of the `messages` input below, which is what made it reachable at all.
 
 **`<tz-time-select>` and `<tz-time-input>`.** The two time controls were the
 only widgets without an Angular wrapper, so a form choosing an hour fell back
@@ -30,7 +32,39 @@ the input falls back to; written on a tag it wins.
 Found by someone asking whether their language switch would work. It did, for
 half of what is on screen.
 
-# Changelog
+### Four things a review found in the two new controls
+
+- **A reading that no longer applied blanked the hour menu.** `offset` means
+  something only on the morning an hour happens twice, and nothing ever dropped
+  it: move the bound `date` to the next day, or let the form write an ordinary
+  time, and the menu asked for an option keyed `9|+01:00` among options keyed
+  `9|`. Nothing matched, so the menu showed empty while the control still held
+  a value. An offset the day does not offer is now ignored, and a value written
+  by the form arrives without a reading.
+- **`[(offset)]` only worked by coincidence.** `offset` is a `model`, which
+  already owns an output called `offsetChange`; an output of the same name was
+  declared beside it, won the binding, and left the model's own emitter dead.
+  Every write to `offset` other than the one that happened to emit alongside it
+  went unannounced. The duplicate is gone — `(offsetChange)` binds exactly as
+  the documentation shows.
+- **`hour12` was on both API pages and on neither wrapper.** A twelve-hour
+  field could not be asked for from a template: `Can't bind to 'hour12'`. Both
+  wrappers take it now.
+- **Neither control was ever marked touched by a blur.** `onTouched` fired only
+  on a change, so `touched && invalid` never showed a required message to the
+  reader who focused the field and walked away. Leaving either one now counts
+  as having answered it.
+
+### Breaking
+
+**`shiftDayRange` took a step it could not apply and said nothing.** Asked to
+move two dates by fifteen minutes it returned the same two dates, because
+`PlainDate.add` truncates rather than refusing. Its step narrowed from
+`ShiftStep` — `number | DurationLike` — to a new `DayStep`: years, months,
+weeks, days. A number no longer type-checks, and a duration carrying a time
+part throws a `RangeError` where 1.1.0 silently returned the range unchanged.
+Nothing inside the library passed one; a caller of its own that did was
+getting no movement.
 
 ## 1.1.0
 
@@ -63,10 +97,6 @@ Three were introduced the same day, two of them in examples shown as working.
   holding the value. The day is kept either way.
 - Dead code from the two removals: the `'auto'`-era `subDay` guard, and
   `RangePreset.step`, which stayed public and documented while nothing read it.
-- **`shiftDayRange` took a step it could not apply and said nothing.** Asked to
-  move two dates by fifteen minutes it returned the same two dates, because
-  `PlainDate.add` truncates rather than refusing. It now takes a `DayStep` —
-  years, months, weeks, days — and throws on anything carrying a time.
 
 ### The arrows, simplified
 

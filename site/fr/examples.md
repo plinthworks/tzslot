@@ -267,6 +267,13 @@ minuits où elles étaient.
 `[allDaySwitch]="false"` masque l’interrupteur, pour un écran qui ne traite
 que des journées entières — ou que des intervalles.
 
+**C’est le seul composant qui a cet interrupteur.** Le champ de
+[Choisir une période](./guide/period) n’en a pas : il lit les journées entières
+sur les deux moments, `end` étant
+[le minuit qui suit le dernier jour](./guide/values#journees-entieres-et-la-fin-qu-on-ne-voit-pas).
+Prenez celui-ci quand le drapeau lui-même doit voyager jusqu’à un back-end ;
+prenez l’autre quand les deux moments ont le droit de le dire tout seuls.
+
 ## Les mêmes horaires chaque jour
 
 ```js

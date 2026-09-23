@@ -74,9 +74,13 @@ and nothing falls through the gap. Written the other way — `<= 20 Sept
 23:59:59.4 is lost. When the two ends are moments someone chose, the same
 query still works unchanged.
 
-`showTime` decides whether the hours are on screen at all — there is no
-*All day* switch, because it asked the reader to classify their own answer
-before giving it.
+`showTime` decides whether the hours are on screen at all. **`createRangeField`
+has no *All day* switch**, because it asked the reader to classify their own
+answer before giving it — two midnights say it already. The one widget that
+still offers the switch is
+[`createDateTimeRange`](../examples#a-whole-day-or-an-interval): it reports
+`allDay` beside `start` and `end`, for a back end that wants the flag told to
+it rather than read.
 
 Whole days. Watch the line under it: `end` is the midnight **after** the last
 day you chose.

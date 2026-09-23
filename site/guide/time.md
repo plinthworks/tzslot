@@ -17,8 +17,10 @@ so it goes straight into a reactive form:
 ```
 
 The control holds a `PlainTime`: a clock face, with no day and no zone. The
-day and the zone are what turn it into a moment — press the arrows on the
-morning an hour is skipped and watch it stepped over:
+day and the zone are what turn it into a moment — press the **hour** arrows on
+the morning an hour is skipped and watch 02 stepped over: down from `03:00`
+lands on `01:00`, because 02:00 does not happen on 29 March in Paris. The
+minute arrows stay inside the hour on purpose, which is the next paragraph.
 
 <Live widget="TimeInput" :options="{ locale: 'en-GB', stepMinutes: 15, date: '2026-03-29', timeZone: 'Europe/Paris', value: Temporal.PlainTime.from('03:00') }" />
 

@@ -87,8 +87,12 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Journées entières' }" />
 
 `true` donne une heure à chaque jour choisi, minuit sauf indication de l'écran.
-Il n'y a pas d'interrupteur *Toute la journée* : il demandait au lecteur de
-classer sa propre réponse avant de la donner.
+**Ce champ n'a pas d'interrupteur *Toute la journée*** : deux minuits le
+disent déjà, il ne reste rien à déclarer au lecteur.
+[`createDateTimeRange`](../examples#une-journee-entiere-ou-un-intervalle) est
+le seul composant qui garde cet interrupteur, et il porte la réponse dans
+`allDay` à côté des deux bornes — à prendre quand un back-end veut qu'on lui
+dise le drapeau plutôt que de le lire sur la valeur.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', showTime: true });

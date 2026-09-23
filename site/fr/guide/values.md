@@ -78,9 +78,13 @@ sans que rien ne tombe dans le trou. Écrite autrement — `<= 20 sept.
 à 23:59:59,4 est perdu. Quand les deux bornes sont des moments choisis, la
 même requête fonctionne sans changer.
 
-`showTime` décide seulement si les heures sont à l’écran — il n’y a pas
-d’interrupteur *Toute la journée*, parce qu’il demandait au lecteur de classer
-sa propre réponse avant de la donner.
+`showTime` décide seulement si les heures sont à l’écran. **`createRangeField`
+n’a pas d’interrupteur *Toute la journée***, parce qu’il demandait au lecteur
+de classer sa propre réponse avant de la donner — deux minuits le disent déjà.
+Le seul composant qui garde cet interrupteur est
+[`createDateTimeRange`](../examples#une-journee-entiere-ou-un-intervalle) : il
+rapporte `allDay` à côté de `start` et `end`, pour un back-end qui veut qu’on
+lui dise le drapeau au lieu de le lire.
 
 Journées entières. Regardez la ligne en dessous : `end` est le minuit
 **après** le dernier jour choisi.

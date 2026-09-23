@@ -17,8 +17,11 @@ autres — il entre donc directement dans un formulaire réactif :
 ```
 
 Le contrôle porte un `PlainTime` : un cadran, sans jour ni fuseau. Le jour et
-le fuseau sont ce qui en fait un moment — pressez les flèches le matin où une
-heure est sautée et regardez-la enjambée :
+le fuseau sont ce qui en fait un moment — pressez les flèches des **heures**
+le matin où une heure est sautée et regardez 02 enjambée : vers le bas depuis
+`03:00` on tombe sur `01:00`, parce que 02:00 n'arrive pas le 29 mars à Paris.
+Les flèches des minutes restent dans l'heure, exprès — c'est le paragraphe
+suivant.
 
 <Live widget="TimeInput" :options="{ stepMinutes: 15, date: '2026-03-29', timeZone: 'Europe/Paris', value: Temporal.PlainTime.from('03:00') }" />
 

@@ -75,7 +75,7 @@ declared. A value with hours in it says so by having them.
 
 `false` — the default — makes a period whole days: the midnight that opens the
 first to **the midnight after the last**, the exclusive end explained in
-[What you get back](./values#whole-days-allday-and-the-end-you-don-t-see).
+[What you get back](./values#whole-days-and-the-end-you-don-t-see).
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
@@ -84,8 +84,12 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Whole days' }" />
 
 `true` gives every chosen day an hour, midnight unless the screen says
-otherwise. There is no *All day* switch: it asked the reader to classify their
-own answer before giving it.
+otherwise. **This field has no *All day* switch**: whole days are what two
+midnights already say, so there is nothing left for the reader to declare.
+[`createDateTimeRange`](../examples#a-whole-day-or-an-interval) is the one
+widget that still offers that switch, and it carries the answer as `allDay`
+beside the two ends — take it when a back end wants the flag told to it rather
+than read off the value.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', showTime: true });

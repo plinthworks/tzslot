@@ -9,7 +9,6 @@ import {
   inject,
   input,
   model,
-  output,
   signal,
   untracked,
 } from '@angular/core';
@@ -37,6 +36,10 @@ import { createTimeSelect, type TimeSelectInstance, type TimeSelectSettings } fr
   selector: 'tz-time-select',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Leaving the menus counts as having answered them, even with nothing
+  // chosen: without it a `touched && invalid` message never appears for the
+  // reader who looked at a required field and walked away.
+  host: { '(focusout)': 'onTouched()' },
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TimeSelect), multi: true },
   ],
@@ -71,6 +74,8 @@ export class TimeSelect implements ControlValueAccessor {
   readonly minuteStep = input(1);
   /** Hours between the options of the hour menu. */
   readonly hourStep = input(1);
+  /** Twelve-hour menus with an AM/PM one beside them; the locale decides when unset. */
+  readonly hour12 = input<boolean | undefined>(undefined);
   /** The first and last times offered. */
   readonly minTime = input<PlainTime | string | undefined>(undefined);
   readonly maxTime = input<PlainTime | string | undefined>(undefined);
@@ -94,9 +99,6 @@ export class TimeSelect implements ControlValueAccessor {
    */
   readonly messages = input<TzslotMessages>(inject(TZSLOT_MESSAGES));
 
-  /** The reading taken, each time the value changes. */
-  readonly offsetChange = output<string | null>();
-
   protected readonly formDisabled = signal(false);
 
   private readonly settings = computed<Partial<TimeSelectSettings>>(() => ({
@@ -106,6 +108,7 @@ export class TimeSelect implements ControlValueAccessor {
     timeZone: this.timeZone(),
     minuteStep: this.minuteStep(),
     hourStep: this.hourStep(),
+    hour12: this.hour12(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     readingStyle: this.readingStyle(),
@@ -118,8 +121,10 @@ export class TimeSelect implements ControlValueAccessor {
     messages: this.messages(),
     onChange: (time, offset) => {
       this.value.set(time);
+      // `offset` is a model, so writing it *is* `(offsetChange)`. An output of
+      // the same name declared beside it won the binding and left the model's
+      // own emitter dead, so any other write to `offset` went unannounced.
       this.offset.set(offset);
-      this.offsetChange.emit(offset);
       this.onChange(time);
       this.onTouched();
     },
@@ -139,10 +144,12 @@ export class TimeSelect implements ControlValueAccessor {
   // ── ControlValueAccessor ────────────────────────────────────
 
   private onChange: (value: PlainTime | null) => void = () => {};
-  private onTouched: () => void = () => {};
+  protected onTouched: () => void = () => {};
 
   /** Typed `unknown`: a form holds what the application put there. */
   writeValue(value: unknown): void {
+    // Whatever reading was held belonged to the value being replaced.
+    this.offset.set(null);
     this.value.set(
       value === null || value === undefined
         ? null

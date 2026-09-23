@@ -32,6 +32,10 @@ import { createTimeInput, type TimeInputInstance, type TimeInputSettings } from 
   selector: 'tz-time-input',
   standalone: true,
   changeDetection: ChangeDetectionStrategy.OnPush,
+  // Leaving the field counts as having answered it, even with nothing typed:
+  // without it a `touched && invalid` message never appears for the reader who
+  // looked at a required field and walked away.
+  host: { '(focusout)': 'onTouched()' },
   providers: [
     { provide: NG_VALUE_ACCESSOR, useExisting: forwardRef(() => TimeInput), multi: true },
   ],
@@ -46,6 +50,8 @@ export class TimeInput implements ControlValueAccessor {
 
   /** What one press of an arrow, or the wheel, moves the minutes by. */
   readonly stepMinutes = input(5);
+  /** A twelve-hour field with AM/PM beside it; the locale decides when unset. */
+  readonly hour12 = input<boolean | undefined>(undefined);
   /** The window the arrows and the typing stay inside. */
   readonly minTime = input<PlainTime | string | undefined>(undefined);
   readonly maxTime = input<PlainTime | string | undefined>(undefined);
@@ -80,6 +86,7 @@ export class TimeInput implements ControlValueAccessor {
   private readonly settings = computed<Partial<TimeInputSettings>>(() => ({
     value: this.value(),
     stepMinutes: this.stepMinutes(),
+    hour12: this.hour12(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     locale: this.locale(),
@@ -110,7 +117,7 @@ export class TimeInput implements ControlValueAccessor {
   // ── ControlValueAccessor ────────────────────────────────────
 
   private onChange: (value: PlainTime | null) => void = () => {};
-  private onTouched: () => void = () => {};
+  protected onTouched: () => void = () => {};
 
   /** Typed `unknown`: a form holds what the application put there. */
   writeValue(value: unknown): void {

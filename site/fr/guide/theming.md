@@ -405,6 +405,30 @@ flèches avec lui. Pour les deux contrôles d'heure, le levier est
 `--tz-time-pad-y`, plus haut ; ils sont séparés parce qu'un menu et un champ
 de saisie veulent des marges horizontales différentes à hauteur égale.
 
+## Enlever le `▾` du champ
+
+Le petit chevron au bout du déclencheur est un span à lui tout seul, construit
+une fois :
+
+```css
+.tz-field__icon { display: none; }
+```
+
+Piloté dans Chrome ensuite : le déclencheur passe de 158,3 px de large à
+144,6 px, le texte garde sa place, et le clic ouvre toujours le panneau — le
+chevron est une décoration `aria-hidden`, on ne perd rien avec lui.
+
+En JavaScript nu il y a une seconde voie, meilleure quand on tient les
+options : `icon` remplace le chevron, et une chaîne vide l'enlève.
+
+```js
+createRangeField(element, { icon: '' });                // rien
+createRangeField(element, { icon: monChevronSvg });     // le vôtre
+```
+
+Les wrappers Angular du champ de période n'ont pas d'entrée `icon` : là, c'est
+la CSS ci-dessus.
+
 ## Vos propres icônes sur les flèches
 
 Les flèches sont écrites `‹` et `›`, en texte. Il n'y a pas de réglage pour

@@ -50,6 +50,8 @@ standalone.
 | `<tz-datetime-range>` | an interval: two date-and-time fields |
 | `<tz-daily-range>` | a range of days with the same hours on each |
 | `<tz-range-field>` | a period, in one field — [its own page](./period) |
+| `<tz-time-select>` | an hour, from two menus that know the day |
+| `<tz-time-input>` | an hour, from a compact field with arrows |
 
 Each one, running. The wrappers add signals, forms and Angular's own idioms
 over exactly these:

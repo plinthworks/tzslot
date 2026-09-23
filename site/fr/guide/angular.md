@@ -50,6 +50,8 @@ ils sont standalone.
 | `<tz-datetime-range>` | un intervalle : deux champs date-et-heure |
 | `<tz-daily-range>` | une plage de jours avec les mêmes horaires chaque jour |
 | `<tz-range-field>` | une période, en un champ — [sa propre page](./period) |
+| `<tz-time-select>` | une heure, dans deux menus qui connaissent le jour |
+| `<tz-time-input>` | une heure, dans un champ compact à flèches |
 
 Chacun, en train de tourner. Les wrappers ajoutent les signaux, les
 formulaires et les idiomes d’Angular par-dessus exactement ceux-là :

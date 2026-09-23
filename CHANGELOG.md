@@ -1,5 +1,14 @@
 ## 1.2.0
 
+**`<tz-time-select>` and `<tz-time-input>`.** The two time controls were the
+only widgets without an Angular wrapper, so a form choosing an hour fell back
+to a list built by hand — walking a day hour by hour and guessing the
+transitions, which is where the two mornings a year go wrong. Both are
+`ControlValueAccessor`s holding a `PlainTime`; given `date` and `timeZone` the
+menus show the day as the zone really has it, and `offsetChange` says which
+reading of a repeated hour was taken.
+
+
 **`messages` is an input on every Angular component.** It arrived only through
 injection, which Angular reads once, so a screen with a language switch saw its
 month names change and the widget's own words stay put — `locale` was an input

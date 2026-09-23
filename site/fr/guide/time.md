@@ -9,6 +9,9 @@ Chaque option des trois a un exemple qui tourne dessous.
 
 ## Un champ compact — `createTimeInput`
 
+En Angular : `<tz-time-input>`, un `ControlValueAccessor` comme les autres.
+
+
 `timeLayout: 'input'`. Les flèches, la molette, les touches haut et bas, et la
 saisie. Sur douze heures là où la locale écrit les heures comme ça.
 
@@ -94,6 +97,9 @@ createTimeInput(element, { disabled: true });
 <Live widget="TimeInput" :options="{ value: Temporal.PlainTime.from('09:30'), disabled: true }" />
 
 ## Deux menus — `createTimeSelect`
+
+En Angular : `<tz-time-select>`, avec `offsetChange` pour la lecture retenue.
+
 
 `timeLayout: 'select'`. Un menu d'heures et un menu de minutes. Ce sont de vrais
 éléments `<select>` : le clavier fonctionne, rien ne peut les rogner, et un

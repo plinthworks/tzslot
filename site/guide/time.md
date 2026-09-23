@@ -9,6 +9,9 @@ Every option of the three has a working example below it.
 
 ## A compact field — `createTimeInput`
 
+In Angular: `<tz-time-input>`, a `ControlValueAccessor` like the rest.
+
+
 `timeLayout: 'input'`. Arrows, the wheel, the up and down keys, and typing.
 Twelve-hour where the locale writes times that way.
 
@@ -95,6 +98,9 @@ createTimeInput(element, { disabled: true });
 <Live widget="TimeInput" :options="{ locale: 'en-GB', value: Temporal.PlainTime.from('09:30'), disabled: true }" />
 
 ## Two menus — `createTimeSelect`
+
+In Angular: `<tz-time-select>`, with `offsetChange` for the reading taken.
+
 
 `timeLayout: 'select'`. An hour menu and a minute menu. They are real
 `<select>` elements, so the keyboard works, nothing can clip them, and a phone

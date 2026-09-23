@@ -34,3 +34,6 @@ export type { DateTimeRangeValue } from './datetime-range.js';
 export type { DateRangeValue } from './date-range.js';
 export type { FieldMode } from './date-field.js';
 export type { SlotChoice } from './time-slot-picker.js';
+
+export { TimeSelect } from './time-select.js';
+export { TimeInput } from './time-input.js';

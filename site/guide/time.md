@@ -16,7 +16,11 @@ so it goes straight into a reactive form:
 <tz-time-input formControlName="startTime" [stepMinutes]="15" [date]="day()" [timeZone]="zone" />
 ```
 
-The control holds a `PlainTime`: a clock face, with no day and no zone.
+The control holds a `PlainTime`: a clock face, with no day and no zone. The
+day and the zone are what turn it into a moment — press the arrows on the
+morning an hour is skipped and watch it stepped over:
+
+<Live widget="TimeInput" :options="{ locale: 'en-GB', stepMinutes: 15, date: '2026-03-29', timeZone: 'Europe/Paris', value: Temporal.PlainTime.from('03:00') }" />
 
 
 `timeLayout: 'input'`. Arrows, the wheel, the up and down keys, and typing.
@@ -122,6 +126,16 @@ as a second argument:
 or `+01:00`. On an ordinary hour it means nothing; on 25 October it is the
 difference between two moments an hour apart, so a form that stores instants
 has to carry it.
+
+Choose `02` twice below — the two entries are the same clock face and two
+different moments, and the line underneath is what `offsetChange` hands your
+form:
+
+<Live
+  widget="TimeSelect"
+  :options="{ locale: 'en-GB', minuteStep: 15, date: '2026-10-25', timeZone: 'Europe/Paris', readingStyle: 'marked' }"
+  :show="(time, offset) => time ? `value ${time}` + (offset ? `  ·  offsetChange → ${offset}` : '  ·  offsetChange → null') : 'nothing chosen'"
+/>
 
 
 `timeLayout: 'select'`. An hour menu and a minute menu. They are real

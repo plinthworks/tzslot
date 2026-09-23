@@ -16,7 +16,11 @@ autres — il entre donc directement dans un formulaire réactif :
 <tz-time-input formControlName="startTime" [stepMinutes]="15" [date]="jour()" [timeZone]="zone" />
 ```
 
-Le contrôle porte un `PlainTime` : un cadran, sans jour ni fuseau.
+Le contrôle porte un `PlainTime` : un cadran, sans jour ni fuseau. Le jour et
+le fuseau sont ce qui en fait un moment — pressez les flèches le matin où une
+heure est sautée et regardez-la enjambée :
+
+<Live widget="TimeInput" :options="{ stepMinutes: 15, date: '2026-03-29', timeZone: 'Europe/Paris', value: Temporal.PlainTime.from('03:00') }" />
 
 
 `timeLayout: 'input'`. Les flèches, la molette, les touches haut et bas, et la
@@ -121,6 +125,16 @@ DOM rend en second argument :
 `+02:00` ou `+01:00`. Sur une heure ordinaire elle ne veut rien dire ; le 25
 octobre, c'est la différence entre deux moments distants d'une heure, donc un
 formulaire qui enregistre des instants doit la porter.
+
+Choisissez `02` deux fois ci-dessous — les deux entrées sont le même cadran et
+deux moments différents, et la ligne en dessous est ce qu'`offsetChange` remet
+à votre formulaire :
+
+<Live
+  widget="TimeSelect"
+  :options="{ minuteStep: 15, date: '2026-10-25', timeZone: 'Europe/Paris', readingStyle: 'marked' }"
+  :show="(time, offset) => time ? `value ${time}` + (offset ? `  ·  offsetChange → ${offset}` : '  ·  offsetChange → null') : 'rien choisi'"
+/>
 
 
 `timeLayout: 'select'`. Un menu d'heures et un menu de minutes. Ce sont de vrais

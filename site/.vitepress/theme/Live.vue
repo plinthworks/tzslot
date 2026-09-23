@@ -13,8 +13,14 @@ const props = withDefaults(
     widget: string;
     /** Its options. Functions and Temporal values are passed straight through. */
     options?: Record<string, unknown>;
-    /** How to write the value under it. Left out, it is stringified. */
-    show?: (value: unknown) => string;
+    /**
+     * How to write the value under it. Left out, it is stringified.
+     *
+     * Every argument the widget reports is passed on, not only the first: the
+     * hour menus hand back the reading taken alongside the time, and on the
+     * morning an hour happens twice that second argument is the whole point.
+     */
+    show?: (...reported: unknown[]) => string;
     /** Buttons beside it, each given the widget to drive. */
     controls?: { label: string; run: (widget: any) => void }[];
     /**
@@ -53,8 +59,8 @@ onMounted(() => {
     // explicit locale in the options still wins — it is spread after this.
     ...(french() ? { locale: 'fr-FR', messages: tzslot.FR } : { locale: 'en-GB' }),
     ...props.options,
-    onChange: (value: unknown) => {
-      held.value = props.show ? props.show(value) : describe(value);
+    onChange: (...reported: unknown[]) => {
+      held.value = props.show ? props.show(...reported) : describe(reported[0]);
     },
   });
 });

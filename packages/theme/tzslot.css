@@ -74,7 +74,10 @@
 .tz-field__panel,
 .tz-field__backdrop,
 .tz-dtr,
-.tz-daily {
+.tz-daily,
+.tz-dateinput,
+.tz-time,
+.tz-timeselect {
   color-scheme: var(--tz-color-scheme, light dark);
   color: var(--tz-fg);
   font: var(--tz-font);

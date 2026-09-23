@@ -218,6 +218,15 @@ module.exports = {
 };
 ```
 
+::: warning In a `.scss` file, write the full filename
+Sass resolves `@import` itself and only passes through a URL that ends in
+`.css`, so `@import "@tzslot/theme";` stops the build with *Can't find
+stylesheet to import*. Write `@import "@tzslot/theme/tzslot.css";` instead —
+and note that `@tailwind base;` is then fine where the rule below asks for
+`@import "tailwindcss/base"`, because Sass hoists a plain CSS `@import` to the
+top of the file for you. Both verified with Dart Sass 1.105 and Tailwind 3.4.19.
+:::
+
 Three things differ from v4, and each fails quietly when missed.
 
 **The `@import` form of the Tailwind directives, not `@tailwind`.** CSS

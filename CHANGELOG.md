@@ -55,6 +55,31 @@ half of what is on screen.
   reader who focused the field and walked away. Leaving either one now counts
   as having answered it.
 
+### Dark mode never reached three of the widgets
+
+**`.tz-dateinput`, `.tz-time` and `.tz-timeselect` were missing from the rule
+that declares `color-scheme`.** `light-dark()` picks its half from the
+`color-scheme` in force at the element using the colour, and the theme
+declares it on the widgets rather than the page, so that importing the theme
+never repaints the page's own form controls. The list was written by hand and
+three widgets were left out of it.
+
+It was invisible on every documentation page, because `color-scheme` is
+inherited and those three always sit inside a field that has one. Put a
+`<tz-time-select>` into a form of your own on a dark page and it had none:
+every colour fell to its light half and the control came out white. Measured
+in Chrome with `html.dark` — `.tz-field` resolved `dark` and `rgb(24,24,27)`,
+`.tz-timeselect` and `.tz-time` resolved `normal` and `rgb(255,255,255)`. The
+list is now checked against the widgets that exist rather than trusted.
+
+**The Tailwind v3 instructions did not work from a `.scss` file**, which is
+what an Angular application has. Sass resolves `@import` itself and only
+passes through a URL ending in `.css`, so the documented
+`@import "@tzslot/theme";` stopped the build with *Can't find stylesheet to
+import* — and dropping that line, which is the natural thing to do, is exactly
+what removes `color-scheme` from the page. Both pages now give the `.scss`
+form.
+
 ### The two time controls, measured
 
 - **An ambiguous hour handed in without a reading showed an empty menu.** On

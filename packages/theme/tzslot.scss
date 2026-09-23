@@ -142,7 +142,17 @@ $emit: true !default;
   .tz-field__panel,
   .tz-field__backdrop,
   .tz-dtr,
-  .tz-daily {
+  .tz-daily,
+  /* The three that can stand on their own outside a panel. A widget inside a
+     field inherits color-scheme from it — color-scheme is an inherited
+     property — which is why these went unnoticed: on a documentation page
+     there is always a field above them. Dropped into a form of their own on a
+     dark page they had none, so every light-dark() fell to its light half and
+     the control came out white. Measured in Chrome with html.dark: .tz-field
+     resolved dark and #18181b, .tz-timeselect and .tz-time normal and white. */
+  .tz-dateinput,
+  .tz-time,
+  .tz-timeselect {
     color-scheme: var(--tz-color-scheme, light dark);
     color: var(--tz-fg);
     font: var(--tz-font);

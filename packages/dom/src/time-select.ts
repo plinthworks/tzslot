@@ -266,17 +266,20 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
         const pair = offered.filter((o) => o.hour === h && o.offset !== null);
         if (pair.length === 2) starred.add(`${pair[1]!.hour}|${pair[1]!.offset}`);
       }
-      // A reading only means anything while the day still offers it. A value
-      // moved to another day, or moved onto an ordinary hour, leaves the old
-      // offset behind: the key asked for was `9|+01:00` among options keyed
-      // `9|`, nothing matched, and the menu came up blank with the form still
-      // holding a time. An offset the day does not have is not obeyed.
+      // Which of the day's entries the value stands for. An option is keyed by
+      // its hour *and* its offset, so the key has to be one the day really
+      // offers or the menu selects nothing at all and comes up blank with the
+      // form still holding a time. It went wrong in both directions: a reading
+      // held from a day that had two of them asked for `9|+01:00` among options
+      // keyed `9|`, and an ambiguous hour with no reading yet asked for `2|` on
+      // a morning where the only entries are `2|+02:00` and `2|+01:00`.
+      //
+      // So: the reading if the day still offers it, else the first entry that
+      // hour has — which is `null` on an ordinary hour and the earlier of the
+      // two readings on the morning the clocks go back.
+      const entries = time === null ? [] : offered.filter((o) => o.hour === time.hour);
       const reading =
-        time !== null &&
-        s.offset !== null &&
-        offered.some((o) => o.hour === time.hour && o.offset === s.offset)
-          ? s.offset
-          : null;
+        entries.find((o) => o.offset === s.offset)?.offset ?? entries[0]?.offset ?? null;
       fillKeyed(
         hour,
         offered.map(({ hour: h, offset, name }) => {

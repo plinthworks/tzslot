@@ -327,3 +327,38 @@ theme.
 And one that is not a colour: `--tz-color-scheme` (`light`, `dark`, or
 `light dark`) decides which half of every `light-dark()` applies. It is
 inherited, which is how `data-theme` on a card reaches everything inside it.
+
+## Sizing the two time controls
+
+The eleven above paint. Four more give the hour menus and the compact field
+their measurements, and they are the ones a form needs when a `<tz-time-select>`
+has to stand level with a `<tz-time-input>`, or with a field of your own.
+
+| Property | Default | What it does |
+| --- | --- | --- |
+| `--tz-time-pad-y` | `0.375rem` | the padding above and below the figures, in **both** controls — the one lever for their height |
+| `--tz-time-menu-width` | `3.25rem` | the floor under every menu's width |
+| `--tz-time-arrow-size` | `0.6rem` | the size of the arrow glyphs in the compact field |
+| `--tz-time-width` | `2.5rem` | the width of one box of figures in the compact field |
+
+```css
+/* Taller controls, with arrows to match. */
+.my-form {
+  --tz-time-pad-y: 0.7rem;
+  --tz-time-arrow-size: 0.85rem;
+}
+```
+
+Measured in Chrome: the menus and the field go from 38px tall to 48.4px
+together, and each arrow's target from 17.5px to 22.7px. The arrows share the
+field's height between them, so raising `--tz-time-pad-y` alone already makes
+them easier to hit; `--tz-time-arrow-size` only sets how big the glyph inside
+is drawn.
+
+`--tz-time-menu-width` exists because a `<select>` is as wide as its widest
+option. Without a floor the hour menu was wider than the minute menu on the
+morning an hour happens twice — the entry reads `02*` — and the row moved
+under the reader as the day changed. The floor is sized so that star fits
+inside it, which holds both menus at one width on every day of the year. A
+menu asked to name its readings in full — `readingStyle: 'named'`, which
+writes `02 — summer` — is wider than the floor on purpose.

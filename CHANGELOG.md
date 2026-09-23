@@ -55,6 +55,24 @@ half of what is on screen.
   reader who focused the field and walked away. Leaving either one now counts
   as having answered it.
 
+### The two time controls, measured
+
+- **An ambiguous hour handed in without a reading showed an empty menu.** On
+  the morning the clocks go back the only entries for 02 are keyed by their two
+  offsets, so a value arriving as plain `02:30` asked for a key the day does
+  not have and the menu selected nothing — while the minutes beside it read
+  `30`. One of the documentation's own examples was showing it. The earlier of
+  the two readings stands in now.
+- **The hour menu changed width with the day.** A `<select>` is as wide as its
+  widest option, so the same widget measured 35.8px on an ordinary day and
+  42.8px on the morning an hour repeats, where the entry reads `02*` — and the
+  minute menu beside it never moved. Every menu now has a floor,
+  `--tz-time-menu-width`, sized so the star fits inside it.
+- **A menu and a compact field were not the same height** — 37.2px against
+  38px, from two vertical paddings written a fortieth of a rem apart. They
+  share one now, `--tz-time-pad-y`, which is also the single lever for making
+  both taller. `--tz-time-arrow-size` sizes the arrow glyphs.
+
 ### Breaking
 
 **`shiftDayRange` took a step it could not apply and said nothing.** Asked to

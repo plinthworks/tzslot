@@ -557,7 +557,7 @@ export const TIME_CSS = `
 .tz-time__input {
   width: var(--tz-time-width, 2.5rem);
   border: 0;
-  padding: 0.375rem 0.25rem;
+  padding: var(--tz-time-pad-y, 0.375rem) 0.25rem;
   background: transparent;
   color: var(--tz-time-fg, var(--tz-fg));
   font: inherit;
@@ -579,7 +579,9 @@ export const TIME_CSS = `
   padding: 0 0.3rem;
   background: transparent;
   color: inherit;
-  font-size: 0.6rem;
+  /* The arrows share the field's height between them, so a taller field gives
+     bigger targets on its own; this only sizes the glyph inside them. */
+  font-size: var(--tz-time-arrow-size, 0.6rem);
   line-height: 1;
   cursor: pointer;
 }
@@ -589,7 +591,7 @@ export const TIME_CSS = `
   margin-left: 0.25rem;
   border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
   border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
-  padding: 0.375rem 0.5rem;
+  padding: var(--tz-time-pad-y, 0.375rem) 0.5rem;
   background: var(--tz-time-bg, var(--tz-bg, transparent));
   color: inherit;
   font: inherit;
@@ -710,7 +712,18 @@ export const TIMESELECT_CSS = `
 .tz-timeselect__menu {
   border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
   border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
-  padding: 0.35rem 0.4rem;
+  /* A select is as wide as its widest option, so the hour menu was wider than
+     the minute menu whenever a day carried '02*', and the same widget changed
+     width between an ordinary day and the morning the clocks go back — the row
+     moved under the reader for a reason they could not see. A floor sized for
+     the star holds both menus at one width on every day of the year. A menu
+     naming its readings in full is wider than that on purpose. */
+  min-width: var(--tz-time-menu-width, 3.25rem);
+  text-align: center;
+  /* The same vertical padding as the compact field, so a menu and a field
+     standing side by side in a form are exactly the same height. Raise it
+     once and both grow together. */
+  padding: var(--tz-time-pad-y, 0.375rem) 0.4rem;
   background: var(--tz-time-bg, var(--tz-bg, transparent));
   color: var(--tz-time-fg, var(--tz-fg));
   font: inherit;

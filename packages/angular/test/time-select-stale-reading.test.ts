@@ -72,6 +72,20 @@ describe('a reading that no longer applies', () => {
     expect(fixture.componentInstance.reading()).toBe(null);
   });
 
+  it('shows an ambiguous hour handed in without a reading', () => {
+    // The mirror of the case above, and the one a docs example was showing:
+    // on the morning the clocks go back the only entries for 02 are keyed by
+    // their two offsets, so a value arriving with no reading asked for `2|`
+    // and selected nothing. The earlier of the two readings stands in.
+    const fixture = TestBed.createComponent(Host);
+    fixture.autoDetectChanges();
+    fixture.componentInstance.control.setValue(Temporal.PlainTime.from('02:30'));
+    fixture.detectChanges();
+    const hour = hourMenu(fixture.nativeElement as HTMLElement);
+    expect(hour.selectedIndex).not.toBe(-1);
+    expect(hour.value).toBe('2|+02:00');
+  });
+
   it('propagates a write to offset through [(offset)]', () => {
     const fixture = TestBed.createComponent(Host);
     fixture.autoDetectChanges();

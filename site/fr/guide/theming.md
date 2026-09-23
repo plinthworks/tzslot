@@ -342,3 +342,40 @@ Et une qui n’est pas une couleur : `--tz-color-scheme` (`light`, `dark` ou
 `light dark`) décide quelle moitié de chaque `light-dark()` s’applique. Elle
 est héritée, c’est ainsi qu’un `data-theme` posé sur une carte atteint tout ce
 qu’elle contient.
+
+## Les mesures des deux contrôles d'heure
+
+Les onze ci-dessus peignent. Quatre autres donnent leurs mesures aux menus
+d'heures et au champ compact — ce sont celles dont un formulaire a besoin
+quand un `<tz-time-select>` doit s'aligner avec un `<tz-time-input>`, ou avec
+un champ à vous.
+
+| Propriété | Défaut | Ce qu'elle fait |
+| --- | --- | --- |
+| `--tz-time-pad-y` | `0.375rem` | l'espace au-dessus et en dessous des chiffres, dans les **deux** contrôles — le levier unique de leur hauteur |
+| `--tz-time-menu-width` | `3.25rem` | le plancher de largeur de chaque menu |
+| `--tz-time-arrow-size` | `0.6rem` | la taille des flèches du champ compact |
+| `--tz-time-width` | `2.5rem` | la largeur d'une boîte de chiffres du champ compact |
+
+```css
+/* Des contrôles plus hauts, avec des flèches à l'avenant. */
+.mon-formulaire {
+  --tz-time-pad-y: 0.7rem;
+  --tz-time-arrow-size: 0.85rem;
+}
+```
+
+Mesuré dans Chrome : les menus et le champ passent ensemble de 38 px à 48,4 px
+de haut, et la cible de chaque flèche de 17,5 px à 22,7 px. Les flèches se
+partagent la hauteur du champ, donc augmenter `--tz-time-pad-y` seul les rend
+déjà plus faciles à viser ; `--tz-time-arrow-size` ne règle que la taille du
+signe dessiné dedans.
+
+`--tz-time-menu-width` existe parce qu'un `<select>` est aussi large que sa
+plus longue option. Sans plancher, le menu des heures était plus large que
+celui des minutes le matin où une heure arrive deux fois — l'entrée s'écrit
+`02*` — et la ligne bougeait sous le lecteur au fil des jours. Le plancher est
+taillé pour que l'étoile tienne dedans, ce qui garde les deux menus à une
+seule largeur tous les jours de l'année. Un menu à qui on demande de nommer
+ses lectures en toutes lettres — `readingStyle: 'named'`, qui écrit
+`02 — été` — est plus large que le plancher, exprès.

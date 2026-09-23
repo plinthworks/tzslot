@@ -367,6 +367,47 @@ ne prend pas de pression.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }], title: 'Pas affiché, non modifiable' }" />
 
+#### La même liste, dans le panneau
+
+Ouvrez le champ ci-dessous. La liste est une colonne à côté du calendrier, là
+où étaient les raccourcis — un écran qu'on lit en comparant demande *de combien
+se déplacer* bien plus souvent qu'un intervalle nommé. Les chevrons encadrent
+les deux champs, puisque c'est sur eux qu'ils agissent.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  months: 1,
+  showTime: true,
+  showPresets: false,
+  shift: [
+    { step: 15,    label: '15 min' },
+    { step: 60,    label: '1 heure' },
+    { step: 1440,  label: '1 jour' },
+    { step: 10080, label: '1 semaine' },
+  ],
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'De combien un clic déplace' }" />
+
+Il s'ouvre sur le quart d'heure, parce que c'est ce que la forme de ce champ
+peut porter. Le champ suivant tient une journée, et trois choses changent d'un
+coup : le second champ disparaît, le pas passe à **1 jour**, et les deux pas
+plus courts sont refusés — une heure dans une journée transforme `22/09/2026`
+en `22/09/2026 01:00 – 23/09/2026 01:00`, sur des contrôles que le même
+réglage vient de retirer de l'écran. Ils sont montrés et refusés plutôt que
+cachés : une liste qui perd des entrées quand on coche une case se lit comme
+un défaut.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'Une journée' }" />
+
+Et avec `showStep: false` la colonne s'en va. Le panneau revient alors à la
+largeur du calendrier, donc les deux champs s'empilent — rien ne le déclare,
+ils passent à la ligne quand elle est trop courte pour les deux.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 heure' }], title: 'Les flèches seules' }" />
+
 ::: warning Les raccourcis ne changent pas le pas
 Un raccourci calcule une valeur ; un pas en déplace une. Les deux se
 touchaient — le raccourci pressé décidait de ce qu'une flèche déplaçait — et

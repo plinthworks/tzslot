@@ -357,6 +357,46 @@ does not take a press.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, showTime: true, shift: [{ step: 15, label: '15 min' }], title: 'Read-only step' }" />
 
+#### The same list, inside the panel
+
+Open the field below. The list is a column beside the calendar, where the
+shortcuts used to be — a screen read by comparing asks *how far to travel*
+more often than it asks for a named range. The arrows stand either side of the
+two fields, which is what they move.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  months: 1,
+  showTime: true,
+  showPresets: false,
+  shift: [
+    { step: 15,    label: '15 min' },
+    { step: 60,    label: '1 hour' },
+    { step: 1440,  label: '1 day' },
+    { step: 10080, label: '1 week' },
+  ],
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 hour' }, { step: 1440, label: '1 day' }, { step: 10080, label: '1 week' }], title: 'How far one press goes' }" />
+
+It opens on the quarter of an hour, because that is what the shape of this
+field can take. Tick one day below and watch three things happen at once: the
+second field goes, the step moves to **1 day**, and the two shorter steps are
+refused — an hour inside a single day turns `22/09/2026` into
+`22/09/2026 01:00 – 23/09/2026 01:00`, over controls the same setting has just
+taken off the screen. They are shown and refused rather than hidden: a list
+that loses entries when a box is ticked reads as a fault.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 hour' }, { step: 1440, label: '1 day' }, { step: 10080, label: '1 week' }], title: 'One day' }" />
+
+And with `showStep: false` the column goes away. The panel then narrows to the
+width of the calendar, so the two fields stack — nothing declares that, they
+wrap when the line is too short for both.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 hour' }], title: 'Arrows only' }" />
+
 ::: warning Shortcuts do not change the step
 A shortcut computes a value; a step moves one. They used to touch — the
 shortcut just pressed decided what an arrow moved by — and that was one

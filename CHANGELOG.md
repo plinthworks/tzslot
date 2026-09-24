@@ -50,6 +50,13 @@ before and after:
   the menus follow the same lever as the box — `--tz-rangefield-field-pad` —
   so the row keeps one height rather than growing around the tallest thing in
   it.
+- **The date box was squeezed to a sliver** in the narrow panel — the one
+  without the column of steps, where the two fields stack. The two time menus
+  beside it took 125px of a 175px row and left it 22, for a date that measures
+  109. It refuses to shrink now, and the head asks the panel for the width one
+  field needs: its minimum was written as a percentage, which resolves against
+  the column it is helping to size, so browsers ignored it while sizing and
+  the head contributed nothing. Panel 372 instead of 278, and a whole date.
 - **The last digit of the year was cut off.** The date box was 104px and
   `08/09/2026` measures 91 with 18 of padding either side: 109 needed. It is
   7.25rem, and `--tz-rangefield-date-width` moves it for a format that writes

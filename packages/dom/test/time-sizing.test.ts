@@ -63,6 +63,25 @@ describe('the two fields inside a range panel', () => {
     expect(RANGEFIELD_CSS).toContain(`--tz-time-pad-y: ${pad}`);
   });
 
+  it('does not let the date box be squeezed by the menus beside it', async () => {
+    // In a panel narrow enough to stack the two fields, the two time menus
+    // pushed the date box down to 22px for a date that measures 109: a sliver
+    // where a date should be. It refuses to shrink now, which makes it the
+    // field's own minimum.
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    expect(RANGEFIELD_CSS).toContain('min-width: var(--tz-rangefield-date-width, 7.25rem)');
+    expect(RANGEFIELD_CSS).toContain('flex: 0 0 auto');
+  });
+
+  it('lets the head ask the panel for the width one field needs', async () => {
+    // A percentage minimum resolves against the column the head is helping to
+    // size, so it counts as none while sizing and the head contributed its
+    // zero width — which is how the panel stayed as narrow as the calendar.
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    expect(RANGEFIELD_CSS).toContain('min-width: min-content');
+    expect(RANGEFIELD_CSS).not.toContain('min-width: 100%');
+  });
+
   it('makes the two labels legible', async () => {
     const { DATEINPUT_CSS } = await import('../src/styles.js');
     expect(DATEINPUT_CSS).toContain('font-weight: 600');

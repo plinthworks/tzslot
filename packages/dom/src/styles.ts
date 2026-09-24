@@ -863,7 +863,13 @@ export const RANGEFIELD_CSS = `
      the column, the line holds both fields; without it, the panel is the
      width of one calendar and the fields wrap on their own. */
   width: 0;
-  min-width: 100%;
+  /* min-content, not 100%: a percentage minimum resolves against the column
+     the head is helping to size, so browsers treat it as none while sizing
+     and the head contributed its zero width. The panel then stayed as narrow
+     as the calendar and squeezed the date box inside the fields down to 22px.
+     Its own minimum — one field and the two arrows — is what it has to ask
+     for. */
+  min-width: min-content;
 }
 /* With the column of steps there is room to spare, so the head takes back its
    natural width and the two fields share one line — measured, two fields need
@@ -909,6 +915,13 @@ export const RANGEFIELD_CSS = `
      of the year was cut off. A format that writes the month in words is far
      wider than any default can be — that is what the property is for. */
   width: var(--tz-rangefield-date-width, 7.25rem);
+  /* And it does not give that width back. The box is allowed to shrink
+     everywhere else, which in a panel narrow enough to stack the two fields
+     let the two time menus push it down to 22px — a date measured 109 and
+     what showed was a sliver. Refusing to shrink makes the field's own
+     minimum, so the panel widens to hold it instead. */
+  flex: 0 0 auto;
+  min-width: var(--tz-rangefield-date-width, 7.25rem);
   /* A row of 2.5rem for a date and two short menus is taller than it needs to
      be, and two of them stacked over a calendar is where that shows. The menus
      beside it are brought down with the same lever, so the row stays one

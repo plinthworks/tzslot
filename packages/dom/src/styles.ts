@@ -320,7 +320,52 @@ export const RANGE_CSS = `
   gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
   padding: var(--tz-cal-header-padding, 0.25rem 0);
 }
-.tz-range__title { font-weight: var(--tz-cal-title-weight, 600); }
+/* A way in, not a caption: it opens the months, then the years. Styled as the
+   single calendar's title is, because it is the same gesture. */
+.tz-range__title {
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  font-weight: var(--tz-cal-title-weight, 600);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--tz-radius, 0.375rem);
+  cursor: pointer;
+}
+.tz-range__title:hover:not(:disabled) {
+  background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent));
+}
+.tz-range__title:disabled { cursor: default; }
+/* Three rows of four: twelve months and twelve years both land tidily, and
+   the block is as wide as one month's day grid so the header does not jump
+   when the view changes. The rows exist for the screen reader; display:
+   contents keeps the drawing as the grid alone would have it. */
+.tz-range__coarse[hidden] { display: none; }
+.tz-range__coarse {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
+  width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, var(--tz-gap, 0.25rem)));
+}
+.tz-range__coarse-row { display: contents; }
+.tz-range__coarse-cell {
+  border: 0;
+  padding: 0.5rem 0.25rem;
+  background: transparent;
+  color: inherit;
+  font: var(--tz-font, inherit);
+  border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+  cursor: pointer;
+}
+.tz-range__coarse-cell:hover:not(:disabled) {
+  background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent));
+}
+.tz-range__coarse-cell--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+.tz-range__coarse-cell--selected {
+  background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
+  color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
+}
+.tz-range__grid[hidden] { display: none; }
 /* Side by side, and wrapping to one column when there is no room. */
 .tz-range--months .tz-range__grid {
   display: flex;

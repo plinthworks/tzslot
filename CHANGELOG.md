@@ -2,6 +2,23 @@
 
 ## 1.3.0
 
+### The months and the years, in the range calendar
+
+The month above the grid is a button now: twelve months behind it, then a
+decade, and a year then a month to come back down. The arrows move by a
+screenful of whatever is shown — a month among days, a year among months, a
+decade among years.
+
+The single calendar has had this since the start. `createDateRange`, the one
+inside the period field, carried a plain span, so the only way out of
+September was the arrows one month at a time: fifteen presses to reach March
+of last year. Nothing else about the panel moves, and there is nothing to turn
+on.
+
+One picker for the whole calendar, whatever it shows. With two months side by
+side the choice sets the first and the second follows — they are one run of
+months, not two calendars that could drift apart.
+
 ### The panel says how far, not which range
 
 A screen read by comparing asks *how far to travel* far more often than it

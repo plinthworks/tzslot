@@ -1,4 +1,11 @@
-import { Temporal, getMonthGrid, getWeekdayOrder, firstDayFor } from '@tzslot/core';
+import {
+  Temporal,
+  getMonthGrid,
+  getWeekdayOrder,
+  firstDayFor,
+  getDecadeYears,
+  isOutsideDecade,
+} from '@tzslot/core';
 import type { PlainDate, Weekday } from '@tzslot/core';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
@@ -136,12 +143,42 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
   const header = el('div', 'tz-range__header');
   const prev = button('tz-range__nav');
-  const title = el('span', 'tz-range__title');
+  /**
+   * The month, as a way in rather than a caption.
+   *
+   * It was a span, so the only way out of September was the arrows, one month
+   * at a time — the single calendar has had months and years behind its title
+   * since the start and this one never received them.
+   */
+  const title = button('tz-range__title');
   const next = button('tz-range__nav');
   title.setAttribute('aria-live', 'polite');
   prev.append(icons?.prev ?? '‹');
   next.append(icons?.next ?? '›');
   header.append(prev, title, next);
+
+  /**
+   * What the title opens: twelve months, then twelve years.
+   *
+   * One picker for the whole calendar, whatever it is showing. With two months
+   * on screen the choice sets the first and the second follows — they are one
+   * run of months, not two calendars side by side.
+   */
+  type RangeView = 'days' | 'months' | 'years';
+  let view: RangeView = 'days';
+  const coarse = el('div', 'tz-range__coarse');
+  coarse.setAttribute('role', 'grid');
+  const coarseCells = Array.from({ length: 12 }, () => {
+    const cell = button('tz-range__coarse-cell');
+    cell.setAttribute('role', 'gridcell');
+    return cell;
+  });
+  for (let r = 0; r < 3; r += 1) {
+    const row = el('div', 'tz-range__coarse-row');
+    row.setAttribute('role', 'row');
+    row.append(...coarseCells.slice(r * 4, r * 4 + 4));
+    coarse.append(row);
+  }
 
   const grid = el('div', 'tz-range__grid');
   grid.setAttribute('role', 'grid');
@@ -207,7 +244,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   const alert = el('p', 'tz-range__error');
   alert.setAttribute('role', 'alert');
 
-  host.append(header, grid);
+  host.append(header, grid, coarse);
 
   const shown = (): YearMonth => {
     if (cursor) return cursor;
@@ -280,7 +317,49 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     const last = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 }).add({
       months: blocks.length - 1,
     });
-    title.textContent = blocks.length > 1 ? '' : first;
+    /*
+     * The title says what the arrows would move, so it says the view: the
+     * month among days, the year among months, the decade among years. With
+     * two months on screen the days view has nothing to put there — each block
+     * carries its own name — so it stays empty, and the picker is reached from
+     * the same place either way.
+     */
+    const decade = getDecadeYears(at.year);
+    const heading =
+      view === 'days'
+        ? blocks.length > 1
+          ? ''
+          : first
+        : view === 'months'
+          ? String(at.year)
+          : `${decade[1]} – ${decade[10]}`;
+    title.textContent = heading;
+    title.disabled = off || view === 'years';
+    title.setAttribute(
+      'aria-label',
+      view === 'days' ? s.messages.chooseMonth : view === 'months' ? s.messages.chooseYear : heading,
+    );
+    grid.hidden = view !== 'days';
+    coarse.hidden = view === 'days';
+    if (view !== 'days') {
+      const monthShort = new Intl.DateTimeFormat(s.locale, { month: 'short', timeZone: 'UTC' });
+      coarseCells.forEach((cell, index) => {
+        const year = decade[index]!;
+        cell.textContent =
+          view === 'months' ? monthShort.format(new Date(Date.UTC(2000, index, 1))) : String(year);
+        cell.disabled = off;
+        // The two cells a decade view borrows from its neighbours are shown
+        // faintly, as the single calendar shows them.
+        cell.classList.toggle(
+          'tz-range__coarse-cell--outside',
+          view === 'years' && isOutsideDecade(year, at.year),
+        );
+        cell.classList.toggle(
+          'tz-range__coarse-cell--selected',
+          view === 'months' ? index + 1 === at.month : year === at.year,
+        );
+      });
+    }
     grid.setAttribute('aria-label', blocks.length > 1 ? `${first} – ${monthName(last.year, last.month)}` : first);
 
     // The end as it would be if the pointer stopped here, so the run under the
@@ -396,8 +475,34 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
   function shift(delta: number): void {
     const { year, month } = shown();
-    const moved = Temporal.PlainDate.from({ year, month, day: 1 }).add({ months: delta });
+    // One press means one screenful of whatever is on screen: a month among
+    // days, a year among months, a decade among years.
+    const moved =
+      view === 'days'
+        ? Temporal.PlainDate.from({ year, month, day: 1 }).add({ months: delta })
+        : Temporal.PlainDate.from({ year, month, day: 1 }).add({
+            years: delta * (view === 'months' ? 1 : 10),
+          });
     cursor = { year: moved.year, month: moved.month };
+    render();
+  }
+
+  /** Days → months → years, and no further: a decade is deep enough. */
+  function openView(): void {
+    view = view === 'days' ? 'months' : 'years';
+    render();
+  }
+
+  /** A month or a year chosen: one step back towards the days. */
+  function chooseCoarse(index: number): void {
+    const { year, month } = shown();
+    if (view === 'months') {
+      cursor = { year, month: index + 1 };
+      view = 'days';
+    } else {
+      cursor = { year: getDecadeYears(year)[index]!, month };
+      view = 'months';
+    }
     render();
   }
 
@@ -462,6 +567,10 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   );
   prev.addEventListener('click', () => shift(-1), on);
   next.addEventListener('click', () => shift(1), on);
+  title.addEventListener('click', openView, on);
+  coarseCells.forEach((cell, index) =>
+    cell.addEventListener('click', () => chooseCoarse(index), on),
+  );
   grid.addEventListener(
     'click',
     (event) => {

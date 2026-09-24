@@ -451,6 +451,26 @@ again.
 
 ## The calendar inside
 
+### The months and the years
+
+The month above the grid is a button. Press it for the twelve months of the
+year, press again for a decade — and press a year, then a month, to come back
+down. The arrows move by a screenful of whatever is shown: a month among days,
+a year among months, a decade among years.
+
+It is **one picker for the whole calendar**, whatever it is showing. With two
+months side by side the choice sets the first and the second follows: they are
+one run of months, not two calendars that could drift apart.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Press the month' }"
+  :controls="[{ label: 'Open the panel', run: (w) => w.open() }]" />
+
+::: tip Nothing to turn on
+The single calendar has had this since the start. The range one carried a
+plain caption instead, so the only way out of September was the arrows, one
+month at a time — fifteen presses to reach March of last year.
+:::
+
 ### `months`
 
 How many months stand side by side. Two suits a period that usually crosses

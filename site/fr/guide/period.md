@@ -462,6 +462,26 @@ pour ajouter une fin, donc son clic suivant doit allonger et non recommencer.
 
 ## Le calendrier à l'intérieur
 
+### Les mois et les années
+
+Le mois au-dessus de la grille est un bouton. Pressez-le pour les douze mois
+de l'année, pressez encore pour une décennie — puis une année, puis un mois,
+et on redescend. Les flèches déplacent d'un écran de ce qui est montré : un
+mois parmi les jours, une année parmi les mois, une décennie parmi les années.
+
+C'est **un seul sélecteur pour tout le calendrier**, quoi qu'il affiche. Avec
+deux mois côte à côte, le choix pose le premier et le second suit : c'est une
+seule suite de mois, pas deux calendriers qui pourraient diverger.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 2, title: 'Pressez le mois' }"
+  :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
+
+::: tip Rien à activer
+Le calendrier simple l'a depuis le début. Celui du champ de période portait un
+simple libellé, donc la seule sortie de septembre était les flèches, un mois à
+la fois — quinze pressions pour atteindre mars de l'an dernier.
+:::
+
 ### `months`
 
 Combien de mois côte à côte. Deux conviennent à une période qui franchit

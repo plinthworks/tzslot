@@ -89,15 +89,33 @@ describe('the column of steps', () => {
     expect(host.querySelector('.tz-field__step')!.textContent).toBe('1 jour');
   });
 
+  // Built once, shown or hidden afterwards — the shortcuts' arrangement. Made
+  // conditional on showStep instead, a panel opened with it off never had a
+  // column at all, and turning it on un-hid a picker on the field that the
+  // panel could not show until it was closed and opened again.
+  const hidden = (e: HTMLElement | null) => e !== null && e.hidden;
+
   it('is put away by showStep: false, arrows kept', () => {
     make({ shift: steps, showTime: true, showStep: false });
-    expect(column()).toBe(null);
-    expect(headArrows()).toHaveLength(2);
+    expect(hidden(column())).toBe(true);
+    expect(headArrows().filter((a) => !a.hidden)).toHaveLength(2);
   });
 
   it('is absent altogether when there is no shift', () => {
     make({ shift: false, showTime: true });
-    expect(column()).toBe(null);
-    expect(headArrows()).toHaveLength(0);
+    expect(column()).toBe(null); // no menu, so no column is ever built
+    expect(headArrows().filter((a) => !a.hidden)).toHaveLength(0);
+  });
+
+  it('follows showStep and shift while the panel stays open', () => {
+    make({ shift: steps, showTime: true, showStep: false });
+    expect(hidden(column())).toBe(true);
+    field.update({ showStep: true });
+    expect(hidden(column())).toBe(false);
+    // And the arrows go when the step does, rather than staying on as two
+    // dead buttons until the panel is closed.
+    field.update({ shift: false });
+    expect(headArrows().filter((a) => !a.hidden)).toHaveLength(0);
+    expect(hidden(column())).toBe(true);
   });
 });

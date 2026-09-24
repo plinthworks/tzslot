@@ -22,7 +22,8 @@ made the panel 24px wider on a single month, and would have shrunk it on two.
 And with two months the title used to be empty in the days view — a
 four-pixel button nobody could press, and a header that grew by those four
 pixels the moment the picker put a year in it. It says the year there now.
-Measured in Chrome: 438 × 501 and 749 × 533, unchanged across all three views.
+Measured in Chrome: the panel holds its size across all three views, on one
+month and on two.
 
 One picker for the whole calendar, whatever it shows. With two months side by
 side the choice sets the first and the second follows — they are one run of
@@ -59,6 +60,45 @@ Once a reader has chosen, their choice stands.
 **`showStep: false` puts the column away**, and the panel then narrows to the
 calendar, so the two fields stack. `shift: false` still removes the arrows and
 the column together.
+
+### Seven things a review found before this went out
+
+The theme is one hole seen from several sides: the panel drew a step as
+refused while the arrows went on moving by it. A guard that only paints is not
+a guard.
+
+- **A single-day field could be shifted by an hour** — the corruption the code
+  had a comment about preventing. When no entry of the menu fitted the shape,
+  the default fell back to the first one anyway and the arrows moved by it.
+  `22/09/2026` became 23:00 the day before, over controls that cannot show an
+  hour. The step in force is now checked, not just the one being drawn, and
+  the arrows go when nothing fits.
+- **A reader's choice outlived the shape.** Picked with the hours on screen,
+  a quarter-hour step survived `singleDay` being turned on: the button went
+  grey and kept `aria-pressed="true"`, and the arrows kept moving by it.
+- **`{ days: 1, minutes: 30 }` passed the guard**, being longer than a day. It
+  still turns 22/09 into 00:30 on the 23rd. A day-shaped field now asks for
+  whole days rather than for a long enough total.
+- **A half hour written `PT1800S` counted as nothing** — the minute count
+  dropped seconds — and was refused as shorter than a quarter hour.
+- **A step Temporal cannot read became the default** and took the arrows with
+  it: they showed, permanently disabled, while a usable entry sat below.
+- **`showStep` and `shift` did not survive `update()`.** The column and the
+  panel's arrows were built when the panel opened, so turning `showStep` on
+  gave a picker the panel could not show, and `shift: false` left two dead
+  arrows in place. Both are built once and hidden now — the arrangement the
+  shortcuts already had.
+- **`createDateRange().destroy()` left the month grid behind**, twelve cells
+  and `tz-range--picking` on the host, so a second calendar on the same host
+  inherited them and the dead grid showed beside the live one.
+
+The refusal also applied too widely: a period field with no hours on screen is
+still two moments, and a screen asking for a quarter-hour step there is asking
+for something coherent. Only a single day has a shape to break.
+
+**And the months grid now takes the keyboard.** Twelve cells, twelve tab stops
+and no arrow keys, under a `role="grid"` — the pattern the role exists to
+prevent. One tab stop, arrows, Home and End, as the single calendar has had.
 
 ### The panel, remeasured
 

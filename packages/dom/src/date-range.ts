@@ -363,6 +363,11 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         cell.textContent =
           view === 'months' ? monthShort.format(new Date(Date.UTC(2000, index, 1))) : String(year);
         cell.disabled = off;
+        // One tab stop for the grid, as the day grid has: the cell in force
+        // takes the focus and the arrows move it from there.
+        cell.tabIndex = index === (view === 'months' ? at.month - 1 : decade.indexOf(at.year))
+          ? 0
+          : -1;
         // The two cells a decade view borrows from its neighbours are shown
         // faintly, as the single calendar shows them.
         cell.classList.toggle(
@@ -538,6 +543,26 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
    * the screen keeping it to itself.
    */
   function onKeydown(event: KeyboardEvent): void {
+    if (view !== 'days') {
+      // Four columns of three. Without this the twelve cells were twelve tab
+      // stops and the arrow keys did nothing — a role="grid" that behaves
+      // like a list of buttons is the pattern the role exists to avoid.
+      const index = coarseCells.indexOf(doc.activeElement as HTMLButtonElement);
+      if (index < 0) return;
+      const moves: Record<string, number> = {
+        ArrowLeft: index - 1,
+        ArrowRight: index + 1,
+        ArrowUp: index - 4,
+        ArrowDown: index + 4,
+        Home: 0,
+        End: coarseCells.length - 1,
+      };
+      const wanted = moves[event.key];
+      if (wanted === undefined) return;
+      event.preventDefault();
+      coarseCells[Math.min(Math.max(wanted, 0), coarseCells.length - 1)]?.focus();
+      return;
+    }
     if (s.disabled) return;
     const at = document.activeElement;
     const current =
@@ -571,7 +596,9 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     grid.querySelector<HTMLElement>(`[data-date="${focusedIso}"]`)?.focus();
   }
 
-  grid.addEventListener('keydown', onKeydown, on);
+  // On the wrapper: the coarse grid is the grid's sibling, so a listener on
+  // the day grid never heard a key pressed among the months.
+  views.addEventListener('keydown', onKeydown, on);
   grid.addEventListener(
     'focusin',
     (event) => {
@@ -640,12 +667,21 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     destroy() {
       listening.abort();
       header.remove();
-      grid.remove();
+      // The wrapper, not the grid inside it: removing the grid left the box
+      // behind with its twelve month cells, so a second calendar on the same
+      // host inherited them — and `tz-range--picking` is matched on the host,
+      // which made the dead grid visible beside the live one.
+      views.remove();
       alert.remove();
       // Every class it put there, not the one that came to mind: a host
       // handed back with tz-range--months still on it is a host whose next
       // tenant inherits a layout nobody asked for.
-      host.classList.remove('tz-range--notes', 'tz-range--weeks', 'tz-range--months');
+      host.classList.remove(
+        'tz-range--notes',
+        'tz-range--weeks',
+        'tz-range--months',
+        'tz-range--picking',
+      );
       if (addedHostClass) host.classList.remove('tz-range');
     },
   };

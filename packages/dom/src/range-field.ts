@@ -429,11 +429,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       if (!menu) return;
       // Cycling past a step the shape cannot take would undo the shape, so
       // those entries are stepped over rather than offered.
-      let next = stepAt(menu);
+      const from = stepAt(menu);
+      let next = from < 0 ? menu.length - 1 : from;
       for (let i = 0; i < menu.length; i += 1) {
         next = (next + 1) % menu.length;
-        if (!tooShort(menu[next]!.step)) break;
+        if (usableStep(menu[next]!.step)) break;
       }
+      // Nothing usable to land on: leave the step where it was rather than
+      // committing one the panel is drawing as refused.
+      if (!usableStep(menu[next]!.step)) return;
       stepIndex = next;
       stepPicked = true;
       render();
@@ -720,7 +724,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (typeof ready === 'string') return null;
     const d = ready;
     if (d.years || d.months) return null;
-    return (d.weeks ?? 0) * 7 * 1440 + (d.days ?? 0) * 1440 + (d.hours ?? 0) * 60 + (d.minutes ?? 0);
+    const seconds = (d.seconds ?? 0) + (d.milliseconds ?? 0) / 1000;
+    return (
+      (d.weeks ?? 0) * 7 * 1440 +
+      (d.days ?? 0) * 1440 +
+      (d.hours ?? 0) * 60 +
+      (d.minutes ?? 0) +
+      // Dropped, a half hour written as PT1800S counted as nothing and was
+      // refused as shorter than a quarter of an hour.
+      seconds / 60
+    );
   };
 
   /** What one press is worth on a field of this shape, in minutes. */
@@ -739,17 +752,47 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * an hour. Months and years count as long enough — they cannot be measured
    * in minutes, but they never cut a day in half.
    */
-  const defaultStep = (menu: readonly ShiftOption[]): number => {
-    const enough = menu.findIndex((o) => !tooShort(o.step));
-    return enough >= 0 ? enough : 0;
+  const defaultStep = (menu: readonly ShiftOption[]): number =>
+    menu.findIndex((o) => usableStep(o.step));
+
+  /**
+   * The entry in force.
+   *
+   * The reader's, while the shape can still take it — a choice made with the
+   * hours on screen outlived `singleDay` being turned on, and the arrows went
+   * on moving by fifteen minutes over a field that holds a day. `-1` when the
+   * menu offers nothing this field can use, which is what takes the arrows
+   * away rather than leaving them to corrupt the value.
+   */
+  const stepAt = (menu: readonly ShiftOption[]): number => {
+    if (stepPicked) {
+      const held = Math.min(stepIndex, menu.length - 1);
+      if (usableStep(menu[held]?.step)) return held;
+    }
+    return defaultStep(menu);
   };
 
-  /** The entry in force: the reader's, or the one the shape asks for. */
-  const stepAt = (menu: readonly ShiftOption[]): number =>
-    stepPicked ? Math.min(stepIndex, menu.length - 1) : defaultStep(menu);
+  /**
+   * A step this field's shape cannot take.
+   *
+   * Shorter than the shape holds — an hour inside a single day — or, on a
+   * day-shaped field, not a whole number of days: `{ days: 1, minutes: 30 }`
+   * is longer than a day and still turns 22/09 into 00:30 on the 23rd.
+   */
+  const tooShort = (step_: ShiftStep): boolean => {
+    // Only a single day has a shape to break. A period with no hours on
+    // screen is still two moments, and a screen that asks for a quarter-hour
+    // step on it is asking for something coherent — refusing it there blanked
+    // the picker on a menu the screen had written by hand.
+    if (!s.singleDay) return false;
+    const minutes = stepMinutes(step_);
+    if (minutes === null) return false; // months and years never cut a day
+    return minutes % 1440 !== 0;
+  };
 
-  /** A step this field's shape cannot take — an hour inside a single day. */
-  const tooShort = (step_: ShiftStep): boolean => (stepMinutes(step_) ?? Infinity) < shapeStep();
+  /** Readable by Temporal, and a shape this field can take. */
+  const usableStep = (step_: ShiftStep | undefined): boolean =>
+    step_ !== undefined && asStep(step_) !== null && !tooShort(step_);
   /**
    * What one press of an arrow moves.
    *
@@ -760,7 +803,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   const currentStep = (): ShiftStep | null => {
     const menu = stepMenu();
-    if (menu) return menu[stepAt(menu)]?.step ?? null;
+    if (menu) {
+      const at = stepAt(menu);
+      return at < 0 ? null : (menu[at]?.step ?? null);
+    }
     if (s.shift === false || Array.isArray(s.shift)) return null;
     /*
      * `true` asks for arrows without naming a step, and the answer follows
@@ -1316,7 +1362,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       }
     }
     if (panelShift) {
-      for (const button of [panelShift.back, panelShift.forward]) button.disabled = !canShift();
+      const stepping = currentStep() !== null;
+      for (const button of [panelShift.back, panelShift.forward]) {
+        button.hidden = !stepping;
+        button.disabled = !canShift();
+      }
     }
     paintPresets();
     paintSteps();
@@ -1331,7 +1381,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     text.textContent = display() || s.placeholder || s.messages.chooseRange;
     const menu = stepMenu();
     host.classList.toggle('tz-field--shift', currentStep() !== null);
-    stepPicker.hidden = menu === null || !s.showStep;
+    // Nothing usable to offer is nothing to show: a menu whose every entry
+    // this field refuses left a button with no label on it.
+    stepPicker.hidden = menu === null || !s.showStep || currentStep() === null;
     if (menu) {
       // The same entry the panel fills in. Reading the raw index here showed
       // '15 min' on the button while the column had '1 day' picked out, on a
@@ -1339,7 +1391,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const current = menu[stepAt(menu)];
       stepIndex = Math.min(stepIndex, menu.length - 1);
       stepPicker.textContent = current?.label ?? '';
-      stepPicker.disabled = off() || menu.length < 2;
+      // Usable entries, not entries: a menu of two with one refused gave a
+      // button that looked live and did nothing when pressed.
+      stepPicker.disabled = off() || menu.filter((o) => usableStep(o.step)).length < 2;
       const label_ = `${s.messages.stepLabel} : ${current?.label ?? ''}`;
       stepPicker.title = label_;
       stepPicker.setAttribute('aria-label', label_);
@@ -1479,14 +1533,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        * reader asked where they were: a row that named the period again, over
        * two fields already showing it, said nothing the fields did not.
        */
-      if (currentStep() !== null) {
-        const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
-        const forwardButton = arrow(1, 'tz-rangefield__shift-arrow');
-        backButton.setAttribute('aria-label', s.messages.previousPeriod);
-        forwardButton.setAttribute('aria-label', s.messages.nextPeriod);
-        head.append(backButton, pair, forwardButton);
-        panelShift = { row: head, label: null, back: backButton, forward: forwardButton };
-      } else head.append(pair);
+      /*
+       * Built always, shown when there is a step. Built only when there was
+       * one, a panel opened with `shift: false` never gained arrows when the
+       * screen gave it a step, and one opened with a step kept two dead
+       * arrows when the screen took it away.
+       */
+      const backButton = arrow(-1, 'tz-rangefield__shift-arrow');
+      const forwardButton = arrow(1, 'tz-rangefield__shift-arrow');
+      backButton.setAttribute('aria-label', s.messages.previousPeriod);
+      forwardButton.setAttribute('aria-label', s.messages.nextPeriod);
+      head.append(backButton, pair, forwardButton);
+      panelShift = { row: head, label: null, back: backButton, forward: forwardButton };
 
       node.append(head);
 
@@ -1507,12 +1565,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        *
        * A screen that reads by comparing wants to say how far to travel far
        * more often than it wants a named range, so the choice of step takes
-       * the place the shortcuts had. `showStep: false` puts it away, and the
-       * panel then narrows to the calendar — the two fields stack on their
-       * own, because they wrap when the line is too short for both.
+       * the place the shortcuts had. `showStep: false` puts it away.
+       *
+       * Built whenever there is a menu at all, and hidden by paintSteps —
+       * gating the building on `showStep` meant a panel opened with it off
+       * never had a column, and update({ showStep: true }) un-hid a picker on
+       * the field that the panel could not show. The shortcuts had this right:
+       * built on `presets.length`, shown on `showPresets`.
        */
       const menuNow = stepMenu();
-      if (menuNow && s.showStep) {
+      if (menuNow) {
         stepColumn = el('div', 'tz-rangefield__steps');
         const heading = el('span', 'tz-rangefield__steps-label');
         heading.textContent = s.messages.stepLabel;

@@ -917,31 +917,21 @@ export const RANGEFIELD_CSS = `
      rule on the box of fields. Centring the head itself instead — justify-self
      — stopped it stretching, and on two months the fields had no room left to
      share a line. */
-  /* The rule between the fields and the calendar lives on the row below, not
-     here: the head is only as wide as one field, so a border of its own
-     stopped two thirds of the way across the panel and read as unfinished. */
-  /* The head asks for nothing and takes what the row below settles on. Left
-     to its natural width it made the panel as wide as two fields side by
-     side, so hiding the column of steps narrowed the calendar and not the
-     panel. Zero width with a 100% floor is what lets the body decide: with
-     the column, the line holds both fields; without it, the panel is the
-     width of one calendar and the fields wrap on their own. */
-  /* It stretches to the row below and asks only for what one field needs. The
-     asking is done by the box of fields, with width: min-content — the head
-     then counts as one field and two arrows while the panel is being sized,
-     and the fields grow into whatever the panel turns out to be. On one month
-     there is too little for both, so they wrap and stack; on two there is
-     room and they share a line. Nothing declares which — the width does.
+  /* The rule between the fields and the calendar is drawn by the row below,
+     not here: the head is as wide as one field, so a border of its own
+     stopped two thirds of the way across the panel and read as unfinished.
 
-     Zeroing the head instead worked for the wrapping and lost the floor: it
-     contributed nothing, the calendar alone settled the width, and the two
-     time menus squeezed the date box inside each field down to 22px. */
+     It stretches to that row and asks only for what one field needs — the
+     asking done by the box of fields, with width: min-content. Zeroing the
+     head instead made the wrapping work and lost the floor: it contributed
+     nothing, the calendar alone settled the width, and the two time menus
+     squeezed the date box inside each field down to 22px. */
   min-width: 0;
 }
-/* The two fields stack, always. Side by side they made the head 601px wide
-   against a body of 434, and the panel carried that difference as a hole
-   between the calendar and the column of steps. One under the other, the row
-   below settles the width and there is nothing left over to leave a gap. */
+/* Whether the two fields share a line is settled by the width, not here: the
+   box of fields asks for one field while the panel is being sized and grows
+   into whatever it turns out to be. One month leaves 412px where two fields
+   need 512, so they wrap; two months leave 723 and they sit side by side. */
 /* The arrows stand on the line of the fields, not of the words above them.
    Centred in the box and then pushed down by the height the label takes:
    measured in Chrome, a field is 69px of which the label and its gap are 27,

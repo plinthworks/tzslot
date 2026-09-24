@@ -35,6 +35,7 @@ import {
 } from './zone-names.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
+import { icon as drawIcon } from './icons.js';
 import {
   DATEINPUT_CSS,
   DATETIME_CSS,
@@ -378,11 +379,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const text = el('span', 'tz-field__text');
   const iconSlot = el('span', 'tz-field__icon');
   iconSlot.setAttribute('aria-hidden', 'true');
-  // No caret of its own: a button is pressed, and one that says so is one
-  // more thing to read on a line that already holds the answer. `icon` puts
-  // something there for a screen that wants it.
-  if (icon) iconSlot.append(icon);
-  trigger.append(text, iconSlot);
+  /*
+   * A calendar, at the head of the line.
+   *
+   * It was a caret at the tail, which said the button could be pressed —
+   * something a button already says. This says what the field is for, which
+   * is the one thing the line does not hold when it is empty. `icon: ''`
+   * takes it away, and any node replaces it.
+   */
+  iconSlot.append(icon ?? drawIcon('calendar', doc));
+  trigger.append(iconSlot, text);
 
   /**
    * Declared here rather than beside the other listeners: the arrows and the
@@ -636,25 +642,20 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const pattern = () => s.format ?? patternFor(s.locale, { time: false });
 
   /**
-   * What an empty field says: the shape of the answer it wants.
+   * What an empty field asks for: one date, or two, named.
    *
-   * A day, a period and a period with hours all read "Choose a range" until
-   * someone opened them — three different questions behind one sentence. A
-   * mask shows which: how many dates, whether the hours count, and the order
-   * the locale writes them in, which helps the typing too.
+   * A day and a period both read "Choose a range" before, one sentence over
+   * two different questions, and the only way to learn which was to open the
+   * panel. A mask of dashes said it too, and said it in twelve characters of
+   * noise — the format and the hours are the panel's business, and the panel
+   * has its own masks for them. What a closed line owes the reader is the
+   * question, not the shape of the answer.
    *
-   * Derived from the locale rather than written out, so `ja-JP` gets
-   * ----/--/-- and nobody has to think about it. A placeholder given by the
-   * screen still wins — it knows its own words.
+   * A placeholder given by the screen still wins: it knows its own words.
    */
   function emptyMask(): string {
-    const dashes = pattern().replace(/[a-zA-Z]/g, '-');
-    const one = s.showTime ? `${dashes} --:--` : dashes;
-    if (s.singleDay) return one;
-    // The separator the filled field uses, not the words the panel uses:
-    // "From … To …" twice over read as a sentence to parse where the shape was
-    // the whole point, and the empty field looked nothing like the full one.
-    return `${one} – ${one}`;
+    if (s.singleDay) return s.messages.singleDate;
+    return `${s.messages.startDate} – ${s.messages.endDate}`;
   }
 
   /** What the field says about a value — the chosen one, or the pending draft. */

@@ -611,32 +611,27 @@ createRangeField(element, { timeZone: 'Europe/Paris', mode: 'dialog' });
 
 ### `placeholder`
 
-Ce qu'affiche le champ fermé quand rien n'est choisi. Sans lui, il affiche la
-**forme de la réponse** : combien de dates, et si les heures comptent.
+Ce qu'affiche le champ fermé quand rien n'est choisi. Sans lui, il **nomme ce
+qu'il attend** :
 
 ```
-une journée              →  --/--/----
-une période              →  --/--/---- – --/--/----
-une période avec heures  →  --/--/---- --:-- – --/--/---- --:--
+une journée   →  Date
+une période   →  Date de début – Date de fin
 ```
 
-Le séparateur est celui qu'emploie un champ rempli : l'état vide est donc la
-même phrase, sans les chiffres — `23/09/2026 – 24/09/2026`.
-
-Regardez les trois ci-dessous sans y toucher : le premier dit qu'il veut une
-date, le deuxième deux, le troisième deux avec une heure chacune. Ils
-affichaient tous « Choisir une période » — trois questions différentes derrière
-une seule phrase.
+Le séparateur est celui qu'emploie un champ rempli : les deux états sont la
+même phrase, avec et sans les chiffres — `Date de début – Date de fin`, puis
+`23/09/2026 – 24/09/2026`. Regardez les deux ci-dessous sans y toucher : le
+premier demande une date, le second deux. Ils affichaient tous les deux
+« Choisir une période » — une seule phrase sur deux questions différentes.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', singleDay: true, title: 'Une journée' }" />
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', title: 'Une période' }" />
 
-<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, title: 'Avec les heures' }" />
-
-Le gabarit suit la locale au lieu d'être écrit en dur : une page japonaise
-obtient `----/--/--`. Posez `placeholder` vous-même et il gagne — l'écran
-connaît ses propres mots.
+Les mots sont dans le catalogue de messages : ils suivent la langue de la page
+comme le reste. Posez `placeholder` vous-même et il gagne — l'écran connaît ses
+propres mots.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', placeholder: 'Toutes les dates' });

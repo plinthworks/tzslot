@@ -10,6 +10,7 @@ import { createPanel, type FieldMode } from './panel.js';
 import { formatWith, maskWith, parseWith, patternFor } from './format.js';
 import { summerFirst, zoneName } from './zone-names.js';
 import { EN, type TzslotMessages } from './messages.js';
+import { icon as drawIcon } from './icons.js';
 import {
   CALENDAR_CSS,
   DATETIME_CSS,
@@ -242,10 +243,15 @@ export function createDateTimeField(
   typed.autocomplete = 'off';
   typed.setAttribute('aria-haspopup', 'dialog');
   const iconSlot = el('span', 'tz-field__icon');
-  // No caret of its own: a button is pressed, and one that says so is one
-  // more thing to read on a line that already holds the answer. `icon` puts
-  // something there for a screen that wants it.
-  if (icon) iconSlot.append(icon);
+  /*
+   * A calendar, at the head of the line. It was a caret at the tail, which
+   * said the button could be pressed — something a button already says. This
+   * says what the field is for. `icon: ''` takes it away.
+   *
+   * When the field is editable the slot moves into its own button, which
+   * opens the panel; the mark is the affordance there rather than decoration.
+   */
+  iconSlot.append(icon ?? drawIcon('calendar', doc));
   const iconButton = doc.createElement('button');
   iconButton.type = 'button';
   iconButton.className = 'tz-field__icon-button';
@@ -348,7 +354,7 @@ export function createDateTimeField(
       wrap.replaceChildren(typed, iconButton);
     } else {
       iconSlot.setAttribute('aria-hidden', 'true');
-      button.replaceChildren(text, iconSlot);
+      button.replaceChildren(iconSlot, text);
       wrap.replaceChildren(button);
     }
   }

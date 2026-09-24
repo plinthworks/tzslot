@@ -3,6 +3,7 @@ import type { PlainDate, Weekday } from '@tzslot/core';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import type { RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
+import { icon as drawIcon } from './icons.js';
 import { FIELD_CSS, CALENDAR_CSS, ensureStyles } from './styles.js';
 import { createPanel, type FieldMode, type PanelController } from './panel.js';
 
@@ -128,11 +129,16 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
   const iconSlot = doc.createElement('span');
   iconSlot.className = 'tz-field__icon';
   iconSlot.setAttribute('aria-hidden', 'true');
-  // No caret of its own: a button is pressed, and one that says so is one
-  // more thing to read on a line that already holds the answer. `icon` puts
-  // something there for a screen that wants it.
-  if (icon) iconSlot.append(icon);
-  trigger.append(text, iconSlot);
+  /*
+   * A calendar, at the head of the line.
+   *
+   * It was a caret at the tail, which said the button could be pressed —
+   * something a button already says. This says what the field is for, which
+   * is the one thing the line does not hold when it is empty. `icon: ''`
+   * takes it away, and any node replaces it.
+   */
+  iconSlot.append(icon ?? drawIcon('calendar', doc));
+  trigger.append(iconSlot, text);
   host.append(trigger);
 
   /** The calendar inside the panel, while there is one. */

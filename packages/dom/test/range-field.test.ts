@@ -25,13 +25,12 @@ const preset = (label: string) => presets().find((b) => b.textContent === label)
 const day = (iso: string) => panel()!.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 
 describe('one field for a period', () => {
-  it('says what it holds, and the shape of the answer when it holds nothing', () => {
-    // Empty, it shows a mask rather than a sentence: a day, a period and a
-    // period with hours all read "Choose a range" before, three different
-    // questions behind one wording, and the reader had to open the panel to
-    // learn which.
+  it('says what it holds, and names what it wants when it holds nothing', () => {
+    // Empty, it asks for two dates by name. "Choose a range" was one sentence
+    // over two different questions — a day and a period read the same — and
+    // the reader had to open the panel to learn which.
     mount();
-    expect(trigger().textContent).toContain('--/--/---- – --/--/----');
+    expect(trigger().textContent).toContain('Start date – End date');
 
     field.update({
       value: {

@@ -27,29 +27,23 @@ const make = (options = {}) => {
 beforeEach(() => { host = document.createElement('div'); document.body.append(host); });
 afterEach(() => { field?.destroy(); host.remove(); document.querySelectorAll('.tz-field__panel').forEach((n) => n.remove()); });
 
-describe('an empty field shows its shape', () => {
-  it('one mask for one day', () => {
+describe('an empty field names what it wants', () => {
+  it('one date for one day', () => {
     make({ singleDay: true });
-    expect(lu()).toBe('--/--/----');
+    expect(lu()).toBe('Date');
   });
 
-  it('two for a period, split by the separator the filled field uses', () => {
-    // Not "From … To …": the words read as a sentence to parse where the
-    // shape was the point, and the empty field looked nothing like the full
-    // one — which reads 23/09/2026 – 24/09/2026.
+  it('two, named, for a period', () => {
+    // A mask of dashes said this too, in twelve characters of noise. The
+    // format and the hours are the panel's business, and the panel has its
+    // own masks for them; a closed line owes the reader the question.
     make();
-    expect(lu()).toBe('--/--/---- – --/--/----');
+    expect(lu()).toBe('Date de début – Date de fin');
   });
 
-  it('and the hours when the hours count', () => {
+  it('says the same whether or not the hours are on screen', () => {
     make({ showTime: true });
-    expect(lu()).toBe('--/--/---- --:-- – --/--/---- --:--');
-  });
-
-  it('follows the locale rather than a written-out pattern', () => {
-    // ja-JP writes the year first. Nobody has to think about it.
-    make({ locale: 'ja-JP', singleDay: true });
-    expect(lu()).toBe('----/--/--');
+    expect(lu()).toBe('Date de début – Date de fin');
   });
 
   it('gives way to a placeholder the screen wrote itself', () => {
@@ -69,16 +63,25 @@ describe('an empty field shows its shape', () => {
   });
 });
 
-describe('no caret on the trigger', () => {
-  it('leaves the slot empty, and the stylesheet takes its room away', async () => {
+describe('a calendar at the head of the line', () => {
+  it('is drawn by default, before the words', () => {
     make();
+    const trigger = host.querySelector('.tz-field__trigger')!;
+    // Before the text, not after it: it was a caret at the tail saying the
+    // button could be pressed, which a button already says.
+    expect(trigger.firstElementChild!.className).toBe('tz-field__icon');
+    expect(trigger.querySelector('.tz-field__icon svg')).not.toBe(null);
+  });
+
+  it('takes a mark of the screen’s own instead', () => {
+    field = createRangeField(host, { timeZone: 'Europe/Paris', locale: 'fr-FR', icon: '▾' });
+    expect(host.querySelector('.tz-field__icon')!.textContent).toBe('▾');
+  });
+
+  it('and an empty string takes it away without leaving a gap', async () => {
+    field = createRangeField(host, { timeZone: 'Europe/Paris', locale: 'fr-FR', icon: '' });
     expect(host.querySelector('.tz-field__icon')!.textContent).toBe('');
     const { FIELD_CSS } = await import('../src/styles.js');
     expect(FIELD_CSS).toContain('.tz-field__icon:empty { display: none; }');
-  });
-
-  it('still takes a mark the screen puts there', () => {
-    field = createRangeField(host, { timeZone: 'Europe/Paris', locale: 'fr-FR', icon: '▾' });
-    expect(host.querySelector('.tz-field__icon')!.textContent).toBe('▾');
   });
 });

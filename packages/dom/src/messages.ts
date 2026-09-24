@@ -64,6 +64,16 @@ export interface TzslotMessages {
   /** The arrows that step a selection to the period before or after it. */
   readonly previousPeriod: string;
   readonly nextPeriod: string;
+  /**
+   * What a closed field asks for when it holds nothing: one date, or two.
+   *
+   * Names rather than a mask. Twelve dashes for a date were noise, and the
+   * question the field is asking — how many dates, and which is which — is
+   * what a reader needs from a line they have not opened yet.
+   */
+  readonly singleDate: string;
+  readonly startDate: string;
+  readonly endDate: string;
   /** The menu between the arrows, when the reader chooses how far one press goes. */
   readonly stepLabel: string;
   /** Said of a step the field's shape cannot take — an hour inside one day. */
@@ -177,6 +187,9 @@ export const EN: TzslotMessages = {
   },
   previousPeriod: 'Previous period',
   nextPeriod: 'Next period',
+  singleDate: 'Date',
+  startDate: 'Start date',
+  endDate: 'End date',
   stepLabel: 'Step',
   stepTooShort: 'Shorter than the day this field holds',
   between: 'Between',
@@ -264,6 +277,9 @@ export const FR: TzslotMessages = {
   },
   previousPeriod: 'Période précédente',
   nextPeriod: 'Période suivante',
+  singleDate: 'Date',
+  startDate: 'Date de début',
+  endDate: 'Date de fin',
   stepLabel: 'Pas',
   stepTooShort: "Plus court que la journée que porte ce champ",
   between: 'Entre',

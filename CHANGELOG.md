@@ -23,32 +23,34 @@ one hour chosen         →  23/09/2026 08:00 – 24/09/2026 18:00
 `showTime` no longer enters into it. It says whether hours are on screen to be
 chosen, which was never the same question as whether they are worth writing.
 
-### An empty field shows the shape of the answer
+### An empty field names what it wants, behind a calendar
 
 A day, a period and a period with hours all read *Choose a range* — three
 different questions behind one sentence, and the only way to learn which was
 to open the panel.
 
 ```
-one day                 →  --/--/----
-a period                →  --/--/---- – --/--/----
-a period with hours     →  --/--/---- --:-- – --/--/---- --:--
+one day     →  Date
+a period    →  Start date – End date
 ```
 
-The separator is the one a filled field uses, so the empty state is that same
-sentence with the figures missing. Naming the two ends — *From … To …* — read
-as something to parse where the shape was the whole point.
+The separator is the one a filled field uses, so the two states are the same
+sentence with and without the figures. A mask of dashes was tried first and
+was worse: twelve characters of noise for a date, when the format and the
+hours are the panel's business and the panel has its own masks for them. What
+a closed line owes the reader is the question, not the shape of the answer.
 
-The mask comes from the locale rather than being written out, so `ja-JP` gets
-`----/--/--` and nobody has to think about it. A `placeholder` the screen wrote
-itself still wins.
+The words live in the message catalogue, so they follow the page's language. A
+`placeholder` the screen wrote itself still wins.
 
-### No caret on a field
+### A calendar at the head of a field, in place of the caret
 
-A button is pressed; one that says so is one more thing to read on a line that
-already holds the answer. The `▾` is gone from `createDateField`,
-`createDateTimeField` and `createRangeField` — `icon` still puts a mark there
-for a screen that wants one, and the slot takes no room until it does.
+The `▾` at the tail said the button could be pressed, which a button already
+says. All three fields — `createDateField`, `createDateTimeField`,
+`createRangeField` — now draw a calendar before the text instead: what the
+field is *for*, which is the one thing an empty line does not hold. `icon`
+replaces it with a mark of your own, and `icon: ''` takes it away without
+leaving a gap.
 
 ## 1.3.0
 

@@ -158,10 +158,12 @@ describe('no switch to classify the answer', () => {
       .find((b) => b.textContent === 'This quarter')!
       .click();
 
-    // Built from the hours on screen it would have ended at 30 September
-    // 00:00 and dropped the last day of the quarter. It ends at the instant
-    // October opens, and says so.
-    expect(shown()).toBe('01/07/2026 00:00 – 01/10/2026 00:00');
+    // The value ends at the instant October opens — built from the hours on
+    // screen it would have ended at 30 September 00:00 and dropped the last
+    // day of the quarter. The field writes the days that end covers, because
+    // that is what was chosen: a reader who picks a quarter has not picked
+    // 1 October, and a field saying so would be saying something they did not.
+    expect(shown()).toBe('01/07/2026 – 30/09/2026');
     expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
   });
 

@@ -1,5 +1,45 @@
 # Changelog
 
+## 1.4.0
+
+### The field never shows a date nobody chose
+
+Click the 24th as the end of a period and the field read **25/09/2026 00:00**.
+The value is right — a day chosen as the end means the whole day, so the
+boundary is the midnight that opens the next one, and that exclusive end is
+the reason this widget holds instants rather than dates. But the reader had
+picked the 24th, and the field answered with the 25th.
+
+What is written now follows the **value**, never the setting: a period landing
+on two midnights is written as days, because days are what was chosen. Give
+either end an hour and it says the moments again.
+
+```
+clicked 23 and 24       →  23/09/2026 – 24/09/2026
+held in the form        →  22/09 22:00Z → 24/09 22:00Z   (the 24th included)
+one hour chosen         →  23/09/2026 08:00 – 24/09/2026 18:00
+```
+
+`showTime` no longer enters into it. It says whether hours are on screen to be
+chosen, which was never the same question as whether they are worth writing.
+
+### An empty field shows the shape of the answer
+
+A day, a period and a period with hours all read *Choose a range* — three
+different questions behind one sentence, and the only way to learn which was
+to open the panel.
+
+```
+one day                 →  --/--/----
+a period                →  From --/--/----  To --/--/----
+a period with hours     →  From --/--/---- --:--  To --/--/---- --:--
+```
+
+The mask comes from the locale rather than being written out, so `ja-JP` gets
+`----/--/--` and nobody has to think about it, and the words are the ones the
+panel already uses over the two fields. A `placeholder` the screen wrote itself
+still wins.
+
 ## 1.3.0
 
 ### The months and the years, in the range calendar

@@ -91,8 +91,14 @@ Journées entières. Regardez la ligne en dessous : `end` est le minuit
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
 
-Le même champ avec les heures à l’écran — il dit alors les deux moments tels
-qu’ils sont, minuit compris :
+Le même champ avec les heures à l’écran. Ce qu’il écrit suit la valeur, pas le
+réglage : une période qui tombe sur deux minuits s’écrit en jours, parce que
+ce sont des jours qu’on a choisis. Donnez une heure à l’une des bornes et il
+dit les moments.
+
+Dans les deux cas la valeur est la paire d’instants, fin exclusive — le champ
+qui lit `23/09 – 24/09` porte 22/09 22:00Z → 24/09 22:00Z, le 24 compris. Il
+n’affiche jamais une date que personne n’a choisie :
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
 

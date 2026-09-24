@@ -25,9 +25,13 @@ const preset = (label: string) => presets().find((b) => b.textContent === label)
 const day = (iso: string) => panel()!.querySelector<HTMLButtonElement>(`[data-date="${iso}"]`)!;
 
 describe('one field for a period', () => {
-  it('says what it holds, and nothing when it holds nothing', () => {
+  it('says what it holds, and the shape of the answer when it holds nothing', () => {
+    // Empty, it shows a mask rather than a sentence: a day, a period and a
+    // period with hours all read "Choose a range" before, three different
+    // questions behind one wording, and the reader had to open the panel to
+    // learn which.
     mount();
-    expect(trigger().textContent).toContain('Choose a range');
+    expect(trigger().textContent).toContain('From --/--/----  To --/--/----');
 
     field.update({
       value: {

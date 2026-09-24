@@ -173,11 +173,11 @@ describe('once the panel is closed', () => {
         end: Temporal.Instant.from('2026-10-25T23:00:00Z'),
       },
     });
-    // Whole days on a screen that shows hours: the two moments as they are,
-    // and — the point of this test — no reading named after either of them.
-    expect(host.querySelector('.tz-field__text')!.textContent).toBe(
-      '25/10/2026 00:00 – 26/10/2026 00:00',
-    );
+    // 25 October is the day the clocks go back, so it is twenty-five hours
+    // long: 24/10 22:00Z to 25/10 23:00Z is that one day, whole. The field
+    // writes the day — and, the point of this test, names no reading, because
+    // there is no hour on screen to be ambiguous about.
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026');
   });
 });
 

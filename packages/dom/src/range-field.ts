@@ -632,21 +632,49 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   const pattern = () => s.format ?? patternFor(s.locale, { time: false });
 
+  /**
+   * What an empty field says: the shape of the answer it wants.
+   *
+   * A day, a period and a period with hours all read "Choose a range" until
+   * someone opened them — three different questions behind one sentence. A
+   * mask shows which: how many dates, whether the hours count, and the order
+   * the locale writes them in, which helps the typing too.
+   *
+   * Derived from the locale rather than written out, so `ja-JP` gets
+   * ----/--/-- and nobody has to think about it. A placeholder given by the
+   * screen still wins — it knows its own words.
+   */
+  function emptyMask(): string {
+    const dashes = pattern().replace(/[a-zA-Z]/g, '-');
+    const one = s.showTime ? `${dashes} --:--` : dashes;
+    if (s.singleDay) return one;
+    return `${s.messages.rangeStart} ${one}  ${s.messages.rangeEnd} ${one}`;
+  }
+
   /** What the field says about a value — the chosen one, or the pending draft. */
   function display(value: RangeFieldValue = s.value): string {
     if (s.displayWith) return s.displayWith(value, s.timeZone);
     /*
-     * Whether the hours are written at all.
+     * Whether the hours are written at all — decided by the value, never by
+     * the settings.
      *
-     * `showTime` asked for them, so they are shown even at midnight — the
-     * screen said it deals in times. And they are written whatever `showTime`
-     * says when the period is not whole days, because a quarter-hour shortcut
-     * on a day-only screen reading "21/09/2026" alone would be a lie.
+     * A period landing on two midnights is a period of whole days, whatever
+     * `showTime` says: the reader clicked days. Writing it as moments meant
+     * the field answered a click on the 24th with "25/09/2026 00:00", the
+     * exclusive end shown as a date nobody had chosen. The field must never
+     * say something the reader did not.
+     *
+     * The other direction still holds: a quarter-hour shortcut on a day-only
+     * screen is written with its hours, because "21/09/2026" alone would be a
+     * lie about it.
+     *
+     * The value does not move. `23/09 – 24/09` on screen is
+     * 22/09 22:00Z → 24/09 22:00Z in the form, the 24th included, which is the
+     * whole reason this widget holds instants instead of dates.
      */
-    const withHours = s.showTime || !coversWholeDays(value);
-    // With hours the field says the two moments as they are, the exclusive end
-    // included: 21/09 09:00 – 26/09 00:00 is the truth of a five-day stay.
-    // Without them it says the days covered, 21/09 – 25/09.
+    const withHours = !coversWholeDays(value);
+    // With hours the field says the two moments as they are; without them, the
+    // days covered — 21/09 – 25/09, both included.
     const { start, end } = withHours
       ? {
           start: value.start ? zoned(value.start).toPlainDate() : null,
@@ -1378,7 +1406,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(host, 'field', FIELD_CSS);
       stylesPending = false;
     }
-    text.textContent = display() || s.placeholder || s.messages.chooseRange;
+    text.textContent = display() || s.placeholder || emptyMask();
     const menu = stepMenu();
     host.classList.toggle('tz-field--shift', currentStep() !== null);
     // Nothing usable to offer is nothing to show: a menu whose every entry

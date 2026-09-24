@@ -87,8 +87,13 @@ day you chose.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, months: 2, presets: ['thisWeek'] }" />
 
-The same field with hours on screen — the field then says the two moments as
-they are, midnight included:
+The same field with hours on screen. What the field writes follows the value,
+not the setting: a period landing on two midnights is written as days, because
+days are what was chosen. Give either end an hour and it says the moments.
+
+Either way the value is the pair of instants, the end exclusive — the field
+reading `23/09 – 24/09` holds 22/09 22:00Z → 24/09 22:00Z, the 24th included.
+It never shows a date nobody picked:
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
 

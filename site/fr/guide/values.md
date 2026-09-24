@@ -96,11 +96,19 @@ réglage : une période qui tombe sur deux minuits s’écrit en jours, parce qu
 ce sont des jours qu’on a choisis. Donnez une heure à l’une des bornes et il
 dit les moments.
 
-Dans les deux cas la valeur est la paire d’instants, fin exclusive — le champ
-qui lit `23/09 – 24/09` porte 22/09 22:00Z → 24/09 22:00Z, le 24 compris. Il
-n’affiche jamais une date que personne n’a choisie :
-
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
+
+Essayez sur celui-ci, qui a les heures à l’écran et aucune heure par défaut.
+**Cliquez le 23, puis le 24**, et lisez la ligne en dessous : le champ dit
+`23/09/2026 – 24/09/2026` et la valeur finit à `2026-09-24T22:00:00Z` — c’est
+le 25 à minuit à Paris, donc le 24 est entier.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, title: 'Cliquez deux jours' }"
+  :show="(v) => v && v.start ? `${v.start.toString()}  →  ${v.end ? v.end.toString() : '…'}` : 'rien choisi'" />
+
+Jusqu’à la 1.4.0, le champ écrivait là `25/09/2026 00:00` — la borne exclusive
+montrée comme une date que personne n’avait cliquée. La valeur n’a pas changé ;
+seule la lecture qu’on en fait a changé.
 
 ## Une seule borne
 

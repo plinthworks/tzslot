@@ -91,11 +91,19 @@ The same field with hours on screen. What the field writes follows the value,
 not the setting: a period landing on two midnights is written as days, because
 days are what was chosen. Give either end an hour and it says the moments.
 
-Either way the value is the pair of instants, the end exclusive — the field
-reading `23/09 – 24/09` holds 22/09 22:00Z → 24/09 22:00Z, the 24th included.
-It never shows a date nobody picked:
-
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, defaultTimes: { start: '09:00', end: '18:00' } }" />
+
+Try it on the one below, which has hours on screen and no default times.
+**Click the 23rd, then the 24th**, and read the line underneath: the field says
+`23/09/2026 – 24/09/2026` and the value ends at `2026-09-24T22:00:00Z` — which
+is the 25th at midnight in Paris, so the 24th is whole.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, title: 'Click two days' }"
+  :show="(v) => v && v.start ? `${v.start.toString()}  →  ${v.end ? v.end.toString() : '…'}` : 'nothing chosen'" />
+
+The field said `25/09/2026 00:00` there until 1.4.0 — the exclusive end shown
+as a date nobody had clicked. The value has not changed; only what is read off
+it has.
 
 ## One end only
 

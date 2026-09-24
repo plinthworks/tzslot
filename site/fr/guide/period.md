@@ -611,7 +611,30 @@ createRangeField(element, { timeZone: 'Europe/Paris', mode: 'dialog' });
 
 ### `placeholder`
 
-Ce qu'affiche le champ fermé quand rien n'est choisi.
+Ce qu'affiche le champ fermé quand rien n'est choisi. Sans lui, il affiche la
+**forme de la réponse** : combien de dates, et si les heures comptent.
+
+```
+une journée              →  --/--/----
+une période              →  Du --/--/----  Au --/--/----
+une période avec heures  →  Du --/--/---- --:--  Au --/--/---- --:--
+```
+
+Regardez les trois ci-dessous sans y toucher : le premier dit qu'il veut une
+date, le deuxième deux, le troisième deux avec une heure chacune. Ils
+affichaient tous « Choisir une période » — trois questions différentes derrière
+une seule phrase.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', singleDay: true, title: 'Une journée' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', title: 'Une période' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, title: 'Avec les heures' }" />
+
+Le gabarit suit la locale au lieu d'être écrit en dur — une page japonaise
+obtient `----/--/--` — et les deux mots sont ceux que le panneau met déjà
+au-dessus de ses champs. Posez `placeholder` vous-même et il gagne : l'écran
+connaît ses propres mots.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', placeholder: 'Toutes les dates' });

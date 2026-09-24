@@ -596,7 +596,29 @@ createRangeField(element, { timeZone: 'Europe/Paris', mode: 'dialog' });
 
 ### `placeholder`
 
-What the closed field reads when nothing is chosen.
+What the closed field reads when nothing is chosen. Left out, it reads the
+shape of the answer instead: how many dates, and whether the hours count.
+
+```
+one day                →  --/--/----
+a period               →  From --/--/----  To --/--/----
+a period with hours    →  From --/--/---- --:--  To --/--/---- --:--
+```
+
+Open the three below without touching them — the first says it wants one date,
+the second two, the third two with an hour each. They all read *Choose a
+range* before, which is three different questions behind one sentence.
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', singleDay: true, title: 'One day' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', title: 'A period' }" />
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, title: 'With hours' }" />
+
+The mask follows the locale rather than being written out, so a Japanese page
+gets `----/--/--`, and the two words are the ones the panel already puts over
+its fields. Say `placeholder` yourself and it wins — the screen knows its own
+words.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', placeholder: 'Any dates' });

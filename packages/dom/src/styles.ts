@@ -913,12 +913,10 @@ export const RANGEFIELD_CSS = `
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 0.75rem 1rem;
-  /* Centred over the row below. The head is as wide as one field and the two
-     arrows — 346 of a 438 panel — so left to itself it sat hard against the
-     left edge with 67px of air on the right. justify-self, not
-     justify-content: the head is a grid item, and the box itself has to move,
-     not the content inside a box that is already full. */
-  justify-self: center;
+  /* The head spans the row below and the fields are centred inside it, by the
+     rule on the box of fields. Centring the head itself instead — justify-self
+     — stopped it stretching, and on two months the fields had no room left to
+     share a line. */
   /* The rule between the fields and the calendar lives on the row below, not
      here: the head is only as wide as one field, so a border of its own
      stopped two thirds of the way across the panel and read as unfinished. */
@@ -928,14 +926,17 @@ export const RANGEFIELD_CSS = `
      panel. Zero width with a 100% floor is what lets the body decide: with
      the column, the line holds both fields; without it, the panel is the
      width of one calendar and the fields wrap on their own. */
-  width: 0;
-  /* min-content, not 100%: a percentage minimum resolves against the column
-     the head is helping to size, so browsers treat it as none while sizing
-     and the head contributed its zero width. The panel then stayed as narrow
-     as the calendar and squeezed the date box inside the fields down to 22px.
-     Its own minimum — one field and the two arrows — is what it has to ask
-     for. */
-  min-width: min-content;
+  /* It stretches to the row below and asks only for what one field needs. The
+     asking is done by the box of fields, with width: min-content — the head
+     then counts as one field and two arrows while the panel is being sized,
+     and the fields grow into whatever the panel turns out to be. On one month
+     there is too little for both, so they wrap and stack; on two there is
+     room and they share a line. Nothing declares which — the width does.
+
+     Zeroing the head instead worked for the wrapping and lost the floor: it
+     contributed nothing, the calendar alone settled the width, and the two
+     time menus squeezed the date box inside each field down to 22px. */
+  min-width: 0;
 }
 /* The two fields stack, always. Side by side they made the head 601px wide
    against a body of 434, and the panel carried that difference as a hole
@@ -954,7 +955,14 @@ export const RANGEFIELD_CSS = `
    beside the fields instead of being pushed to the edge of a panel whose
    width the calendar below has settled — which is what one field, in
    singleDay, looked like. */
-.tz-rangefield__head > .tz-rangefield__inputs { flex: 0 1 auto; }
+.tz-rangefield__head > .tz-rangefield__inputs {
+  /* min-content while the panel is sized — one field — and grown to fill it
+     afterwards. That is what lets the same rule stack them on one month and
+     line them up on two. */
+  width: min-content;
+  flex: 1 1 auto;
+  justify-content: center;
+}
 /* The two fields sit side by side, with whatever separates them between
    them — a word, an arrow, nothing. They drop onto two lines only when the
    panel is too narrow to hold them. */

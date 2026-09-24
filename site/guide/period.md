@@ -414,9 +414,10 @@ column inside the panel. `true` by default, which means both appear whenever
 reader only moves.
 
 Putting the column away narrows the panel to the width of the calendar alone.
-The two fields stack either way: side by side they made the head half again
-as wide as the row below it, and the panel carried that difference as a hole
-between the calendar and the column.
+
+Whether the two fields share a line is not declared anywhere — the width says
+it. One month leaves 412px where two fields need 512, so they wrap and stack;
+two months leave 723 and they sit side by side, which halves the head.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

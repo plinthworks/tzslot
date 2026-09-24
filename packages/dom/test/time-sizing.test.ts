@@ -74,21 +74,33 @@ describe('the two fields inside a range panel', () => {
   });
 
   it('lets the head ask the panel for the width one field needs', async () => {
-    // A percentage minimum resolves against the column the head is helping to
-    // size, so it counts as none while sizing and the head contributed its
-    // zero width — which is how the panel stayed as narrow as the calendar.
+    // The asking is done by the box of fields: width: min-content makes the
+    // head count as one field and two arrows while the panel is sized. Zeroing
+    // the head instead made it contribute nothing, the calendar alone settled
+    // the width, and the two time menus squeezed the date box down to 22px.
     const { RANGEFIELD_CSS } = await import('../src/styles.js');
-    expect(RANGEFIELD_CSS).toContain('min-width: min-content');
-    expect(RANGEFIELD_CSS).not.toContain('min-width: 100%');
+    expect(RANGEFIELD_CSS).toMatch(
+      /\.tz-rangefield__head > \.tz-rangefield__inputs\s*\{[^}]*width: min-content/,
+    );
+    // `min-width: 0` contains `width: 0`, so the boundary matters here.
+    expect(RANGEFIELD_CSS).not.toMatch(/\.tz-rangefield__head\s*\{[^}]*[^-]width: 0/);
   });
 
-  it('centres the fields over the row below', async () => {
-    // The head is one field and two arrows — 346 of a 438 panel — so left to
-    // itself it sat against the left edge with 67px of air on the right.
-    // justify-self, not justify-content: the box has to move, not the content
-    // inside a box that is already full.
+  it('lets the width decide whether the fields share a line', async () => {
+    // The box of fields asks for one field while the panel is sized and grows
+    // into whatever it turns out to be. Measured: one month gives it 412 and
+    // two fields need 512, so they wrap and stack; two months give 723 and
+    // they share a line, which halves the head — 133px to 63.
     const { RANGEFIELD_CSS } = await import('../src/styles.js');
-    expect(RANGEFIELD_CSS).toMatch(/\.tz-rangefield__head\s*\{[^}]*justify-self: center/);
+    expect(RANGEFIELD_CSS).toMatch(
+      /\.tz-rangefield__head > \.tz-rangefield__inputs\s*\{[^}]*width: min-content/,
+    );
+    expect(RANGEFIELD_CSS).toMatch(
+      /\.tz-rangefield__head > \.tz-rangefield__inputs\s*\{[^}]*justify-content: center/,
+    );
+    // Centring the head itself would stop it stretching, and the fields would
+    // never have room to share a line.
+    expect(RANGEFIELD_CSS).not.toContain('justify-self: center');
   });
 
   it('makes the two labels legible', async () => {

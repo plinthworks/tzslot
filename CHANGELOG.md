@@ -60,6 +60,21 @@ Once a reader has chosen, their choice stands.
 calendar, so the two fields stack. `shift: false` still removes the arrows and
 the column together.
 
+### The width decides whether the fields share a line
+
+Not a setting and not a rule written down: the box of fields asks for one
+field while the panel is being sized and grows into whatever the panel turns
+out to be. One month leaves it 412px and two fields need 512, so they wrap and
+stack. Two months leave 723 and they sit side by side — which halves the head,
+133px to 63, and the panel with it, 533 to 462.
+
+Getting there took three goes, and the two failures are worth naming. Zeroing
+the head made the wrapping work and lost the floor: it contributed nothing to
+the panel's width, the calendar alone settled it, and the two time menus
+squeezed the date box inside each field down to 22px. And centring the head
+with `justify-self` stopped it stretching, so on two months the fields had no
+room to share a line however wide the panel was.
+
 ### The two fields stack, and the column moves in
 
 Seen in place, side by side was the wrong answer: the head came out 601px wide

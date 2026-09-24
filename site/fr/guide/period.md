@@ -424,10 +424,12 @@ le panneau. `true` par défaut, donc les deux apparaissent dès que `shift` est
 une liste. `false` les cache : le pas appartient au développeur, et le lecteur
 ne fait que se déplacer.
 
-Ranger la colonne ramène le panneau à la largeur du seul calendrier. Les deux
-champs s'empilent dans les deux cas : côte à côte, ils rendaient l'en-tête une
-fois et demie plus large que la rangée du dessous, et le panneau portait cette
-différence sous forme de trou entre le calendrier et la colonne.
+Ranger la colonne ramène le panneau à la largeur du seul calendrier.
+
+Que les deux champs partagent une ligne n'est déclaré nulle part — c'est la
+largeur qui le dit. Un mois laisse 412 px là où deux champs en demandent 512,
+donc ils passent à la ligne et s'empilent ; deux mois en laissent 723 et ils
+tiennent côte à côte, ce qui divise la hauteur de l'en-tête par deux.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

@@ -22,9 +22,16 @@ const cells = () => [...host.querySelectorAll<HTMLButtonElement>('.tz-range__coa
 const labels = () => cells().map((c) => c.textContent);
 const chosen = () =>
   cells().find((c) => c.classList.contains('tz-range__coarse-cell--selected'))?.textContent;
+/**
+ * Which of the two is on show.
+ *
+ * They share one cell and swap by visibility, not by display, so the calendar
+ * keeps its size when the title is pressed — a months grid sized on its own
+ * grew the panel by 24px on one month and would have shrunk it on two.
+ */
 const showing = () => ({
-  jours: !host.querySelector<HTMLElement>('.tz-range__grid')!.hidden,
-  grossiere: !host.querySelector<HTMLElement>('.tz-range__coarse')!.hidden,
+  jours: !host.classList.contains('tz-range--picking'),
+  grossiere: host.classList.contains('tz-range--picking'),
 });
 
 beforeEach(() => { host = document.createElement('div'); document.body.append(host); });
@@ -85,13 +92,49 @@ describe('the title opens the months, then the years', () => {
 
   it('is one picker for two months, and the second follows the first', () => {
     make({ months: 2 });
-    // Two months on screen: each block carries its own name, so the header has
-    // nothing to say until the picker is open.
-    expect(title().textContent).toBe('');
+    // Two months on screen: each block names itself above its own grid, so the
+    // header says the year rather than repeating them. Never nothing: an empty
+    // title is a four-pixel button nobody can press, and the header grew by
+    // those four pixels the moment the picker put a year in it.
+    expect(title().textContent).toBe('2026');
     title().click();
     expect(title().textContent).toBe('2026');
     cells()[0]!.click(); // janvier
     const names = [...host.querySelectorAll('.tz-range__month-title')].map((n) => n.textContent);
     expect(names).toEqual(['janvier 2026', 'février 2026']);
+  });
+});
+
+/**
+ * Pressing the title must change what is drawn and never what it measures.
+ *
+ * jsdom lays nothing out, so what is asserted here is the rule text; the
+ * measurements are from Chrome. Sized on its own, a months grid built to the
+ * width of one month made the panel 24px wider on a single month (438 → 462)
+ * and would have shrunk it on two. And with two months the title was empty in
+ * the days view, so the header grew by 4px the moment the picker put a year
+ * in it — 529 → 533.
+ */
+describe('the calendar keeps its size when the title is pressed', () => {
+  it('lays the months over the days instead of beside them', async () => {
+    const { RANGE_CSS } = await import('../src/styles.js');
+    expect(RANGE_CSS).toMatch(/\.tz-range__views\s*\{[^}]*position: relative/);
+    expect(RANGE_CSS).toMatch(/\.tz-range__coarse\s*\{[^}]*position: absolute/);
+    // Swapped by visibility: display would take the day grid out of the flow
+    // and the box would collapse onto the months.
+    expect(RANGE_CSS).toContain('.tz-range--picking .tz-range__grid { visibility: hidden; }');
+  });
+
+  it('never leaves the title empty, in any view', () => {
+    for (const months of [1, 2]) {
+      make({ months });
+      expect(title().textContent).not.toBe('');
+      title().click();
+      expect(title().textContent).not.toBe('');
+      title().click();
+      expect(title().textContent).not.toBe('');
+      range.destroy();
+      host.replaceChildren();
+    }
   });
 });

@@ -340,12 +340,27 @@ export const RANGE_CSS = `
    the block is as wide as one month's day grid so the header does not jump
    when the view changes. The rows exist for the screen reader; display:
    contents keeps the drawing as the grid alone would have it. */
-.tz-range__coarse[hidden] { display: none; }
+/* The days and the months stand in the same cell, one visible at a time, so
+   pressing the title changes what is drawn and never what it measures. */
+/* The day grid alone settles the size, and the months are laid over it. In
+   one shared grid cell the taller of the two won, which on two months made
+   the panel four pixels taller when the title was pressed. */
+.tz-range__views { position: relative; }
+.tz-range__coarse { position: absolute; inset: 0; }
+.tz-range__coarse { visibility: hidden; }
+.tz-range--picking .tz-range__coarse { visibility: visible; }
+.tz-range--picking .tz-range__grid { visibility: hidden; }
 .tz-range__coarse {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: var(--tz-cal-gap, var(--tz-gap, 0.25rem));
-  width: calc(7 * var(--tz-cal-cell-size, 2rem) + 6 * var(--tz-cal-gap, var(--tz-gap, 0.25rem)));
+  align-content: start;
+  /* No wider than one month's worth of days, and centred in whatever the cell
+     turns out to be: with two months side by side the cell is twice as wide,
+     and twelve cells spread across it would be a different widget. */
+  max-width: calc(7 * var(--tz-cal-cell-size, 2rem));
+  width: 100%;
+  margin-inline: auto;
 }
 .tz-range__coarse-row { display: contents; }
 .tz-range__coarse-cell {
@@ -365,7 +380,6 @@ export const RANGE_CSS = `
   background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
   color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
 }
-.tz-range__grid[hidden] { display: none; }
 /* Side by side, and wrapping to one column when there is no room. */
 .tz-range--months .tz-range__grid {
   display: flex;

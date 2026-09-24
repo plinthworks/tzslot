@@ -15,6 +15,15 @@ September was the arrows one month at a time: fifteen presses to reach March
 of last year. Nothing else about the panel moves, and there is nothing to turn
 on.
 
+**Pressing it changes what is drawn and never what it measures.** The months
+are laid over the days rather than put beside them, and the two swap by
+visibility: sized on its own a months grid built to the width of one month
+made the panel 24px wider on a single month, and would have shrunk it on two.
+And with two months the title used to be empty in the days view — a
+four-pixel button nobody could press, and a header that grew by those four
+pixels the moment the picker put a year in it. It says the year there now.
+Measured in Chrome: 438 × 501 and 749 × 533, unchanged across all three views.
+
 One picker for the whole calendar, whatever it shows. With two months side by
 side the choice sets the first and the second follows — they are one run of
 months, not two calendars that could drift apart.

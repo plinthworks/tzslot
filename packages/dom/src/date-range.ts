@@ -244,7 +244,15 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   const alert = el('p', 'tz-range__error');
   alert.setAttribute('role', 'alert');
 
-  host.append(header, grid, coarse);
+  /*
+   * The two views share one cell, so the calendar keeps its size when the
+   * title is pressed. Sized apart they could not: a months grid built to the
+   * width of one month grew the panel by 24px on a single month, and would
+   * have shrunk it on two. Neither is a change the reader asked for.
+   */
+  const views = el('div', 'tz-range__views');
+  views.append(grid, coarse);
+  host.append(header, views);
 
   const shown = (): YearMonth => {
     if (cursor) return cursor;
@@ -327,8 +335,13 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     const decade = getDecadeYears(at.year);
     const heading =
       view === 'days'
-        ? blocks.length > 1
-          ? ''
+        ? // Two months name themselves above their own grids, so the header
+          // says the year instead of repeating them. It says *something* in
+          // every view on purpose: left empty it was a four-pixel button
+          // nobody could press, and the header grew by those four pixels the
+          // moment the picker put a year in it.
+          blocks.length > 1
+          ? String(at.year)
           : first
         : view === 'months'
           ? String(at.year)
@@ -339,8 +352,10 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
       'aria-label',
       view === 'days' ? s.messages.chooseMonth : view === 'months' ? s.messages.chooseYear : heading,
     );
-    grid.hidden = view !== 'days';
-    coarse.hidden = view === 'days';
+    // Shown and hidden by visibility rather than by display: both keep their
+    // place in the cell, so neither the width nor the height moves. A hidden
+    // one is out of the tab order all the same.
+    host.classList.toggle('tz-range--picking', view !== 'days');
     if (view !== 'days') {
       const monthShort = new Intl.DateTimeFormat(s.locale, { month: 'short', timeZone: 'UTC' });
       coarseCells.forEach((cell, index) => {

@@ -163,6 +163,9 @@ export const FIELD_CSS = `
 }
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
+/* Empty by default — no caret. The slot stays for a screen that puts its own
+   mark there, and takes no room until it does. */
+.tz-field__icon:empty { display: none; }
 .tz-field__icon { opacity: 0.6; font-size: 0.75em; }
 /* The field, its step menu and its two arrows on one line, and they stay on
    it: the trigger gives up its width rather than the arrows giving up their

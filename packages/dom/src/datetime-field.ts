@@ -242,7 +242,10 @@ export function createDateTimeField(
   typed.autocomplete = 'off';
   typed.setAttribute('aria-haspopup', 'dialog');
   const iconSlot = el('span', 'tz-field__icon');
-  iconSlot.append(icon ?? '▾');
+  // No caret of its own: a button is pressed, and one that says so is one
+  // more thing to read on a line that already holds the answer. `icon` puts
+  // something there for a screen that wants it.
+  if (icon) iconSlot.append(icon);
   const iconButton = doc.createElement('button');
   iconButton.type = 'button';
   iconButton.className = 'tz-field__icon-button';

@@ -31,14 +31,24 @@ to open the panel.
 
 ```
 one day                 →  --/--/----
-a period                →  From --/--/----  To --/--/----
-a period with hours     →  From --/--/---- --:--  To --/--/---- --:--
+a period                →  --/--/---- – --/--/----
+a period with hours     →  --/--/---- --:-- – --/--/---- --:--
 ```
 
+The separator is the one a filled field uses, so the empty state is that same
+sentence with the figures missing. Naming the two ends — *From … To …* — read
+as something to parse where the shape was the whole point.
+
 The mask comes from the locale rather than being written out, so `ja-JP` gets
-`----/--/--` and nobody has to think about it, and the words are the ones the
-panel already uses over the two fields. A `placeholder` the screen wrote itself
-still wins.
+`----/--/--` and nobody has to think about it. A `placeholder` the screen wrote
+itself still wins.
+
+### No caret on a field
+
+A button is pressed; one that says so is one more thing to read on a line that
+already holds the answer. The `▾` is gone from `createDateField`,
+`createDateTimeField` and `createRangeField` — `icon` still puts a mark there
+for a screen that wants one, and the slot takes no room until it does.
 
 ## 1.3.0
 

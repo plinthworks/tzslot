@@ -387,29 +387,22 @@ buttons with it. For the two time controls the lever is `--tz-time-pad-y`,
 above; they are separate because a menu and a text field want different
 horizontal padding for the same height.
 
-## Removing the `▾` from the field
+## A mark of your own in the field
 
-The little caret at the end of the trigger is a span of its own, built once:
-
-```css
-.tz-field__icon { display: none; }
-```
-
-Driven in Chrome afterwards: the trigger goes from 158.3px wide to 144.6px,
-the text keeps its place, and clicking it still opens the panel — the caret is
-`aria-hidden` decoration, so nothing is lost with it.
-
-In plain JavaScript there is a second way, and it is the better one when you
-have the options in hand: `icon` replaces the caret, and an empty string
-removes it.
+The field carries no caret: a button is pressed, and one that says so is
+one more thing to read on a line that already holds the answer. `icon`
+puts one there for a screen that wants it — a string, or a node of yours.
 
 ```js
-createRangeField(element, { icon: '' });                // nothing
-createRangeField(element, { icon: myChevronSvgNode });   // your own
+createRangeField(element, { icon: '▾' });
+createRangeField(element, { icon: myChevronSvg });
 ```
 
-The Angular wrappers for the range field have no `icon` input, so there the
-CSS above is the way.
+The Angular wrappers for the range field do not expose it; CSS does:
+
+```css
+.tz-field__icon::before { content: "▾"; }
+```
 
 ## Your own icons on the shift arrows
 

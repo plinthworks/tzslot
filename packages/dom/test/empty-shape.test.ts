@@ -33,14 +33,17 @@ describe('an empty field shows its shape', () => {
     expect(lu()).toBe('--/--/----');
   });
 
-  it('two, named, for a period', () => {
+  it('two for a period, split by the separator the filled field uses', () => {
+    // Not "From … To …": the words read as a sentence to parse where the
+    // shape was the point, and the empty field looked nothing like the full
+    // one — which reads 23/09/2026 – 24/09/2026.
     make();
-    expect(lu()).toBe('Du --/--/----  Au --/--/----');
+    expect(lu()).toBe('--/--/---- – --/--/----');
   });
 
   it('and the hours when the hours count', () => {
     make({ showTime: true });
-    expect(lu()).toBe('Du --/--/---- --:--  Au --/--/---- --:--');
+    expect(lu()).toBe('--/--/---- --:-- – --/--/---- --:--');
   });
 
   it('follows the locale rather than a written-out pattern', () => {
@@ -63,5 +66,19 @@ describe('an empty field shows its shape', () => {
       },
     });
     expect(lu()).toBe('23/09/2026 – 24/09/2026');
+  });
+});
+
+describe('no caret on the trigger', () => {
+  it('leaves the slot empty, and the stylesheet takes its room away', async () => {
+    make();
+    expect(host.querySelector('.tz-field__icon')!.textContent).toBe('');
+    const { FIELD_CSS } = await import('../src/styles.js');
+    expect(FIELD_CSS).toContain('.tz-field__icon:empty { display: none; }');
+  });
+
+  it('still takes a mark the screen puts there', () => {
+    field = createRangeField(host, { timeZone: 'Europe/Paris', locale: 'fr-FR', icon: '▾' });
+    expect(host.querySelector('.tz-field__icon')!.textContent).toBe('▾');
   });
 });

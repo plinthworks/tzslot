@@ -378,7 +378,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   const text = el('span', 'tz-field__text');
   const iconSlot = el('span', 'tz-field__icon');
   iconSlot.setAttribute('aria-hidden', 'true');
-  iconSlot.append(icon ?? '▾');
+  // No caret of its own: a button is pressed, and one that says so is one
+  // more thing to read on a line that already holds the answer. `icon` puts
+  // something there for a screen that wants it.
+  if (icon) iconSlot.append(icon);
   trigger.append(text, iconSlot);
 
   /**
@@ -648,7 +651,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const dashes = pattern().replace(/[a-zA-Z]/g, '-');
     const one = s.showTime ? `${dashes} --:--` : dashes;
     if (s.singleDay) return one;
-    return `${s.messages.rangeStart} ${one}  ${s.messages.rangeEnd} ${one}`;
+    // The separator the filled field uses, not the words the panel uses:
+    // "From … To …" twice over read as a sentence to parse where the shape was
+    // the whole point, and the empty field looked nothing like the full one.
+    return `${one} – ${one}`;
   }
 
   /** What the field says about a value — the chosen one, or the pending draft. */

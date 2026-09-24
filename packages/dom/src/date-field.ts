@@ -128,7 +128,10 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
   const iconSlot = doc.createElement('span');
   iconSlot.className = 'tz-field__icon';
   iconSlot.setAttribute('aria-hidden', 'true');
-  iconSlot.append(icon ?? '▾');
+  // No caret of its own: a button is pressed, and one that says so is one
+  // more thing to read on a line that already holds the answer. `icon` puts
+  // something there for a screen that wants it.
+  if (icon) iconSlot.append(icon);
   trigger.append(text, iconSlot);
   host.append(trigger);
 

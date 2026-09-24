@@ -616,9 +616,12 @@ Ce qu'affiche le champ fermé quand rien n'est choisi. Sans lui, il affiche la
 
 ```
 une journée              →  --/--/----
-une période              →  Du --/--/----  Au --/--/----
-une période avec heures  →  Du --/--/---- --:--  Au --/--/---- --:--
+une période              →  --/--/---- – --/--/----
+une période avec heures  →  --/--/---- --:-- – --/--/---- --:--
 ```
+
+Le séparateur est celui qu'emploie un champ rempli : l'état vide est donc la
+même phrase, sans les chiffres — `23/09/2026 – 24/09/2026`.
 
 Regardez les trois ci-dessous sans y toucher : le premier dit qu'il veut une
 date, le deuxième deux, le troisième deux avec une heure chacune. Ils
@@ -631,9 +634,8 @@ une seule phrase.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: true, title: 'Avec les heures' }" />
 
-Le gabarit suit la locale au lieu d'être écrit en dur — une page japonaise
-obtient `----/--/--` — et les deux mots sont ceux que le panneau met déjà
-au-dessus de ses champs. Posez `placeholder` vous-même et il gagne : l'écran
+Le gabarit suit la locale au lieu d'être écrit en dur : une page japonaise
+obtient `----/--/--`. Posez `placeholder` vous-même et il gagne — l'écran
 connaît ses propres mots.
 
 ```js

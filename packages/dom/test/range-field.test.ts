@@ -31,7 +31,7 @@ describe('one field for a period', () => {
     // questions behind one wording, and the reader had to open the panel to
     // learn which.
     mount();
-    expect(trigger().textContent).toContain('From --/--/----  To --/--/----');
+    expect(trigger().textContent).toContain('--/--/---- – --/--/----');
 
     field.update({
       value: {

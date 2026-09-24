@@ -183,9 +183,12 @@ describe('the panel reads as two halves', () => {
     // …and the calendar and its shortcuts to the second.
     expect(head.querySelector('.tz-range__grid')).toBeNull();
     expect(head.querySelector('.tz-rangefield__presets')).toBeNull();
+    // The rule between the two halves is drawn by the row below, not by the
+    // head: the head is only as wide as one field, so a border of its own
+    // stopped two thirds of the way across and read as unfinished.
     const css = [...document.querySelectorAll('style[data-tzslot]')].map((n) => n.textContent).join('');
     expect(css).toContain('.tz-rangefield__head');
-    expect(css).toMatch(/\.tz-rangefield__head[^}]*border-bottom/);
+    expect(css).toMatch(/\.tz-rangefield__body[^}]*border-top/);
   });
 
   it('the hour sits inside its field, framed by it and not by itself', () => {

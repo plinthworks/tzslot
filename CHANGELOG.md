@@ -34,6 +34,21 @@ Once a reader has chosen, their choice stands.
 calendar, so the two fields stack. `shift: false` still removes the arrows and
 the column together.
 
+### The two fields stack, and the column moves in
+
+Seen in place, side by side was the wrong answer: the head came out 601px wide
+against a body of 434, and the panel carried that difference as a hole between
+the calendar and the column of steps. One field under the other, the row below
+settles the width, and there is nothing left over to leave a gap — 16px
+between calendar and column where there were 172, and a panel of 438 where it
+was 627.
+
+Two more things with it. The rule between the two halves is drawn by the row
+below now: on the head it stopped two thirds of the way across, because the
+head is only as wide as one field. And the column's own label was as faint as
+FROM and TO had been — it names the column, so it is read at 0.8 and 600 like
+they are.
+
 ### The two fields, measured again
 
 Four things a reader saw that the first pass did not, each measured in Chrome

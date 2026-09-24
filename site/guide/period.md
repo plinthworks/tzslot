@@ -393,9 +393,8 @@ that loses entries when a box is ticked reads as a fault.
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 hour' }, { step: 1440, label: '1 day' }, { step: 10080, label: '1 week' }], title: 'One day' }"
   :controls="[{ label: 'Open the panel', run: (w) => w.open() }]" />
 
-And with `showStep: false` the column goes away. The panel then narrows to the
-width of the calendar, so the two fields stack — nothing declares that, they
-wrap when the line is too short for both.
+And with `showStep: false` the column goes away, and the panel narrows to the
+width of the calendar alone.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 hour' }], title: 'Arrows only' }"
   :controls="[{ label: 'Open the panel', run: (w) => w.open() }]" />
@@ -414,10 +413,10 @@ column inside the panel. `true` by default, which means both appear whenever
 `shift` is a list. `false` hides them: the step is the developer's, and the
 reader only moves.
 
-Putting the column away narrows the panel to the width of the calendar, and
-the two fields then stack instead of sharing a line. Nothing declares that:
-they wrap when the line is too short for both, which is also what happens in
-a panel too narrow for them.
+Putting the column away narrows the panel to the width of the calendar alone.
+The two fields stack either way: side by side they made the head half again
+as wide as the row below it, and the panel carried that difference as a hole
+between the calendar and the column.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

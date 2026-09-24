@@ -854,8 +854,9 @@ export const RANGEFIELD_CSS = `
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 0.75rem 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+  /* The rule between the fields and the calendar lives on the row below, not
+     here: the head is only as wide as one field, so a border of its own
+     stopped two thirds of the way across the panel and read as unfinished. */
   /* The head asks for nothing and takes what the row below settles on. Left
      to its natural width it made the panel as wide as two fields side by
      side, so hiding the column of steps narrowed the calendar and not the
@@ -871,19 +872,10 @@ export const RANGEFIELD_CSS = `
      for. */
   min-width: min-content;
 }
-/* With the column of steps there is room to spare, so the head takes back its
-   natural width and the two fields share one line — measured, two fields need
-   512px and a calendar beside one column offers 413. Without the column the
-   rule above holds and they stack, which is what a panel the width of a
-   calendar can carry. */
-.tz-rangefield__panel:has(.tz-rangefield__steps:not([hidden])) .tz-rangefield__head {
-  width: auto;
-  /* max-content, not 0: the panel is a grid whose single column takes the
-     widest item, and letting the head merely *allow* more width was not
-     enough — the body still settled it, and the two fields went on wrapping.
-     Asking for the head's own intrinsic width is what widens the column. */
-  min-width: max-content;
-}
+/* The two fields stack, always. Side by side they made the head 601px wide
+   against a body of 434, and the panel carried that difference as a hole
+   between the calendar and the column of steps. One under the other, the row
+   below settles the width and there is nothing left over to leave a gap. */
 /* The arrows stand on the line of the fields, not of the words above them.
    Centred in the box and then pushed down by the height the label takes:
    measured in Chrome, a field is 69px of which the label and its gap are 27,
@@ -1023,6 +1015,8 @@ export const RANGEFIELD_CSS = `
   display: flex;
   align-items: stretch;
   gap: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
 }
 /* The calendar sits in the middle of whatever the head leaves over, rather
    than pinned to one side with a hole beside it. It has a box of its own for
@@ -1061,11 +1055,14 @@ export const RANGEFIELD_CSS = `
   padding-left: 1rem;
   border-left: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
 }
+/* It names the column, so it has to be read rather than sensed — the same
+   reason FROM and TO were lifted off 0.6 and a normal weight. */
 .tz-rangefield__steps-label {
   font-size: 0.7rem;
+  font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  opacity: 0.6;
+  opacity: 0.8;
 }
 .tz-rangefield__step-list {
   display: flex;

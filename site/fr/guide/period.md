@@ -404,9 +404,8 @@ un défaut.
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, showPresets: false, shift: [{ step: 15, label: '15 min' }, { step: 60, label: '1 heure' }, { step: 1440, label: '1 jour' }, { step: 10080, label: '1 semaine' }], title: 'Une journée' }"
   :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
 
-Et avec `showStep: false` la colonne s'en va. Le panneau revient alors à la
-largeur du calendrier, donc les deux champs s'empilent — rien ne le déclare,
-ils passent à la ligne quand elle est trop courte pour les deux.
+Et avec `showStep: false` la colonne s'en va, et le panneau revient à la
+largeur du seul calendrier.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, showPresets: false, showStep: false, shift: [{ step: 60, label: '1 heure' }], title: 'Les flèches seules' }"
   :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
@@ -425,10 +424,10 @@ le panneau. `true` par défaut, donc les deux apparaissent dès que `shift` est
 une liste. `false` les cache : le pas appartient au développeur, et le lecteur
 ne fait que se déplacer.
 
-Ranger la colonne ramène le panneau à la largeur du calendrier, et les deux
-champs s'empilent alors au lieu de partager une ligne. Rien ne le déclare :
-ils passent à la ligne quand elle est trop courte pour les deux, ce qui arrive
-aussi dans un panneau trop étroit pour eux.
+Ranger la colonne ramène le panneau à la largeur du seul calendrier. Les deux
+champs s'empilent dans les deux cas : côte à côte, ils rendaient l'en-tête une
+fois et demie plus large que la rangée du dessous, et le panneau portait cette
+différence sous forme de trou entre le calendrier et la colonne.
 
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });

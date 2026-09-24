@@ -60,88 +60,40 @@ Once a reader has chosen, their choice stands.
 calendar, so the two fields stack. `shift: false` still removes the arrows and
 the column together.
 
-### The width decides whether the fields share a line
+### The panel, remeasured
 
-Not a setting and not a rule written down: the box of fields asks for one
-field while the panel is being sized and grows into whatever the panel turns
-out to be. One month leaves it 412px and two fields need 512, so they wrap and
-stack. Two months leave 723 and they sit side by side — which halves the head,
-133px to 63, and the panel with it, 533 to 462.
+The layout was taken apart and put back with a tape measure. What a reader
+sees, one month with the column of steps: **438 × 501**, where 1.2.0 drew
+500 × 541. Two months: **749 × 462**, and the head half what it was.
 
-Getting there took three goes, and the two failures are worth naming. Zeroing
-the head made the wrapping work and lost the floor: it contributed nothing to
-the panel's width, the calendar alone settled it, and the two time menus
-squeezed the date box inside each field down to 22px. And centring the head
-with `justify-self` stopped it stretching, so on two months the fields had no
-room to share a line however wide the panel was.
-
-### The two fields stack, and the column moves in
-
-Seen in place, side by side was the wrong answer: the head came out 601px wide
-against a body of 434, and the panel carried that difference as a hole between
-the calendar and the column of steps. One field under the other, the row below
-settles the width, and there is nothing left over to leave a gap — 16px
-between calendar and column where there were 172, and a panel of 438 where it
-was 627.
-
-Two more things with it. The rule between the two halves is drawn by the row
-below now: on the head it stopped two thirds of the way across, because the
-head is only as wide as one field. And the column's own label was as faint as
-FROM and TO had been — it names the column, so it is read at 0.8 and 600 like
-they are.
-
-### The fields are centred over the row below
-
-The head is one field and the two arrows — 346px of a 438 panel — and it sat
-hard against the left edge with 67 of air on the right. `justify-self`, not
-`justify-content`: the head is a grid item, so the box has to move rather than
-the content inside a box that is already full. 34px either side now.
-
-### The two fields, measured again
-
-Four things a reader saw that the first pass did not, each measured in Chrome
-before and after:
-
-- **The arrows sat 12px above the line they move.** They were pushed down by a
-  flat `1.35rem`, guessed rather than measured; a field is 69px of which the
-  label and its gap take 27, so the input's middle is 13.5px below the box's.
-  They are centred and offset by the label's own height now —
-  `--tz-rangefield-label-block`.
-- **FROM and TO were barely there**, at 0.6 of the text colour and a normal
-  weight. They name the two ends, so they have to be read: 0.8 and 600.
-- **The row was 42px tall** for a date and two short menus. It is 36 now, and
-  the menus follow the same lever as the box — `--tz-rangefield-field-pad` —
-  so the row keeps one height rather than growing around the tallest thing in
-  it.
-- **The date box was squeezed to a sliver** in the narrow panel — the one
-  without the column of steps, where the two fields stack. The two time menus
-  beside it took 125px of a 175px row and left it 22, for a date that measures
-  109. It refuses to shrink now, and the head asks the panel for the width one
-  field needs: its minimum was written as a percentage, which resolves against
-  the column it is helping to size, so browsers ignored it while sizing and
-  the head contributed nothing. Panel 372 instead of 278, and a whole date.
-- **The last digit of the year was cut off.** The date box was 104px and
-  `08/09/2026` measures 91 with 18 of padding either side: 109 needed. It is
-  7.25rem, and `--tz-rangefield-date-width` moves it for a format that writes
-  the month in words.
-
-### The panel, measured
-
-- **The date box inside the panel was 8.5rem for a date that draws 75px.** The
-  blank was half the width of each field, and it is why two fields could not
-  share a line: 288px each against 413 of room. At 6.5rem a field is 256 and
-  they sit side by side. `--tz-rangefield-date-width` moves it.
-- **The head no longer decides the panel's width** — the calendar below does,
-  except when the column of steps gives it room to spare. Hiding the column
-  used to narrow the calendar instead of the panel.
-- **The calendar has a box of its own** so it can be centred in whatever the
-  head leaves over. Placing it directly made its header a column beside its
-  grid: `createDateRange` puts its class on the host it is given, so the host
-  *is* the calendar, and a rule meant to position it landed on its own layout.
-
-Measured in Chrome, one month with the column: panel 627 × 427 where it was
-500 × 541 — wider, and a quarter shorter. Without the column: 278 wide, the
-two fields stacked.
+- **Whether the two fields share a line is decided by the width**, not by a
+  setting. The box of fields asks for one field while the panel is being sized
+  and grows into whatever the panel turns out to be: one month leaves it 412px
+  and two fields need 512, so they wrap and stack; two months leave 723 and
+  they sit side by side, which halves the head — 133px to 63.
+- **The choice of step sits where the shortcuts were**, right beside the
+  calendar: 16px between them, where an earlier arrangement left 172. Its
+  label reads at 0.8 and 600 like FROM and TO, which were themselves barely
+  there at 0.6 and a normal weight.
+- **The arrows are centred on the line they move.** They were pushed down by a
+  flat 1.35rem, guessed rather than measured, and landed 12px high: a field is
+  69px of which the label and its gap take 27, so the input's middle is 13.5px
+  below the box's. `--tz-rangefield-label-block`.
+- **A field is 36px tall, not 42**, for a date and two short menus, and the
+  menus come down with the box rather than the row growing around the tallest
+  thing in it. `--tz-rangefield-field-pad`.
+- **The date box fits a date.** It was 8.5rem holding a blank half the width of
+  the field, then 104px where `08/09/2026` needs 109 and the last digit of the
+  year was cut off. It is 7.25rem and it refuses to shrink: in the narrow
+  panel the two time menus had squeezed it to 22px.
+  `--tz-rangefield-date-width`.
+- **The rule between the two halves crosses the panel.** Drawn by the head it
+  stopped two thirds of the way over, because the head is as wide as one
+  field.
+- **The calendar has a box of its own.** Placed directly it turned its own
+  header into a column beside its grid: `createDateRange` puts its class on
+  the element it is given, so the host *is* the calendar and a rule meant to
+  position it landed on its own layout.
 
 ## 1.2.0
 

@@ -854,6 +854,12 @@ export const RANGEFIELD_CSS = `
   flex-wrap: nowrap;
   align-items: flex-start;
   gap: 0.75rem 1rem;
+  /* Centred over the row below. The head is as wide as one field and the two
+     arrows — 346 of a 438 panel — so left to itself it sat hard against the
+     left edge with 67px of air on the right. justify-self, not
+     justify-content: the head is a grid item, and the box itself has to move,
+     not the content inside a box that is already full. */
+  justify-self: center;
   /* The rule between the fields and the calendar lives on the row below, not
      here: the head is only as wide as one field, so a border of its own
      stopped two thirds of the way across the panel and read as unfinished. */

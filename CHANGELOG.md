@@ -49,6 +49,13 @@ head is only as wide as one field. And the column's own label was as faint as
 FROM and TO had been — it names the column, so it is read at 0.8 and 600 like
 they are.
 
+### The fields are centred over the row below
+
+The head is one field and the two arrows — 346px of a 438 panel — and it sat
+hard against the left edge with 67 of air on the right. `justify-self`, not
+`justify-content`: the head is a grid item, so the box has to move rather than
+the content inside a box that is already full. 34px either side now.
+
 ### The two fields, measured again
 
 Four things a reader saw that the first pass did not, each measured in Chrome

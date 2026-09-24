@@ -82,6 +82,15 @@ describe('the two fields inside a range panel', () => {
     expect(RANGEFIELD_CSS).not.toContain('min-width: 100%');
   });
 
+  it('centres the fields over the row below', async () => {
+    // The head is one field and two arrows — 346 of a 438 panel — so left to
+    // itself it sat against the left edge with 67px of air on the right.
+    // justify-self, not justify-content: the box has to move, not the content
+    // inside a box that is already full.
+    const { RANGEFIELD_CSS } = await import('../src/styles.js');
+    expect(RANGEFIELD_CSS).toMatch(/\.tz-rangefield__head\s*\{[^}]*justify-self: center/);
+  });
+
   it('makes the two labels legible', async () => {
     const { DATEINPUT_CSS } = await import('../src/styles.js');
     expect(DATEINPUT_CSS).toContain('font-weight: 600');

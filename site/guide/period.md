@@ -472,6 +472,42 @@ plain caption instead, so the only way out of September was the arrows, one
 month at a time — fifteen presses to reach March of last year.
 :::
 
+### `preset` — a shortcut that stays a shortcut
+
+A shortcut was resolved at the moment of the click and its name thrown away.
+Store that filter, reopen it four days later, and it is a fixed window that has
+quietly stopped meaning *the last seven days*. This is the thing an analytics
+filter has to get right, and it was the one thing the widget could not do.
+
+The name now travels beside the period, and handing it back resolves it again:
+
+```js
+createRangeField(element, {
+  presets: ['last7Days', 'thisMonth'],
+  onChange: (value, from) => save({ ...value, preset: from.preset }),
+});
+
+// Later, from whatever was saved:
+field.update({ preset: saved.preset, value: { start: saved.start, end: saved.end } });
+```
+
+`from.preset` is the shortcut's name, or `null` once a reader has chosen days
+themselves — whatever those days happen to coincide with. Handed back, the
+name wins over the value beside it: it is the more specific statement of the
+two.
+
+In Angular it is a model, so `[(preset)]` binds both ways:
+
+```html
+<tz-range-field [(value)]="period" [(preset)]="preset" />
+```
+
+::: tip The period is still two moments
+The name is kept beside the value, not inside it. A form holding a period
+holds two instants and nothing else, and a back end that knows nothing about
+shortcuts goes on receiving exactly what it received before.
+:::
+
 ### `clearable`
 
 Whether the panel offers a **Clear**. `true`, because a field that cannot be

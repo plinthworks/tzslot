@@ -48,12 +48,13 @@
 | `labels` | `{ start?: Node \| string \| null; end?: Node \| string \| null; between?: Node \| string \| null; }` | `{}` | What is written above each of the panel's two fields, and between them. Words by default — From / To in the messages — but a screen that prefers an arrow says so: `{ start: null, end: null, between: '»' }`. Anything that can be put in a document works, an SVG icon included. |
 | `displayWith` | `((value: RangeFieldValue, timeZone: string) => string) \| undefined` | — | The last word on the text the field shows. |
 | `messages` | `TzslotMessages` | `{ ...EN, ...(initial.messages ?? {}) }` | The words the widget says. One bundle, English and French included. |
+| `preset` | `string \| null` | `null` | The name of the shortcut the value came from, when it came from one. Hand it back and the field resolves it again against today, which is what makes a saved filter keep meaning what it said. Without this, "the last seven days" was resolved at the moment of the click and the name thrown away: stored and reopened tomorrow, the same filter was a fixed window that had quietly stopped being the last seven days. Set alongside a `value`, the shortcut wins — it is the more specific statement of the two. |
 
 ### Callbacks
 
 | | Type | |
 |---|---|---|
-| `onChange` | `((value: RangeFieldValue) => void) \| undefined` | Called when the user chooses, changes or clears the value. |
+| `onChange` | `((value: RangeFieldValue, from: { preset: string \| null }) => void) \| undefined` | What the field reports. The second argument carries the name of the shortcut when the value came from one, and `null` when a reader picked the days themselves. A handler that only wants the period can go on taking one parameter. |
 | `onOpen` | `(() => void) \| undefined` | Called when the panel opens. |
 | `onClose` | `(() => void) \| undefined` | Called when the panel closes. |
 

@@ -271,7 +271,27 @@ export interface RangeFieldSettings {
   /** The last word on the text the field shows. */
   displayWith: ((value: RangeFieldValue, timeZone: string) => string) | undefined;
   messages: TzslotMessages;
-  onChange: ((value: RangeFieldValue) => void) | undefined;
+  /**
+   * The name of the shortcut the value came from, when it came from one.
+   *
+   * Hand it back and the field resolves it again against today, which is what
+   * makes a saved filter keep meaning what it said. Without this, "the last
+   * seven days" was resolved at the moment of the click and the name thrown
+   * away: stored and reopened tomorrow, the same filter was a fixed window
+   * that had quietly stopped being the last seven days.
+   *
+   * Set alongside a `value`, the shortcut wins — it is the more specific
+   * statement of the two.
+   */
+  preset: string | null;
+  /**
+   * What the field reports.
+   *
+   * The second argument carries the name of the shortcut when the value came
+   * from one, and `null` when a reader picked the days themselves. A handler
+   * that only wants the period can go on taking one parameter.
+   */
+  onChange: ((value: RangeFieldValue, from: { preset: string | null }) => void) | undefined;
   onOpen: (() => void) | undefined;
   onClose: (() => void) | undefined;
 }
@@ -372,6 +392,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     fieldIcon: undefined,
     fieldIconSide: 'start',
     displayWith: undefined,
+    preset: null,
     onChange: undefined,
     onOpen: undefined,
     onClose: undefined,
@@ -762,8 +783,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   function commit(next: RangeFieldValue): void {
     s.value = next;
+    s.preset = cameFrom;
     render();
-    s.onChange?.(next);
+    s.onChange?.(next, { preset: cameFrom });
   }
 
   /** Chosen in the panel: reported at once, or held until Apply. */
@@ -968,6 +990,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   function step(direction: 1 | -1): void {
+    // Moved, so it is a period of its own now — the rhythm of the shortcut is
+    // kept by `lastPresetStep`, the name is not.
+    cameFrom = null;
     const by = effectiveStep();
     if (!canShift() || by === null) return;
     const moveBy = Temporal.Duration.from(asShiftStep(by));
@@ -1062,6 +1087,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   function setEdge(edge: Edge, wall: WallValue): void {
     if (off(edge)) return;
+    // A day chosen by hand is no longer "the last seven days", whatever it
+    // happens to coincide with.
+    cameFrom = null;
     // Without showTime there is nowhere to read or change an hour, so a day
     // chosen is a whole day.
     const timed = s.showTime;
@@ -1220,9 +1248,19 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     );
 
   /** What a preset returns, applied — days become a period, moments are one. */
+  /**
+   * The shortcut the current value came from, or null once it was touched.
+   *
+   * Kept beside the value rather than inside it: a period is two moments and
+   * nothing else, and a form holding one should not have to carry a name it
+   * does not understand.
+   */
+  let cameFrom: string | null = null;
+
   function applyPreset(preset: RangePreset): void {
     armed = 'start';
     armedByHand = false;
+    cameFrom = preset.name;
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
     if (isMoments(picked)) {
       choose({ start: picked.start, end: picked.end }, { close: !s.confirm });
@@ -1827,6 +1865,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           clear.type = 'button';
           clear.textContent = s.messages.clear;
           clear.onclick = () => {
+            cameFrom = null;
             draft = EMPTY;
             armEndNext = false;
             armed = 'start';
@@ -1892,6 +1931,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       if ('value' in settings) {
         draft = s.value;
         armEndNext = false;
+        // A value handed in is a period, not a shortcut — unless a shortcut
+        // came with it, which the next block reads.
+        if (!('preset' in settings)) cameFrom = null;
+      }
+      /*
+       * A shortcut handed back is resolved again, against today.
+       *
+       * This is what makes a saved filter keep its meaning: "the last seven
+       * days", stored on Monday and reopened on Friday, is Friday's seven days
+       * and not Monday's. The value that came with it, if any, is replaced —
+       * the name is the more specific statement of the two.
+       */
+      if ('preset' in settings && settings.preset) {
+        const named = presets().find((p) => p.name === settings.preset);
+        if (named) {
+          applyPreset(named);
+          render();
+          return;
+        }
       }
       if ('singleDay' in settings && s.singleDay !== wasSingle) crossOver(wasSingle);
       render();
@@ -1900,6 +1958,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     close: () => panel.close(),
     toggle: () => (panel.isOpen ? panel.close() : openPanel()),
     clear() {
+      cameFrom = null;
       draft = EMPTY;
       armEndNext = false;
       commit(draft);

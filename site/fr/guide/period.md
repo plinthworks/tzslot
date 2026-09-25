@@ -484,6 +484,43 @@ simple libellé, donc la seule sortie de septembre était les flèches, un mois 
 la fois — quinze pressions pour atteindre mars de l'an dernier.
 :::
 
+### `preset` — un raccourci qui reste un raccourci
+
+Un raccourci était résolu au moment du clic et son nom jeté. Enregistrez ce
+filtre, rouvrez-le quatre jours plus tard : c'est une fenêtre fixe qui a
+silencieusement cessé de vouloir dire *les 7 derniers jours*. C'est ce qu'un
+filtre analytique doit réussir, et c'était la seule chose que le composant ne
+savait pas faire.
+
+Le nom voyage maintenant à côté de la période, et le rendre le résout de
+nouveau :
+
+```js
+createRangeField(element, {
+  presets: ['last7Days', 'thisMonth'],
+  onChange: (value, from) => enregistrer({ ...value, preset: from.preset }),
+});
+
+// Plus tard, depuis ce qui a été enregistré :
+field.update({ preset: enregistré.preset, value: { start: …, end: … } });
+```
+
+`from.preset` est le nom du raccourci, ou `null` dès qu'un lecteur a choisi les
+jours lui-même — quoi qu'ils recouvrent par hasard. Rendu, le nom l'emporte sur
+la valeur qui l'accompagne : c'est le plus précis des deux énoncés.
+
+En Angular c'est un modèle, donc `[(preset)]` lie dans les deux sens :
+
+```html
+<tz-range-field [(value)]="periode" [(preset)]="preset" />
+```
+
+::: tip La période reste deux moments
+Le nom est gardé **à côté** de la valeur, pas dedans. Un formulaire qui porte
+une période porte deux instants et rien d'autre, et un back-end qui ignore tout
+des raccourcis continue de recevoir exactement ce qu'il recevait.
+:::
+
 ### `clearable`
 
 Si le panneau offre un bouton **Effacer**. `true`, parce qu'un champ qu'on ne

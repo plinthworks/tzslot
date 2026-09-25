@@ -143,6 +143,15 @@ export class RangeField implements ControlValueAccessor {
    * is a filter nobody can take off.
    */
   readonly clearable = input(true);
+  /**
+   * The shortcut the value came from, when it came from one.
+   *
+   * Bind it and the field resolves it again against today, which is what makes
+   * a saved filter keep meaning what it said: "the last seven days", stored on
+   * Monday and reopened on Friday, is Friday's seven days. `presetChange` says
+   * which shortcut a reader pressed, and `null` once they pick days by hand.
+   */
+  readonly preset = model<string | null>(null);
   /** One field instead of two; a click means that whole day. */
   readonly singleDay = input(false);
   readonly months = input(2);
@@ -235,6 +244,7 @@ export class RangeField implements ControlValueAccessor {
     showPresets: this.showPresets(),
     showStep: this.showStep(),
     clearable: this.clearable(),
+    preset: this.preset(),
     singleDay: this.singleDay(),
     months: this.months(),
     weekNumbers: this.weekNumbers(),
@@ -266,8 +276,12 @@ export class RangeField implements ControlValueAccessor {
   /** Created before the required timeZone is bound; the first change detection fills it in. */
   private readonly field: RangeFieldInstance = createRangeField(inject(ElementRef).nativeElement, {
     messages: this.messages(),
-    onChange: (value) => {
+    onChange: (value, from) => {
       this.value.set(value);
+      // `preset` is a model, so writing it is `(presetChange)`. A screen that
+      // stores the name alongside the period gets a filter that still means
+      // what it said when it is reopened.
+      this.preset.set(from.preset);
       this.onChange(value);
       this.onTouched();
     },

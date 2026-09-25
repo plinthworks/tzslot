@@ -6,6 +6,28 @@ A product critique and a code review, read end to end. The two worst findings
 were that the panel could not be reached on a phone and that a range being
 chosen was invisible; the rest is what a filter screen needs and did not get.
 
+### A shortcut that stays a shortcut
+
+`onChange` hands back two instants and nothing else, so "the last seven days"
+was resolved at the moment of the click and its name thrown away. Store that
+filter, reopen it four days later, and it is a fixed window that has quietly
+stopped meaning the last seven days. It is the thing an analytics filter has
+to get right and the one thing this widget could not do.
+
+```js
+onChange: (value, from) => save({ ...value, preset: from.preset }),
+// later
+field.update({ preset: saved.preset });     // today's seven days, not that day's
+```
+
+`from.preset` is the shortcut's name, or `null` once a reader has chosen days
+themselves — whatever those days coincide with. Handed back it wins over the
+value beside it, being the more specific of the two statements. In Angular it
+is a model: `[(preset)]`.
+
+The period itself is untouched: two instants, kept apart from a name a form
+holding them has no reason to understand.
+
 ### The panel fits the window it is in
 
 The library had no media query at all. At 375 × 667 with the default two

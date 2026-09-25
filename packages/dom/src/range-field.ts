@@ -216,8 +216,21 @@ export interface RangeFieldSettings {
   placeholder: string | undefined;
   ariaLabel: string | undefined;
   locale: string | undefined;
-  min: PlainDate | null;
-  max: PlainDate | null;
+  /**
+   * The earliest and latest the period may reach.
+   *
+   * A day greys the days before or after it. A **moment** does that *and*
+   * holds the hour: "nothing after 18:00 today" is a thing a booking screen
+   * says, and in a widget whose value is an instant it was inexpressible —
+   * the bounds were dates in a library built on the difference between the
+   * two.
+   *
+   * A moment is clamped rather than refused, the way `maxSpan` is: a reader
+   * who types 19:00 against a 18:00 ceiling gets 18:00, not a rejection they
+   * have to decode.
+   */
+  min: PlainDate | Instant | null;
+  max: PlainDate | Instant | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
   /**
    * Whether a period may run over a day `isDateDisabled` refuses.
@@ -1118,7 +1131,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         : edge === 'start'
           ? midnight(wall.date)
           : endOfDay(wall.date);
-    draft = withinSpan(ordered({ ...draft, [edge]: at_ } as RangeFieldValue, edge), edge);
+    draft = withinSpan(ordered({ ...draft, [edge]: withinBounds(at_) } as RangeFieldValue, edge), edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
   }
@@ -1232,6 +1245,32 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   const clock = () => s.now ?? Temporal.Now.instant();
+
+  /** A bound as a day, for the grid, whichever way it was given. */
+  const asDay = (bound: PlainDate | Instant | null): PlainDate | null =>
+    bound === null ? null : bound instanceof Temporal.Instant ? zoned(bound).toPlainDate() : bound;
+
+  /** A bound as a moment, for the value — the day's edge when it is a day. */
+  const asMoment = (bound: PlainDate | Instant | null, edge: 'first' | 'last'): Instant | null => {
+    if (bound === null) return null;
+    if (bound instanceof Temporal.Instant) return bound;
+    return edge === 'first' ? midnight(bound) : midnight(bound.add({ days: 1 }));
+  };
+
+  /**
+   * A moment brought inside the bounds.
+   *
+   * Clamped, not refused, as `maxSpan` is: someone who types 19:00 against a
+   * ceiling of 18:00 means as late as they are allowed, and a rejection they
+   * have to decode helps nobody.
+   */
+  const withinBounds = (at_: Instant): Instant => {
+    const floor = asMoment(s.min, 'first');
+    const ceiling = asMoment(s.max, 'last');
+    if (floor && Temporal.Instant.compare(at_, floor) < 0) return floor;
+    if (ceiling && Temporal.Instant.compare(at_, ceiling) > 0) return ceiling;
+    return at_;
+  };
 
   const presets = (): RangePreset[] =>
     s.presets.map((preset) =>
@@ -1432,8 +1471,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       weekNumbers: s.weekNumbers,
       firstDayOfWeek: firstDay(),
       locale: s.locale,
-      min: s.min,
-      max: s.max,
+      // The grid greys whole days, so a moment is read as the day it falls in.
+      min: asDay(s.min),
+      max: asDay(s.max),
       isDateDisabled: s.isDateDisabled,
       blockAcrossDisabled: s.blockAcrossDisabled,
       rangeSpansBlockedMessage: s.rangeSpansBlockedMessage,

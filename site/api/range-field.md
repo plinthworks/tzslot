@@ -32,8 +32,8 @@
 | `placeholder` | `string \| undefined` | — | What the field shows while it holds nothing. |
 | `ariaLabel` | `string \| undefined` | — | The accessible name, for a screen reader. |
 | `locale` | `string \| undefined` | — | A BCP-47 tag for the month and weekday names, and the order of a date. The browser's own when left out. |
-| `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
-| `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
+| `min` | `PlainDate \| Instant \| null` | `null` | The earliest and latest the period may reach. A day greys the days before or after it. A **moment** does that *and* holds the hour: "nothing after 18:00 today" is a thing a booking screen says, and in a widget whose value is an instant it was inexpressible — the bounds were dates in a library built on the difference between the two. A moment is clamped rather than refused, the way `maxSpan` is: a reader who types 19:00 against a 18:00 ceiling gets 18:00, not a rejection they have to decode. |
+| `max` | `PlainDate \| Instant \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
 | `blockAcrossDisabled` | `boolean` | `true` | Whether a period may run over a day `isDateDisabled` refuses. `true`, because a screen that greys the weekends and then takes a stay across one has greyed them for nothing. The calendar has had this from the start; the field neither forwarded it nor let anyone turn it off. |
 | `rangeSpansBlockedMessage` | `string \| undefined` | — | What is said when it does. Overrides `messages.rangeCrossesUnavailable`. |

@@ -96,3 +96,33 @@ describe('the name of a shortcut', () => {
     expect(days()).toBe('2026-09-22 → 2026-09-26');
   });
 });
+
+describe('a bound that holds an hour', () => {
+  it('clamps a moment past the ceiling instead of refusing it', () => {
+    // "Nothing after 18:00 today" was inexpressible: the bounds were dates in
+    // a library built on the difference between a date and a moment.
+    make('2026-09-25', {
+      showTime: true,
+      max: Temporal.Instant.from('2026-09-25T16:00:00Z'), // 18:00 Paris
+      presets: [],
+    });
+    field.open();
+    document.querySelector<HTMLButtonElement>('.tz-field__panel .tz-range__day[data-date="2026-09-25"]')!.click();
+    const end = field.value.start!.toZonedDateTimeISO(paris);
+    expect(`${end.hour}:${String(end.minute).padStart(2, '0')}`).toBe('0:00');
+
+    // Typing past the ceiling gives the ceiling, the way maxSpan does.
+    const input = document.querySelector<HTMLInputElement>('.tz-field__panel .tz-dateinput__input')!;
+    input.value = '25/09/2026';
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+    input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    expect(Temporal.Instant.compare(field.value.start!, Temporal.Instant.from('2026-09-25T16:00:00Z'))).toBeLessThanOrEqual(0);
+  });
+
+  it('still greys the days beyond it', () => {
+    make('2026-09-25', { max: Temporal.Instant.from('2026-09-25T16:00:00Z'), presets: [] });
+    field.open();
+    const beyond = document.querySelector<HTMLButtonElement>('.tz-field__panel .tz-range__day[data-date="2026-09-26"]')!;
+    expect(beyond.disabled).toBe(true);
+  });
+});

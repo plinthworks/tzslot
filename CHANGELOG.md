@@ -6,6 +6,17 @@ A product critique and a code review, read end to end. The two worst findings
 were that the panel could not be reached on a phone and that a range being
 chosen was invisible; the rest is what a filter screen needs and did not get.
 
+### `min` and `max` can hold an hour
+
+They were `PlainDate` in a widget whose value is an `Instant`, so "nothing
+after 18:00 today" — a thing a booking screen says — was inexpressible, in a
+library built on the difference between a date and a moment. They take either
+now: a day greys the days beyond it, a moment does that *and* holds the hour.
+
+A moment past the bound is clamped rather than refused, as `maxSpan` is.
+Someone typing 19:00 against a ceiling of 18:00 means as late as they are
+allowed, and a rejection they have to decode helps nobody.
+
 ### A shortcut that stays a shortcut
 
 `onChange` hands back two instants and nothing else, so "the last seven days"

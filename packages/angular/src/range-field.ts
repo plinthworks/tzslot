@@ -162,8 +162,13 @@ export class RangeField implements ControlValueAccessor {
   readonly placeholder = input<string | undefined>(undefined);
   readonly ariaLabel = input<string | undefined>(undefined);
   readonly locale = input<string | undefined>(this.defaults.locale);
-  readonly min = input<PlainDate | null>(null);
-  readonly max = input<PlainDate | null>(null);
+  /**
+   * The earliest and latest the period may reach. A day greys the days beyond
+   * it; a **moment** holds the hour too — "nothing after 18:00 today" — and is
+   * clamped rather than refused.
+   */
+  readonly min = input<PlainDate | Instant | null>(null);
+  readonly max = input<PlainDate | Instant | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
   /**
    * Whether a period may run over a day `isDateDisabled` refuses. `true`: a

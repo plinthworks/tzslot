@@ -93,6 +93,19 @@ export interface TzslotMessages {
   /** Above the two fields of a period: the day it runs from, the day it runs to. */
   readonly rangeStart: string;
   readonly rangeEnd: string;
+  /**
+   * What a screen reader hears on a day of the grid, after the date itself.
+   *
+   * A cell said "21" and nothing else — no month, no year, no weekday, and no
+   * word for whether it was the start of the period, the end, or inside it.
+   * `aria-selected` was set on the two ends alike, so nothing told them apart
+   * and everything between was announced as unselected.
+   */
+  readonly dayIsStart: string;
+  readonly dayIsEnd: string;
+  readonly dayWithin: string;
+  /** Said after the value whenever it changes, in the panel's live region. */
+  readonly selectedRange: (period: string) => string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -200,6 +213,10 @@ export const EN: TzslotMessages = {
   clearField: 'Empty this field',
   rangeStart: 'From',
   rangeEnd: 'To',
+  dayIsStart: 'start of the period',
+  dayIsEnd: 'end of the period',
+  dayWithin: 'in the period',
+  selectedRange: (period) => `Selected: ${period}`,
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -290,6 +307,10 @@ export const FR: TzslotMessages = {
   clearField: 'Vider ce champ',
   rangeStart: 'Du',
   rangeEnd: 'Au',
+  dayIsStart: 'début de la période',
+  dayIsEnd: 'fin de la période',
+  dayWithin: 'dans la période',
+  selectedRange: (period) => `Sélection : ${period}`,
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

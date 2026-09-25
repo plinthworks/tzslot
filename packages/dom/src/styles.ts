@@ -921,6 +921,18 @@ export const RANGEFIELD_CSS = `
 /* The dates and their arrows are one thing; the calendar and its shortcuts
    are another. Without a line between them the panel reads as one long column
    of controls. */
+/* Heard, not seen: the panel already shows what it holds in its two fields. */
+.tz-rangefield__status {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 .tz-rangefield__title {
   margin: 0 0 0.25rem;
   font-size: 0.95em;

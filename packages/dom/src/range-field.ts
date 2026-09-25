@@ -466,6 +466,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let presetList: HTMLElement | null = null;
   /** Kept so the column can be hidden and shown again without losing the list. */
   let presetColumn: HTMLElement | null = null;
+  /** Where the panel says out loud what it has just done. */
+  let liveRegion: HTMLElement | null = null;
   /** The same, for the column of steps. */
   let stepList: HTMLElement | null = null;
   let stepColumn: HTMLElement | null = null;
@@ -1440,6 +1442,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
     paintPresets();
     paintSteps();
+    if (liveRegion) {
+      const said = display(draft);
+      const next = said ? s.messages.selectedRange(said) : '';
+      // Written only when it differs: a live region repeating itself is a
+      // screen reader saying the same sentence twice.
+      if (liveRegion.textContent !== next) liveRegion.textContent = next;
+    }
     panel.place();
   }
 
@@ -1479,7 +1488,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
     trigger.classList.toggle('tz-field__trigger--empty', s.value.start === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
-    trigger.setAttribute('aria-label', s.ariaLabel ?? s.title ?? s.messages.chooseRange);
+    /*
+     * The subject of the button, and then what it holds.
+     *
+     * `aria-label` overrides an element's contents, so a button reading
+     * "21/09/2026 – 25/09/2026" was announced as "Choose a range" — the value
+     * was invisible to a screen reader in every state. The name says both now:
+     * what the field is for, and what is in it.
+     */
+    const subject = s.ariaLabel ?? s.title ?? s.messages.chooseRange;
+    const held = display();
+    trigger.setAttribute('aria-label', held ? `${subject}, ${held}` : subject);
     // The panel is labelled when it opens and lives on the body, so a change
     // of words while it is open left a dialog announcing itself in the
     // language before. The trigger was repainted; this was not.
@@ -1509,6 +1528,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       presetColumn = null;
       stepList = null;
       stepColumn = null;
+      liveRegion = null;
       endField = null;
       betweenMark = null;
       panelShift = null;
@@ -1550,6 +1570,19 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ensureStyles(node, 'dateinput', DATEINPUT_CSS);
       ensureStyles(node, 'timeselect', TIMESELECT_CSS);
       ensureStyles(node, 'datetime', DATETIME_CSS);
+
+      /*
+       * What changed, said once, politely.
+       *
+       * The only live region in an open panel was the month heading, whose
+       * text is "septembre 2026" — so choosing a start, choosing an end, a
+       * shortcut firing and a span being clamped were all silent. A screen
+       * reader had no way to learn what the panel had just done.
+       */
+      liveRegion = el('p', 'tz-rangefield__status');
+      liveRegion.setAttribute('role', 'status');
+      liveRegion.setAttribute('aria-live', 'polite');
+      node.append(liveRegion);
 
       if (s.title) {
         const heading = el('h2', 'tz-rangefield__title');

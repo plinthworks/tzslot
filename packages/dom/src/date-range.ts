@@ -321,6 +321,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         new Date(Date.UTC(year, month - 1, 1)),
       );
     const short = new Intl.DateTimeFormat(s.locale, { weekday: 'short', timeZone: 'UTC' });
+    const long = new Intl.DateTimeFormat(s.locale, { dateStyle: 'full', timeZone: 'UTC' });
     const first = monthName(at.year, at.month);
     const last = Temporal.PlainDate.from({ year: at.year, month: at.month, day: 1 }).add({
       months: blocks.length - 1,
@@ -435,7 +436,28 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         cell.classList.toggle('tz-range__day--start', isStart);
         cell.classList.toggle('tz-range__day--end', isEnd);
         cell.classList.toggle('tz-range__day--within', within);
-        cell.setAttribute('aria-selected', String(isStart || isEnd));
+        cell.setAttribute('aria-selected', String(isStart || isEnd || within));
+        /*
+         * What a screen reader hears.
+         *
+         * The cell's own text is the day number alone — "21" — so without
+         * this the month, the year and the weekday are all missing, and so is
+         * any word for where in the period the day falls. `aria-selected` was
+         * true on the two ends and false on everything between, which
+         * announced the middle of the range as unselected.
+         */
+        const said = long.format(new Date(Date.UTC(date.year, date.month - 1, date.day)));
+        const where = isStart
+          ? s.messages.dayIsStart
+          : isEnd
+            ? s.messages.dayIsEnd
+            : within
+              ? s.messages.dayWithin
+              : null;
+        cell.setAttribute('aria-label', where ? `${said}, ${where}` : said);
+        // The grid says which day is today; it had the class and not the word.
+        if (date.equals(s.today)) cell.setAttribute('aria-current', 'date');
+        else cell.removeAttribute('aria-current');
         cell.disabled = off || blocked(date);
         // One stop for the whole grid, months included: Tab reaches the
         // calendar, the arrows move inside it.

@@ -472,6 +472,42 @@ plain caption instead, so the only way out of September was the arrows, one
 month at a time — fifteen presses to reach March of last year.
 :::
 
+### `clearable`
+
+Whether the panel offers a **Clear**. `true`, because a field that cannot be
+emptied is a filter nobody can take off. It empties the whole period, which is
+what someone starting again means — the cross inside each date belongs to
+`openEnded`, where one end genuinely may be nothing.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', clearable: false });
+```
+
+### `blockAcrossDisabled`
+
+Whether a period may run over a day `isDateDisabled` refuses. `true`: a screen
+that greys the weekends and then takes a stay across one has greyed them for
+nothing. The refusal is said in the panel, and
+`rangeSpansBlockedMessage` puts your own words there.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  isDateDisabled: (date) => date.dayOfWeek > 5,
+  rangeSpansBlockedMessage: 'Closed at weekends.',
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, isDateDisabled: (d) => d.dayOfWeek > 5, title: 'Working days' }"
+  :controls="[{ label: 'Open the panel', run: (w) => w.open() }]" />
+
+::: tip It is announced, not only drawn
+Choosing a start, choosing an end, a shortcut firing, a span clamped by
+`maxSpan` — all of it goes through a polite live region in the panel, so a
+screen reader hears what the widget has just done. Each day cell carries its
+full date and where it falls in the period; the grid says which day is today.
+:::
+
 ### `months`
 
 How many months stand side by side. Two suits a period that usually crosses

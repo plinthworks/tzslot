@@ -86,3 +86,47 @@ describe('the panel says what it has just done', () => {
     expect(status.textContent).toBe('Sélection : 21/09/2026 – 25/09/2026');
   });
 });
+
+describe('a limit that moves the other end says so', () => {
+  it('names what holds the period, alongside the value', () => {
+    // The clamp is right — a refusal leaves the reader guessing which end was
+    // wrong — but it moved an end the reader had set and said nothing.
+    make({ maxSpan: { days: 3 } });
+    field.open();
+    cell('2026-09-21').click();
+    cell('2026-09-30').click();
+    const status = document.querySelector('.tz-field__panel .tz-rangefield__status')!;
+    // The touched end stays and the other moves: clicking the 30th as the end
+    // pulls the start up to the 28th, three days back.
+    expect(status.textContent).toContain('Sélection : 28/09/2026 – 30/09/2026');
+    expect(status.textContent).toContain("L'autre borne a bougé");
+  });
+});
+
+describe('a field can be emptied, and an arrow keeps confirm’s promise', () => {
+  it('offers a Clear that empties the whole period', () => {
+    // The cross inside each date lived behind openEnded, so a plain period
+    // field could not be emptied at all — a filter nobody can take off.
+    make({ value: week });
+    field.open();
+    const clear = document.querySelector<HTMLButtonElement>('.tz-field__panel .tz-rangefield__clear')!;
+    expect(clear.textContent).toBe(FR.clear);
+    clear.click();
+    expect(field.value).toEqual({ start: null, end: null });
+  });
+
+  it('does not report from a closed field when confirm is on', () => {
+    // confirm promises nothing is reported until Apply — "for searches that
+    // cost" — and an arrow beside a closed field went straight to commit.
+    const reported: unknown[] = [];
+    field = createRangeField(host, {
+      timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, months: 1,
+      today: Temporal.PlainDate.from('2026-09-21'), confirm: true, shift: true,
+      value: week, onChange: (v) => reported.push(v),
+    });
+    host.querySelector<HTMLButtonElement>('.tz-field__shift--prev')!.click();
+    expect(reported).toHaveLength(0);
+    // It opens on the moved period instead, so the reader can see and apply it.
+    expect(field.isOpen).toBe(true);
+  });
+});

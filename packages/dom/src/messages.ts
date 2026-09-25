@@ -106,6 +106,14 @@ export interface TzslotMessages {
   readonly dayWithin: string;
   /** Said after the value whenever it changes, in the panel's live region. */
   readonly selectedRange: (period: string) => string;
+  /**
+   * Said when a period is clamped to `maxSpan` or stretched to `minSpan`.
+   *
+   * The other end moved and nothing was said about it. A reader who had
+   * carefully set an end six weeks out, then adjusted the start, watched their
+   * end jump and was told neither that it had nor why.
+   */
+  readonly spanClamped: (limit: string) => string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -217,6 +225,7 @@ export const EN: TzslotMessages = {
   dayIsEnd: 'end of the period',
   dayWithin: 'in the period',
   selectedRange: (period) => `Selected: ${period}`,
+  spanClamped: (limit) => `The other end moved: this period is held to ${limit}.`,
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -311,6 +320,7 @@ export const FR: TzslotMessages = {
   dayIsEnd: 'fin de la période',
   dayWithin: 'dans la période',
   selectedRange: (period) => `Sélection : ${period}`,
+  spanClamped: (limit) => `L'autre borne a bougé : cette période est limitée à ${limit}.`,
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

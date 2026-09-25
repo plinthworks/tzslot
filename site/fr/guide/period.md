@@ -484,6 +484,44 @@ simple libellé, donc la seule sortie de septembre était les flèches, un mois 
 la fois — quinze pressions pour atteindre mars de l'an dernier.
 :::
 
+### `clearable`
+
+Si le panneau offre un bouton **Effacer**. `true`, parce qu'un champ qu'on ne
+peut pas vider est un filtre que personne ne peut retirer. Il vide toute la
+période — c'est ce que veut dire recommencer. La croix dans chaque date est
+autre chose : elle appartient à `openEnded`, où une borne peut légitimement
+n'être rien.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', clearable: false });
+```
+
+### `blockAcrossDisabled`
+
+Si une période peut enjamber un jour que `isDateDisabled` refuse. `true` : un
+écran qui grise les week-ends puis accepte un séjour au travers les a grisés
+pour rien. Le refus est dit dans le panneau, et `rangeSpansBlockedMessage` y
+met vos mots.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  isDateDisabled: (date) => date.dayOfWeek > 5,
+  rangeSpansBlockedMessage: 'Fermé le week-end.',
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, isDateDisabled: (d) => d.dayOfWeek > 5, title: 'Jours ouvrés' }"
+  :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
+
+::: tip C'est annoncé, pas seulement dessiné
+Choisir un début, choisir une fin, un raccourci qui part, une durée ramenée par
+`maxSpan` — tout passe par une région vivante polie dans le panneau, pour qu'un
+lecteur d'écran entende ce que le composant vient de faire. Chaque cellule
+porte sa date entière et sa place dans la période ; la grille dit quel jour est
+aujourd'hui.
+:::
+
 ### `months`
 
 Combien de mois côte à côte. Deux conviennent à une période qui franchit

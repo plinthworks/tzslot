@@ -11,6 +11,7 @@ import {
   snapTime,
   resolveWallTime,
   firstDayFor,
+  formatDuration,
 } from '@tzslot/core';
 import type {
   Weekday,
@@ -191,6 +192,14 @@ export interface RangeFieldSettings {
    * then — the step is the developer's, and the reader only moves.
    */
   showStep: boolean;
+  /**
+   * Whether the panel offers a Clear.
+   *
+   * `true`: a field that cannot be emptied is a filter nobody can take off.
+   * The cross inside each date is a different thing — it belongs to an
+   * open-ended period, where one end genuinely may be nothing.
+   */
+  clearable: boolean;
   /** How many months the panel shows side by side. */
   months: number;
   weekNumbers: boolean;
@@ -208,6 +217,16 @@ export interface RangeFieldSettings {
   min: PlainDate | null;
   max: PlainDate | null;
   isDateDisabled: ((date: PlainDate) => boolean) | undefined;
+  /**
+   * Whether a period may run over a day `isDateDisabled` refuses.
+   *
+   * `true`, because a screen that greys the weekends and then takes a stay
+   * across one has greyed them for nothing. The calendar has had this from the
+   * start; the field neither forwarded it nor let anyone turn it off.
+   */
+  blockAcrossDisabled: boolean;
+  /** What is said when it does. Overrides `messages.rangeCrossesUnavailable`. */
+  rangeSpansBlockedMessage: string | undefined;
   renderCell: RenderCell | undefined;
   today: PlainDate;
   /**
@@ -316,6 +335,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     showPresets: true,
     singleDay: false,
     showStep: true,
+    clearable: true,
     title: undefined,
     timeLayout: 'select',
     openEnded: false,
@@ -338,6 +358,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     min: null,
     max: null,
     isDateDisabled: undefined,
+    blockAcrossDisabled: true,
+    rangeSpansBlockedMessage: undefined,
     renderCell: undefined,
     today: Temporal.Now.plainDateISO(),
     now: null,
@@ -468,6 +490,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let presetColumn: HTMLElement | null = null;
   /** Where the panel says out loud what it has just done. */
   let liveRegion: HTMLElement | null = null;
+  /** Said alongside the value when a limit has just moved the other end. */
+  let clamped: string | null = null;
   /** The same, for the column of steps. */
   let stepList: HTMLElement | null = null;
   let stepColumn: HTMLElement | null = null;
@@ -917,6 +941,28 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * comparing two weeks means — and, across a change of clocks, not the same
    * number of hours, which is the truth of it.
    */
+  /**
+   * What an arrow does with the period it has just moved.
+   *
+   * `confirm` promises that nothing is reported until Apply is pressed — "for
+   * searches that cost" — and an arrow beside a *closed* field went straight
+   * to commit, which reports. The expensive search ran on a press of the very
+   * setting that exists to prevent it. Pressing an arrow there now opens the
+   * panel on the moved period, so the reader sees it and applies it.
+   */
+  function report(next: RangeFieldValue): void {
+    if (panel.isOpen) {
+      choose(next);
+      return;
+    }
+    if (s.confirm) {
+      draft = next;
+      openPanel();
+      return;
+    }
+    commit(next);
+  }
+
   function step(direction: 1 | -1): void {
     const by = effectiveStep();
     if (!canShift() || by === null) return;
@@ -948,8 +994,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (datePart.blank) {
       draft = s.value;
       const next = withTime(s.value);
-      if (panel.isOpen) choose(next);
-      else commit(next);
+      report(next);
       return;
     }
 
@@ -963,14 +1008,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const moved = shiftDayRange({ start: day, end: day }, datePart, direction);
       const onDays = fromDays(shown.start ? { start: moved.start, end: null } : { start: null, end: moved.end });
       const next = withTime(onDays);
-      if (panel.isOpen) choose(next);
-      else commit(next);
+      report(next);
       return;
     }
     const moved = shiftDayRange({ start: shown.start, end: shown.end }, datePart, direction);
     const next = withTime(fromDays({ start: moved.start, end: moved.end }));
-    if (panel.isOpen) choose(next);
-    else commit(next);
+    report(next);
   }
 
 
@@ -1102,10 +1145,20 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         ? { ...value, end: shiftInstant(start, limit, direction, s.timeZone) }
         : { ...value, start: shiftInstant(end, limit, -direction as 1 | -1, s.timeZone) };
 
+    /*
+     * Moving the other end is right; doing it in silence is not.
+     *
+     * A refusal leaves the reader guessing which end was wrong, so the clamp
+     * stays — but the panel now says that an end moved and what holds it, in
+     * the same live region the value goes through. Before, a reader who had
+     * set an end six weeks out and then adjusted the start watched their end
+     * jump and was told nothing at all.
+     */
     if (s.maxSpan) {
       const longest = Temporal.Duration.from(asDuration(s.maxSpan));
       const room = zoned(start).until(zoned(end));
       if (Temporal.Duration.compare(room, longest, { relativeTo: zoned(start) }) > 0) {
+        clamped = s.messages.spanClamped(formatDuration(longest));
         return move(longest, 1);
       }
     }
@@ -1113,9 +1166,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const shortest = Temporal.Duration.from(asDuration(s.minSpan));
       const room = zoned(start).until(zoned(end));
       if (Temporal.Duration.compare(room, shortest, { relativeTo: zoned(start) }) < 0) {
+        clamped = s.messages.spanClamped(formatDuration(shortest));
         return move(shortest, 1);
       }
     }
+    clamped = null;
     return value;
   }
 
@@ -1338,6 +1393,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       min: s.min,
       max: s.max,
       isDateDisabled: s.isDateDisabled,
+      blockAcrossDisabled: s.blockAcrossDisabled,
+      rangeSpansBlockedMessage: s.rangeSpansBlockedMessage,
       renderCell: s.renderCell,
       today: s.today,
       disabled: off(),
@@ -1444,7 +1501,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     paintSteps();
     if (liveRegion) {
       const said = display(draft);
-      const next = said ? s.messages.selectedRange(said) : '';
+      const value = said ? s.messages.selectedRange(said) : '';
+      const next = clamped ? `${value} ${clamped}`.trim() : value;
       // Written only when it differs: a live region repeating itself is a
       // screen reader saying the same sentence twice.
       if (liveRegion.textContent !== next) liveRegion.textContent = next;
@@ -1726,20 +1784,44 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         },
       });
 
-      if (s.confirm) {
+      /*
+       * The footer, which is not only Apply and Cancel.
+       *
+       * A reader had no way to empty a plain period field: the cross inside
+       * each date lived behind `openEnded`, and emptying one end of a closed
+       * period is not what they meant anyway — they meant to start again.
+       * Clear does that, and it stands on the left, away from Apply.
+       */
+      if (s.confirm || s.clearable) {
         const footer = el('div', 'tz-rangefield__footer');
-        const cancel = el('button', 'tz-rangefield__cancel');
-        cancel.type = 'button';
-        cancel.textContent = s.messages.cancel;
-        cancel.onclick = () => panel.close();
-        const apply = el('button', 'tz-rangefield__apply');
-        apply.type = 'button';
-        apply.textContent = s.messages.apply;
-        apply.onclick = () => {
-          commit(draft);
-          panel.close();
-        };
-        footer.append(cancel, apply);
+        if (s.clearable) {
+          const clear = el('button', 'tz-rangefield__clear');
+          clear.type = 'button';
+          clear.textContent = s.messages.clear;
+          clear.onclick = () => {
+            draft = EMPTY;
+            armEndNext = false;
+            armed = 'start';
+            if (s.confirm) paintPanel();
+            else commit(draft);
+            paintPanel();
+          };
+          footer.append(clear);
+        }
+        if (s.confirm) {
+          const cancel = el('button', 'tz-rangefield__cancel');
+          cancel.type = 'button';
+          cancel.textContent = s.messages.cancel;
+          cancel.onclick = () => panel.close();
+          const apply = el('button', 'tz-rangefield__apply');
+          apply.type = 'button';
+          apply.textContent = s.messages.apply;
+          apply.onclick = () => {
+            commit(draft);
+            panel.close();
+          };
+          footer.append(cancel, apply);
+        }
         node.append(footer);
       }
 

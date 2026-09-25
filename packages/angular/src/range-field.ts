@@ -138,6 +138,11 @@ export class RangeField implements ControlValueAccessor {
   readonly showPresets = input(true);
   /** Whether the step sits between the arrows, to be read and pressed. */
   readonly showStep = input(true);
+  /**
+   * Whether the panel offers a Clear. `true`: a field that cannot be emptied
+   * is a filter nobody can take off.
+   */
+  readonly clearable = input(true);
   /** One field instead of two; a click means that whole day. */
   readonly singleDay = input(false);
   readonly months = input(2);
@@ -151,6 +156,14 @@ export class RangeField implements ControlValueAccessor {
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
+  /**
+   * Whether a period may run over a day `isDateDisabled` refuses. `true`: a
+   * screen that greys the weekends and then takes a stay across one has greyed
+   * them for nothing.
+   */
+  readonly blockAcrossDisabled = input(true);
+  /** What is said when it does, in place of the catalogue's words. */
+  readonly rangeSpansBlockedMessage = input<string | undefined>(undefined);
   readonly renderCell = input<RenderCell | undefined>(undefined);
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   /** The moment the shortcuts shorter than a day are counted from. The clock by default. */
@@ -221,6 +234,7 @@ export class RangeField implements ControlValueAccessor {
     shift: this.shift(),
     showPresets: this.showPresets(),
     showStep: this.showStep(),
+    clearable: this.clearable(),
     singleDay: this.singleDay(),
     months: this.months(),
     weekNumbers: this.weekNumbers(),
@@ -232,6 +246,8 @@ export class RangeField implements ControlValueAccessor {
     min: this.min(),
     max: this.max(),
     isDateDisabled: this.isDateDisabled(),
+    blockAcrossDisabled: this.blockAcrossDisabled(),
+    rangeSpansBlockedMessage: this.rangeSpansBlockedMessage(),
     renderCell: this.renderCell(),
     today: this.today(),
     now: this.now(),

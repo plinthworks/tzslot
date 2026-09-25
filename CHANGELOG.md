@@ -1,5 +1,69 @@
 # Changelog
 
+## 1.5.0
+
+A product critique and a code review, read end to end. The two worst findings
+were that the panel could not be reached on a phone and that a range being
+chosen was invisible; the rest is what a filter screen needs and did not get.
+
+### The panel fits the window it is in
+
+The library had no media query at all. At 375 × 667 with the default two
+months, the panel measured **466 × 785 at top −378**: 378px of it above the
+fold, 99 past the right edge, and neither the panel nor the page scrolled. The
+calendar was on the page and could not be reached. `place()` chose above or
+below and never *and then fit*.
+
+It is capped at the window now and scrolls inside it, its top edge stays on
+screen, and under 30rem the row becomes a column — the steps and the shortcuts
+as a strip under the calendar, day cells at 44px or whatever the width allows.
+Measured after: **359 × 651 at (8, 8)**, nothing off screen, cells 43px
+against 36.
+
+### A range being chosen looks like one
+
+The panel folded a selection in progress into a closed range of one day before
+handing it to the calendar, so the calendar never learned a second click was
+coming. Its preview — there since the beginning — could not fire: the day just
+clicked carried start, end *and* within at once, reading as a finished choice,
+and hovering anywhere else painted nothing. The guide claimed the opposite
+twice.
+
+It also brought a guard back to life. `blockAcrossDisabled` had been unreachable
+from the field for the same reason — every click arrived with both ends already
+set — so a screen greying its weekends took a stay across one anyway. It is a
+setting now, with `rangeSpansBlockedMessage` for your own words.
+
+### A screen reader is told what a sighted reader can see
+
+- **The trigger's name was the subject alone.** `aria-label` overrides an
+  element's contents, so a button reading `21/09/2026 – 25/09/2026` was
+  announced as *Choose a range*. It says both now.
+- **A day cell was called "21"** — no month, no year, no weekday, and no word
+  for where in the period it fell. Every cell carries its full date and its
+  position, from the catalogue, so it follows the page's language.
+- **`aria-selected` was true on the two ends and false between them**, which
+  announced the middle of a range as unselected. And nothing said which day
+  was today, though the class had been there all along.
+- **The only live region was the month heading**, whose text is *septembre
+  2026*. There is a polite status in the panel now, and choosing an end, a
+  shortcut firing and a span being clamped all pass through it.
+
+### A field can be emptied, and `confirm` keeps its promise
+
+`clearable` — `true` — puts a **Clear** in the panel. The cross inside each
+date lived behind `openEnded`, so a plain period field could not be emptied at
+all: a filter nobody could take off.
+
+And `maxSpan` moved the end the reader had not touched **in silence**. The
+clamp stays, because a refusal leaves them guessing which end was wrong, but
+it says that an end moved and what holds the period.
+
+`confirm` promises that nothing is reported until Apply is pressed, *for
+searches that cost* — and an arrow beside a **closed** field went straight to
+commit, running the expensive search on a press of the setting meant to
+prevent it. It opens the panel on the moved period instead.
+
 ## 1.4.0
 
 ### The field never shows a date nobody chose

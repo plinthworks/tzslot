@@ -1226,11 +1226,15 @@ export const RANGEFIELD_CSS = `
 .tz-rangefield__time-label { font-size: 0.8125em; opacity: 0.7; }
 .tz-rangefield__footer {
   display: flex;
-  justify-content: flex-end;
+  /* Clear on the left, Apply on the right: the one that undoes should not sit
+     under the thumb that confirms. */
+  justify-content: space-between;
   gap: 0.5rem;
   padding-top: 0.5rem;
   border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
 }
+.tz-rangefield__clear { margin-inline-end: auto; }
+.tz-rangefield__clear,
 .tz-rangefield__cancel,
 .tz-rangefield__apply {
   border: 1px solid var(--tz-border, currentColor);

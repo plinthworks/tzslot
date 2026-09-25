@@ -24,6 +24,7 @@
 | `confirm` | `boolean` | `false` | Nothing is reported until Apply is pressed. For searches that cost. |
 | `shift` | `boolean \| ShiftStep \| readonly ShiftOption[]` | `false` | How far one press of an arrow moves the period, and whether there are arrows at all. `false` — the default — draws none: a field that means one chosen period has nothing to step through. `true` draws them and follows what is being chosen: an hour where the hours are on screen, a day otherwise. A step imposes it. A plain number is minutes — `15`, `60`, `1440` — which is what most screens want; anything a number cannot say is said in full: `{ days: 1, minutes: 30 }`, `{ months: 1, hours: 1, minutes: 45 }`, or the short form `'45mn'`. A list offers several and lets the reader pick between them — see `showStep` for whether that picker is on screen. Shortcuts never change it. A shortcut computes a value; a step moves one. |
 | `showStep` | `boolean` | `true` | Whether the step sits between the arrows, where the reader can read it and press it. It appears when `shift` is a list, which is also what lets the reader change it. A list of one is how a screen shows the step without handing it over: the button reads it and does not take a press. `false` hides it even then — the step is the developer's, and the reader only moves. |
+| `clearable` | `boolean` | `true` | Whether the panel offers a Clear. `true`: a field that cannot be emptied is a filter nobody can take off. The cross inside each date is a different thing — it belongs to an open-ended period, where one end genuinely may be nothing. |
 | `months` | `number` | `2` | How many months the panel shows side by side. |
 | `weekNumbers` | `boolean` | `false` |  |
 | `firstDayOfWeek` | `1 \| 2 \| 3 \| 4 \| 5 \| 6 \| 7 \| undefined` | — | Where the week starts, 1 for Monday through 7 for Sunday. Left out, the locale decides — Monday in France, Sunday in the United States. Set it only where a business disagrees with its own locale. |
@@ -34,6 +35,8 @@
 | `min` | `PlainDate \| null` | `null` | The earliest day that can be chosen. |
 | `max` | `PlainDate \| null` | `null` | The latest day that can be chosen. |
 | `isDateDisabled` | `((date: PlainDate) => boolean) \| undefined` | — | Rules out individual days inside the range: closures, weekends, days already full. |
+| `blockAcrossDisabled` | `boolean` | `true` | Whether a period may run over a day `isDateDisabled` refuses. `true`, because a screen that greys the weekends and then takes a stay across one has greyed them for nothing. The calendar has had this from the start; the field neither forwarded it nor let anyone turn it off. |
+| `rangeSpansBlockedMessage` | `string \| undefined` | — | What is said when it does. Overrides `messages.rangeCrossesUnavailable`. |
 | `renderCell` | `RenderCell \| undefined` | — | Adds to each day: a note under the number, a class of your own, a tooltip, or a reason to rule it out. |
 | `today` | `PlainDate` | `Temporal.Now.plainDateISO()` | Which day is today. Settable so a test does not depend on the day it runs. |
 | `now` | `Instant \| null` | `null` | The moment the ranges shorter than a day are counted from. The clock, unless a test or a page rendered ahead of time needs it fixed. |

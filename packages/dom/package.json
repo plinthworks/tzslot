@@ -1,11 +1,11 @@
 {
   "name": "@tzslot/dom",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "DST-safe date and time pickers in plain DOM. No framework; wrappers for Angular and others sit on top.",
   "type": "module",
   "license": "MIT",
   "dependencies": {
-    "@tzslot/core": "^1.4.0"
+    "@tzslot/core": "^1.5.0"
   },
   "exports": {
     ".": {

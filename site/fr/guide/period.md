@@ -613,9 +613,19 @@ locale :
 
 ### `min` et `max`
 
-La fenêtre de jours qu'on peut choisir. En dehors, les jours sont là, grisés,
-plutôt qu'absents : un calendrier qui s'arrête net ne donne au lecteur aucun
-moyen de distinguer une limite d'un bug.
+La fenêtre qu'on peut choisir. En dehors, les jours sont là, grisés, plutôt
+qu'absents : un calendrier qui s'arrête net ne donne au lecteur aucun moyen de
+distinguer une limite d'un bug.
+
+Un **jour** grise les jours au-delà. Un **moment** fait cela *et* tient
+l'heure — « rien après 18:00 aujourd'hui », ce qu'un écran de réservation dit
+couramment et qui était inexprimable tant que les bornes étaient des dates.
+Au-delà de la borne, un moment est ramené dedans plutôt que refusé : qui tape
+19:00 contre un plafond de 18:00 veut dire « aussi tard que permis ».
+
+```js
+createRangeField(element, { max: Temporal.Instant.from('2026-09-25T16:00:00Z') });
+```
 
 ```js
 createRangeField(element, {

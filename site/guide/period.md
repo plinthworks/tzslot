@@ -596,9 +596,19 @@ Set it only where a business disagrees with its own locale:
 
 ### `min` and `max`
 
-The window of days that can be chosen at all. Outside it the days are there,
-greyed, rather than absent: a calendar that simply stops gives the reader no
-way to tell a limit from a bug.
+The window that can be chosen at all. Outside it the days are there, greyed,
+rather than absent: a calendar that simply stops gives the reader no way to
+tell a limit from a bug.
+
+A **day** greys the days beyond it. A **moment** does that *and* holds the
+hour — "nothing after 18:00 today", which a booking screen says often and
+which was inexpressible while the bounds were dates. Past the bound a moment
+is brought inside rather than refused: someone typing 19:00 against a ceiling
+of 18:00 means as late as they are allowed.
+
+```js
+createRangeField(element, { max: Temporal.Instant.from('2026-09-25T16:00:00Z') });
+```
 
 ```js
 createRangeField(element, {

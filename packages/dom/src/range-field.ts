@@ -1313,7 +1313,20 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const shown = days(draft);
     // With one end open there is a single day to mark; the grid draws it as a
     // range of one, which is exactly how it looks.
-    const only = shown.start === null || shown.end === null ? (shown.start ?? shown.end) : null;
+    /*
+     * A selection in progress is handed over as one, not closed up.
+     *
+     * Both ends were folded into a range of one day, so the calendar never
+     * learned that a second click was coming — and its preview, which paints
+     * the run under the pointer and under the keyboard, could not fire. The
+     * day just clicked carried start, end *and* within at once, reading as a
+     * finished one-day choice, and hovering anywhere else painted nothing.
+     *
+     * A period left open on purpose is different: it has no second click to
+     * wait for, so it keeps the single mark it always had.
+     */
+    const picking = shown.start !== null && shown.end === null && !s.openEnded && !s.singleDay;
+    const only = !picking && (shown.start === null || shown.end === null) ? (shown.start ?? shown.end) : null;
     range?.update({
       value: only ? { start: only, end: only } : { start: shown.start, end: shown.end },
       months: s.months,

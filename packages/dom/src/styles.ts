@@ -253,6 +253,15 @@ export const FIELD_CSS = `
 }
 .tz-field__panel {
   position: fixed;
+  /* Never wider or taller than the window, and scrolls inside when it would
+     be. Without this a two-month panel on a 375px screen measured 466 x 785
+     and sat at top -378: most of it off the fold, the rest past the right
+     edge, and nothing scrolled. dvh rather than vh because a phone's toolbars
+     come and go and vh does not notice. */
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow: auto;
+  overscroll-behavior: contain;
   z-index: var(--tz-panel-z, 1000);
   padding: 0.75rem;
   border: 1px solid;
@@ -265,6 +274,8 @@ export const FIELD_CSS = `
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
+  /* Centred, so it clips at both ends rather than one — the caps above are
+     what stop it, and the scroll is what makes the far end reachable. */
 }
 .tz-field__backdrop {
   position: fixed;
@@ -1224,6 +1235,52 @@ export const RANGEFIELD_CSS = `
   background: var(--tz-accent, currentColor);
   color: var(--tz-accent-fg, canvas);
   font-weight: 600;
+}
+
+/*
+ * Narrow screens.
+ *
+ * The library had no media query at all, which on a phone meant a panel
+ * measured 466 wide against 375 of window. The row becomes a column, the
+ * column of steps and the shortcuts become a strip under the calendar rather
+ * than beside it, and the day cells grow to a size a thumb can hit.
+ */
+@media (max-width: 30rem) {
+  .tz-rangefield__body {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .tz-rangefield__steps,
+  .tz-rangefield__presets {
+    width: auto;
+    max-height: none;
+    padding-left: 0;
+    padding-top: 0.75rem;
+    border-left: 0;
+    border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+  }
+  /* Side by side and wrapping, so four steps are one or two lines rather than
+     four, and the calendar keeps the height. */
+  .tz-rangefield__step-list,
+  .tz-rangefield__preset-list {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
+  .tz-rangefield__step-choice,
+  .tz-rangefield__preset {
+    flex: 1 1 auto;
+    text-align: center;
+  }
+  /* 2.75rem is 44px, the size everyone settled on for a touch target — but
+     not past the width there is. Seven of them plus the week column came to
+     336 in a 333 box, which is three pixels of sideways scroll in a calendar.
+     The subtraction is the panel's margins, its padding and the week column. */
+  .tz-rangefield__panel {
+    --tz-cal-cell-size: min(2.75rem, calc((100vw - 5.5rem) / 7));
+  }
+  .tz-rangefield__calendar {
+    justify-content: flex-start;
+  }
 }
 `;
 

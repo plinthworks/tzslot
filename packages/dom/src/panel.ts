@@ -125,7 +125,23 @@ export function createPanel(options: PanelOptions): PanelController {
     const height = panel.offsetHeight;
     const below = win.innerHeight - field.bottom;
     const flip = below < height + gap && field.top > below;
-    const top = flip ? field.top - height - gap : field.bottom + gap;
+    const wanted = flip ? field.top - height - gap : field.bottom + gap;
+    /*
+     * Clamped to the window, both ways.
+     *
+     * It chose above or below and never "and then fit". On a 375px screen the
+     * two-month panel came out 466 x 785 at top -378: 378px of it above the
+     * fold, 99 past the right edge, and neither the panel nor the page
+     * scrolled. The calendar was there and could not be reached.
+     *
+     * The stylesheet caps the panel at the viewport, so what is left here is
+     * to keep its top edge on screen. Sticking to the bottom rather than the
+     * top when the panel is taller than the window keeps the trigger's own
+     * line visible — a field one scrolls back to is better than one hidden
+     * under a panel.
+     */
+    const room = win.innerHeight - 2 * edge;
+    const top = height >= room ? edge : Math.max(edge, Math.min(wanted, win.innerHeight - height - edge));
     const left = Math.max(edge, Math.min(field.left, win.innerWidth - panel.offsetWidth - edge));
     panel.style.top = `${top}px`;
     panel.style.left = `${left}px`;

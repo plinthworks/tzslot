@@ -44,7 +44,7 @@ export interface DateFieldSettings {
 }
 
 export interface DateFieldOptions extends Partial<DateFieldSettings> {
-  /** Replaces the ▾. A string is used as text, never as HTML. */
+  /** Replaces the calendar. A string is used as text, never as HTML. */
   icon?: Node | string | undefined;
   /**
    * Where the panel is attached. The body by default, so no ancestor's

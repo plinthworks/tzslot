@@ -133,7 +133,9 @@ describe('once the panel is closed', () => {
       },
     });
     const shown = () => host.querySelector('.tz-field__text')!.textContent;
-    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (été)');
+    // The start opens a day and is written as one; the end is 02:30 and says
+    // so, with the reading that tells the two 02:30s apart.
+    expect(shown()).toBe('25/10/2026 – 25/10/2026 02:30 (été)');
 
     // The other reading is an hour later and reads differently, which is the
     // whole point: two identical clock faces, two different fields.
@@ -143,7 +145,9 @@ describe('once the panel is closed', () => {
         end: Temporal.Instant.from('2026-10-25T01:30:00Z'),
       },
     });
-    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (hiver)');
+    // The start opens a day and is written as one; the end is 02:30 and says
+    // so, with the reading that tells the two 02:30s apart.
+    expect(shown()).toBe('25/10/2026 – 25/10/2026 02:30 (hiver)');
   });
 
   it('and says it for a period open at one end', () => {

@@ -348,11 +348,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     fieldIcon: undefined,
     fieldIconSide: 'start',
     displayWith: undefined,
-    messages: EN,
     onChange: undefined,
     onOpen: undefined,
     onClose: undefined,
     ...initial,
+    /*
+     * Merged, not replaced. A catalogue written by hand — or carried over from
+     * a version before a word existed — left the new keys undefined, and an
+     * empty field read "undefined – undefined". TypeScript refuses an
+     * incomplete catalogue; JavaScript, and anything passing one through
+     * `provideTzslotMessages` from untyped code, does not.
+     */
+    messages: { ...EN, ...(initial.messages ?? {}) },
   };
 
   /** The week's first day: what the screen asked for, or what the locale says. */
@@ -679,19 +686,34 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * 22/09 22:00Z → 24/09 22:00Z in the form, the 24th included, which is the
      * whole reason this widget holds instants instead of dates.
      */
-    const withHours = !coversWholeDays(value);
-    // With hours the field says the two moments as they are; without them, the
-    // days covered — 21/09 – 25/09, both included.
-    const { start, end } = withHours
-      ? {
-          start: value.start ? zoned(value.start).toPlainDate() : null,
-          end: value.end ? zoned(value.end).toPlainDate() : null,
-        }
-      : days(value);
+    /*
+     * Each end answers for itself.
+     *
+     * Deciding for the pair meant one default hour brought the other end's
+     * exclusive midnight back: `defaultTimes: { start: '09:00' }` and a click
+     * on the 26th read "24/09 09:00 – 27/09 00:00". The start carries an hour
+     * because it has one; the end is a day because it opens one.
+     *
+     * A period of no length is the exception. Two clicks on the same day give
+     * start and end at the same midnight, and an end read inclusively is then
+     * the day *before* the start — "24/09/2026 – 23/09/2026", a period running
+     * backwards over a day nobody touched. Both ends say their moment there.
+     */
+    const empty =
+      value.start !== null && value.end !== null && Temporal.Instant.compare(value.start, value.end) === 0;
+    const startIsDay = !empty && (!value.start || opensADay(value.start));
+    const endIsDay = !empty && (!value.end || opensADay(value.end));
+    const covered = days(value);
+    const start = startIsDay
+      ? covered.start
+      : value.start
+        ? zoned(value.start).toPlainDate()
+        : null;
+    const end = endIsDay ? covered.end : value.end ? zoned(value.end).toPlainDate() : null;
     if (!start && !end) return '';
     const shape = pattern();
-    const time = (at_: Instant | null) => {
-      if (!withHours || !at_) return '';
+    const time = (at_: Instant | null, asDay: boolean) => {
+      if (asDay || !at_) return '';
       const written = formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale);
       // Which 02:30 was chosen is visible in the panel and nowhere else once
       // it closes, and a field that reads 02:30 twice over is a field the
@@ -699,8 +721,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const reading = nameOfReading(at_, s.timeZone, s.messages);
       return reading ? ` ${written} (${reading})` : ` ${written}`;
     };
-    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start) : null;
-    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end) : null;
+    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start, startIsDay) : null;
+    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end, endIsDay) : null;
     // An open end is a statement, not an unfinished sentence: "From 14/09/2026",
     // not "14/09/2026 – …". The reader has to be able to tell the two apart.
     if (first && !last) return s.openEnded ? `${s.messages.fromDate} ${first}` : `${first} – …`;
@@ -1702,6 +1724,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     update(settings) {
       const wasSingle = s.singleDay;
       Object.assign(s, settings);
+      // Same merge on the way in: a partial catalogue is a perfectly sensible
+      // thing to hand a widget that already has one.
+      if (settings.messages) s.messages = { ...EN, ...settings.messages };
       // Which field is armed is about the panel, not about the value — and a
       // framework hands the value straight back after every change, so
       // resetting it here re-armed the start between two clicks and both of

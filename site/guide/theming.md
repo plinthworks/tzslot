@@ -398,11 +398,16 @@ createRangeField(element, { icon: '▾' });
 createRangeField(element, { icon: myChevronSvg });
 ```
 
-The Angular wrappers for the range field do not expose it; CSS does:
+The Angular wrappers for the range field do not expose it; CSS does — by
+hiding the calendar, not by writing beside it:
 
 ```css
+.tz-field__icon svg { display: none; }
 .tz-field__icon::before { content: "▾"; }
 ```
+
+A `::before` on its own would not show: an empty slot is hidden with
+`display: none`, and the replacement goes with it.
 
 ## Your own icons on the shift arrows
 

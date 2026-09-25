@@ -149,7 +149,11 @@ export const FIELD_CSS = `
 .tz-field__trigger {
   display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  /* Not space-between: with the mark moved to the head, that pinned the text
+     to the right edge and left a hole between them — 135px on a field reading
+     "Date". The text takes the slack instead, which also keeps it truncating
+     from the right when it is too long. */
+  justify-content: flex-start;
   gap: var(--tz-field-gap, 0.5rem);
   min-width: var(--tz-field-width, 12rem);
   padding: var(--tz-field-padding, 0.5rem 0.75rem);
@@ -163,10 +167,20 @@ export const FIELD_CSS = `
 }
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
-/* Empty by default — no caret. The slot stays for a screen that puts its own
-   mark there, and takes no room until it does. */
+/* The mark at the head of a field. It sits at the weight of the text beside
+   it: 0.75em was the size of a caret glyph, and left the calendar drawn at
+   10.5px against 14px text, which reads as a smudge rather than a calendar.
+   A slot holding nothing takes no room. */
+.tz-field__icon {
+  display: inline-flex;
+  align-items: center;
+  opacity: 0.6;
+}
+/* Nothing in the slot, no room taken. A screen swapping the mark for one of
+   its own hides the svg and writes a ::before, which keeps the element
+   un-empty — the recipe the theming page gives. */
 .tz-field__icon:empty { display: none; }
-.tz-field__icon { opacity: 0.6; font-size: 0.75em; }
+.tz-field__text { flex: 1 1 auto; min-width: 0; }
 /* The field, its step menu and its two arrows on one line, and they stay on
    it: the trigger gives up its width rather than the arrows giving up their
    place.

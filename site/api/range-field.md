@@ -44,7 +44,7 @@
 | `fieldIconSide` | `'start' \| 'end'` | `'start'` |  |
 | `labels` | `{ start?: Node \| string \| null; end?: Node \| string \| null; between?: Node \| string \| null; }` | `{}` | What is written above each of the panel's two fields, and between them. Words by default — From / To in the messages — but a screen that prefers an arrow says so: `{ start: null, end: null, between: '»' }`. Anything that can be put in a document works, an SVG icon included. |
 | `displayWith` | `((value: RangeFieldValue, timeZone: string) => string) \| undefined` | — | The last word on the text the field shows. |
-| `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
+| `messages` | `TzslotMessages` | `{ ...EN, ...(initial.messages ?? {}) }` | The words the widget says. One bundle, English and French included. |
 
 ### Callbacks
 

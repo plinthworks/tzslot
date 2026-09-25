@@ -85,3 +85,41 @@ describe('a calendar at the head of the line', () => {
     expect(FIELD_CSS).toContain('.tz-field__icon:empty { display: none; }');
   });
 });
+
+describe('what a review found in 1.4.0', () => {
+  it('writes each end for itself, so one default hour does not bring back the other', () => {
+    // Decided for the pair, `defaultTimes: { start: '09:00' }` and a click on
+    // the 26th read "24/09 09:00 – 27/09 00:00" — the exclusive end back on
+    // screen, which is the thing this release set out to abolish.
+    make({ showTime: true, defaultTimes: { start: '09:00' } });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-24T07:00:00Z'),
+        end: Temporal.Instant.from('2026-09-26T22:00:00Z'),
+      },
+    });
+    expect(lu()).toBe('24/09/2026 09:00 – 26/09/2026');
+  });
+
+  it('does not write a period of no length backwards', () => {
+    // Both ends at the same midnight. Read inclusively the end is the day
+    // before the start: "24/09/2026 – 23/09/2026", a period running backwards
+    // over a day nobody touched.
+    const at = Temporal.Instant.from('2026-09-23T22:00:00Z');
+    make({ showTime: true });
+    field.update({ value: { start: at, end: at } });
+    // Said once, since both ends are the same moment — not twice, and not
+    // backwards.
+    expect(lu()).toBe('24/09/2026 00:00');
+  });
+
+  it('survives a catalogue that predates the words it needs', () => {
+    // TypeScript refuses an incomplete catalogue; JavaScript does not, and a
+    // catalogue carried over from 1.3.0 rendered "undefined – undefined".
+    const stale = { ...FR } as Record<string, unknown>;
+    delete stale['startDate'];
+    delete stale['endDate'];
+    make({ messages: stale as never });
+    expect(lu()).toBe('Start date – End date');
+  });
+});

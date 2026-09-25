@@ -184,7 +184,10 @@ describe('no switch to classify the answer', () => {
     // One hour set moves that end and nothing else. The end stays where the
     // shortcut put it — the instant October opens — instead of being rebuilt
     // a day earlier behind the reader's back.
-    expect(shown()).toBe('01/07/2026 09:00 – 01/10/2026 00:00');
+    // Each end answers for itself: the start carries an hour because it has
+    // one, the end is a day because it opens one. Deciding for the pair meant
+    // one default hour brought the other end's exclusive midnight back.
+    expect(shown()).toBe('01/07/2026 09:00 – 30/09/2026');
     expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
   });
 

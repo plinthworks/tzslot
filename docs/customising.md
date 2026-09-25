@@ -45,7 +45,7 @@ Projected, with the built-in chevrons as fallback:
 </tz-date-field>
 ```
 
-Project nothing and you keep `‹ › ▾`.
+Project nothing and you keep the chevrons and the calendar the library draws.
 
 ## Colours, spacing, shape
 

@@ -43,6 +43,34 @@ a closed line owes the reader is the question, not the shape of the answer.
 The words live in the message catalogue, so they follow the page's language. A
 `placeholder` the screen wrote itself still wins.
 
+### Seven things two reviews found in this release
+
+The first four are mine, from the same afternoon.
+
+- **The mark moved to the head and the trigger kept `space-between`**, which
+  pins the first item left and the second right. Every field narrower than its
+  12rem floor printed its text flush right: a field reading `Date` had a 135px
+  hole between the calendar and the word. The text takes the slack now.
+- **The calendar drew at 10.5px against 14px text** — `.tz-field__icon` still
+  carried the `font-size: 0.75em` a caret glyph wanted. It reads as a smudge.
+- **The field wrote a period of no length backwards.** Two clicks on one day
+  give both ends the same midnight, and an end read inclusively is then the day
+  before the start: `24/09/2026 – 23/09/2026`, over a day nobody touched. It
+  says the moment once.
+- **"Never shows a date nobody chose" held only when both ends were midnight.**
+  Deciding for the pair, one default hour brought the other end's exclusive
+  midnight back: `defaultTimes: { start: '09:00' }` and a click on the 26th
+  read `24/09 09:00 – 27/09 00:00`. Each end answers for itself now —
+  `24/09/2026 09:00 – 26/09/2026`.
+- **A catalogue written by hand rendered `undefined – undefined`.** The three
+  new words made a stale catalogue fatal where one was harmless before;
+  messages are merged over the defaults now, on creation and on `update`.
+- **The theming page's recipe for replacing the mark could not work.** An empty
+  slot is hidden, and a `::before` leaves it empty, so the replacement was
+  hidden with it. The recipe hides the calendar instead.
+- **The same widget showed the calendar on the left read-only and on the right
+  once it took typing.** Both at the head now.
+
 ### A calendar at the head of a field, in place of the caret
 
 The `▾` at the tail said the button could be pressed, which a button already

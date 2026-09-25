@@ -351,7 +351,10 @@ export function createDateTimeField(
     if (s.editable) {
       iconSlot.removeAttribute('aria-hidden');
       iconButton.replaceChildren(iconSlot);
-      wrap.replaceChildren(typed, iconButton);
+      // At the head here too: the same widget showed the calendar on the left
+      // while it was read-only and on the right once it took typing, which is
+      // the one thing a field changing shape must not do.
+      wrap.replaceChildren(iconButton, typed);
     } else {
       iconSlot.setAttribute('aria-hidden', 'true');
       button.replaceChildren(iconSlot, text);

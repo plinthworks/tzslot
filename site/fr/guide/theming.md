@@ -417,11 +417,15 @@ createRangeField(element, { icon: monChevronSvg });
 ```
 
 Les wrappers Angular du champ de période n'exposent pas cette option ;
-la CSS y pourvoit :
+la CSS y pourvoit — en masquant le calendrier, pas en écrivant à côté :
 
 ```css
+.tz-field__icon svg { display: none; }
 .tz-field__icon::before { content: "▾"; }
 ```
+
+Un `::before` seul ne suffirait pas : le logement vide est masqué par
+`display: none`, et la marque de remplacement avec lui.
 
 ## Vos propres icônes sur les flèches
 

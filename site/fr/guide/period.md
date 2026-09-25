@@ -514,6 +514,19 @@ createRangeField(element, {
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, isDateDisabled: (d) => d.dayOfWeek > 5, title: 'Jours ouvrés' }"
   :controls="[{ label: 'Ouvrir le panneau', run: (w) => w.open() }]" />
 
+Sous le calendrier, le panneau écrit la longueur de la période et le fuseau
+dans lequel il la lit :
+
+```
+5d · Europe/Paris
+7d 1h · Europe/Paris      ← sept jours à cheval sur le changement d'octobre
+```
+
+Cette seconde ligne est toute la raison d'être de la bibliothèque : sept jours
+qui traversent le changement d'heure à Paris font 169 heures, pas 168. C'était
+écrit dans le guide et jamais montré au lecteur. `periodSummary`, dans le
+catalogue de messages, réécrit cette ligne.
+
 ::: tip C'est annoncé, pas seulement dessiné
 Choisir un début, choisir une fin, un raccourci qui part, une durée ramenée par
 `maxSpan` — tout passe par une région vivante polie dans le panneau, pour qu'un

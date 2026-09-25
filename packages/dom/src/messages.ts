@@ -114,6 +114,15 @@ export interface TzslotMessages {
    * end jump and was told neither that it had nor why.
    */
   readonly spanClamped: (limit: string) => string;
+  /**
+   * The line under the panel: how long the period is, and where it is read.
+   *
+   * The library's whole claim is that seven days across the October change in
+   * Paris is 169 hours and not 168. It was written in the documentation and
+   * never once shown to the reader in the widget, and the panel never said
+   * which zone it was working in either.
+   */
+  readonly periodSummary: (parts: { length: string; zone: string }) => string;
   readonly endBeforeStart: string;
   readonly rangeCrossesUnavailable: string;
 
@@ -226,6 +235,7 @@ export const EN: TzslotMessages = {
   dayWithin: 'in the period',
   selectedRange: (period) => `Selected: ${period}`,
   spanClamped: (limit) => `The other end moved: this period is held to ${limit}.`,
+  periodSummary: ({ length, zone }) => `${length} · ${zone}`,
   endBeforeStart: 'The end is before the start.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
@@ -321,6 +331,7 @@ export const FR: TzslotMessages = {
   dayWithin: 'dans la période',
   selectedRange: (period) => `Sélection : ${period}`,
   spanClamped: (limit) => `L'autre borne a bougé : cette période est limitée à ${limit}.`,
+  periodSummary: ({ length, zone }) => `${length} · ${zone}`,
   endBeforeStart: 'La fin précède le début.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',

@@ -12,6 +12,8 @@ import {
   resolveWallTime,
   firstDayFor,
   formatDuration,
+  getRangeInfo,
+  isRangeProblem,
 } from '@tzslot/core';
 import type {
   Weekday,
@@ -488,6 +490,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   let presetList: HTMLElement | null = null;
   /** Kept so the column can be hidden and shown again without losing the list. */
   let presetColumn: HTMLElement | null = null;
+  /** The visible line: the length of the period, and the zone it is read in. */
+  let summaryLine: HTMLElement | null = null;
   /** Where the panel says out loud what it has just done. */
   let liveRegion: HTMLElement | null = null;
   /** Said alongside the value when a limit has just moved the other end. */
@@ -1499,6 +1503,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     }
     paintPresets();
     paintSteps();
+    if (summaryLine) {
+      const { start, end } = draft;
+      const info = start && end ? getRangeInfo(start, end, s.timeZone) : null;
+      const length = info && !isRangeProblem(info) ? formatDuration(info.duration) : null;
+      summaryLine.textContent = length
+        ? // The identifier, not the localized name: "Europe/Paris" is shorter
+          // than "heure d'été d'Europe centrale" and cannot be mistaken for
+          // another zone that happens to share an offset today.
+          s.messages.periodSummary({ length, zone: s.timeZone })
+        : '';
+      summaryLine.hidden = !length;
+    }
     if (liveRegion) {
       const said = display(draft);
       const value = said ? s.messages.selectedRange(said) : '';
@@ -1587,6 +1603,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       stepList = null;
       stepColumn = null;
       liveRegion = null;
+      summaryLine = null;
       endField = null;
       betweenMark = null;
       panelShift = null;
@@ -1637,6 +1654,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        * shortcut firing and a span being clamped were all silent. A screen
        * reader had no way to learn what the panel had just done.
        */
+      /*
+       * How long, and where.
+       *
+       * The library's claim is that seven days across the October change in
+       * Paris is 169 hours, not 168 — written in the guide and never shown in
+       * the widget. And a field sold on the zone being impossible to get
+       * wrong never said which zone it was in.
+       */
+      summaryLine = el('p', 'tz-rangefield__summary');
+
       liveRegion = el('p', 'tz-rangefield__status');
       liveRegion.setAttribute('role', 'status');
       liveRegion.setAttribute('aria-live', 'polite');
@@ -1750,6 +1777,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         body.append(presetColumn);
       }
       node.append(body);
+      node.append(summaryLine);
 
       range = createDateRange(rangeHost, {
         injectStyles: false,

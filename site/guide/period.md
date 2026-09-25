@@ -501,6 +501,19 @@ createRangeField(element, {
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', months: 1, isDateDisabled: (d) => d.dayOfWeek > 5, title: 'Working days' }"
   :controls="[{ label: 'Open the panel', run: (w) => w.open() }]" />
 
+Under the calendar, the panel writes how long the period is and the zone it
+is read in:
+
+```
+5d · Europe/Paris
+7d 1h · Europe/Paris      ← seven days across the October change
+```
+
+That second line is the whole reason this library exists: seven days across
+the change in Paris are 169 hours, not 168. It was written in the guide and
+never shown to the reader. `periodSummary`, in the message catalogue, rewrites
+it.
+
 ::: tip It is announced, not only drawn
 Choosing a start, choosing an end, a shortcut firing, a span clamped by
 `maxSpan` — all of it goes through a polite live region in the panel, so a

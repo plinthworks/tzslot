@@ -130,3 +130,33 @@ describe('a field can be emptied, and an arrow keeps confirm’s promise', () =>
     expect(field.isOpen).toBe(true);
   });
 });
+
+describe('the panel says how long, and where', () => {
+  it('shows the length of the period and the zone it is read in', () => {
+    make({ value: week });
+    field.open();
+    const line = document.querySelector('.tz-field__panel .tz-rangefield__summary')!;
+    expect(line.textContent).toBe('5d · Europe/Paris');
+  });
+
+  it('counts the twenty-fifth hour the October change adds', () => {
+    // The whole claim of the library, made in the guide and never once shown
+    // in the widget: seven days across the change in Paris is 169 hours.
+    make({
+      value: {
+        start: Temporal.Instant.from('2026-10-21T22:00:00Z'), // 22 Oct, 00:00 Paris
+        end: Temporal.Instant.from('2026-10-28T23:00:00Z'), // 29 Oct, 00:00 — after the change
+      },
+    });
+    field.open();
+    const line = document.querySelector('.tz-field__panel .tz-rangefield__summary')!;
+    expect(line.textContent).toBe('7d 1h · Europe/Paris');
+  });
+
+  it('says nothing while there is nothing to say', () => {
+    make();
+    field.open();
+    const line = document.querySelector<HTMLElement>('.tz-field__panel .tz-rangefield__summary')!;
+    expect(line.hidden).toBe(true);
+  });
+});

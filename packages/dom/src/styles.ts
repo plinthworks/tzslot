@@ -921,6 +921,13 @@ export const RANGEFIELD_CSS = `
 /* The dates and their arrows are one thing; the calendar and its shortcuts
    are another. Without a line between them the panel reads as one long column
    of controls. */
+.tz-rangefield__summary[hidden] { display: none; }
+.tz-rangefield__summary {
+  margin: 0;
+  font-size: 0.8125em;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
 /* Heard, not seen: the panel already shows what it holds in its two fields. */
 .tz-rangefield__status {
   position: absolute;

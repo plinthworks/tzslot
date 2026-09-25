@@ -49,6 +49,19 @@ setting now, with `rangeSpansBlockedMessage` for your own words.
   2026*. There is a polite status in the panel now, and choosing an end, a
   shortcut firing and a span being clamped all pass through it.
 
+### The panel says how long, and where
+
+```
+5d · Europe/Paris
+7d 1h · Europe/Paris      ← seven days across the October change
+```
+
+The library's whole claim is that seven days across the change in Paris is
+169 hours and not 168. It was written in the guide and never once shown to the
+reader in the widget — and a field sold on the zone being impossible to get
+wrong never said which zone it was working in. Both are a line under the
+calendar now. `periodSummary` in the catalogue rewrites it.
+
 ### A field can be emptied, and `confirm` keeps its promise
 
 `clearable` — `true` — puts a **Clear** in the panel. The cross inside each

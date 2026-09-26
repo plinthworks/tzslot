@@ -1,10 +1,41 @@
 # Changelog
 
-## 1.5.0
+## 1.4.0
 
-A product critique and a code review, read end to end. The two worst findings
-were that the panel could not be reached on a phone and that a range being
-chosen was invisible; the rest is what a filter screen needs and did not get.
+A product critique, three code reviews and a migration onto a real screen,
+read end to end. 1.4.0 was written, documented and never published; rather
+than leave a hole on npm this release carries everything since 1.3.0 under
+that number, and 1.5.0 is kept free for what comes next.
+
+The worst findings were that the panel could not be reached on a phone, that
+a range being chosen was invisible, and — from the last review, on a consumer
+screen — three defects nobody would have found without wiring the field into
+an application that pays for every query.
+
+### Three things a consumer screen found
+
+A screen opening on a single day pushed its filter **twice**. `update` promises
+never to report, and it kept that promise for every setting but one: crossing
+`singleDay` reshaped the value and announced it, even when the value was
+already that one day and nothing had moved. It now reports only a reshape that
+really moves the period — a consumer holding the old one still has to be told,
+or its copy silently goes stale.
+
+A shortcut walked straight through `maxSpan`. Dragging in the calendar was
+held to the ceiling; **This quarter** handed out ninety-two days on a field
+that documents thirty, in one click, and the query behind it was three times
+what the screen allows. Shortcuts now pass through the same clamp, the start
+kept and the end pulled in. And a shortcut that had to be pulled in leaves the
+panel **open**, because closing it would take the adjusted period and the
+sentence explaining it away in the same instant.
+
+A period of no length was reported as though it were one. A whole day ends at
+the midnight after it, so clicking the day just before the start of a finished
+period put the end exactly on the start: zero length, which an exclusive end
+makes match no record at all, under a trigger reading `10/09/2026 00:00` like
+a perfectly good single moment. The guard runs *after* the length limits, and
+that order matters — a `minSpan` can rescue two ends that met by pushing the
+untouched one out, and refusing them earlier would take that rescue away.
 
 ### `min` and `max` can hold an hour
 
@@ -109,8 +140,6 @@ it says that an end moved and what holds the period.
 searches that cost* — and an arrow beside a **closed** field went straight to
 commit, running the expensive search on a press of the setting meant to
 prevent it. It opens the panel on the moved period instead.
-
-## 1.4.0
 
 ### The field never shows a date nobody chose
 

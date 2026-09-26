@@ -1060,6 +1060,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
 
 
+  /** Two periods that name the same pair of moments, null ends included. */
+  function samePeriod(a: RangeFieldValue, b: RangeFieldValue): boolean {
+    const at = (x: Instant | null) => (x === null ? null : x.epochMilliseconds);
+    return at(a.start) === at(b.start) && at(a.end) === at(b.end);
+  }
+
   /**
    * Turning singleDay on or off, with a value already in hand.
    *
@@ -1081,7 +1087,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // hiding the second field otherwise left a value on the trigger with no
       // control anywhere able to reach it.
       const day = start ?? end;
-      if (day) choose(fromDays({ start: day, end: day }), { close: false });
+      if (!day) return;
+      const asOneDay = fromDays({ start: day, end: day });
+      // Only when it really moves. `update` promises never to report, and a
+      // value that is already this one day moves nothing — yet the field
+      // announced it anyway, so a screen opening on a single day pushed its
+      // filter twice: once from its own code, once from this crossing. A
+      // reshape that does change the value is still reported, because a
+      // consumer holding the old one has no other way to learn it is stale.
+      if (!samePeriod(asOneDay, s.value)) choose(asOneDay, { close: false });
       return;
     }
     if (wasSingle && start) {
@@ -1131,7 +1145,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         : edge === 'start'
           ? midnight(wall.date)
           : endOfDay(wall.date);
-    draft = withinSpan(ordered({ ...draft, [edge]: withinBounds(at_) } as RangeFieldValue, edge), edge);
+    draft = notEmpty(withinSpan(ordered({ ...draft, [edge]: withinBounds(at_) } as RangeFieldValue, edge), edge), edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
   }
@@ -1167,6 +1181,35 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // The end that is now impossible is dropped, and it is the one to fill
     // next: this is someone beginning a new period, and saying so reads
     // better than a period of no length at all.
+    armed = other;
+    armedByHand = false;
+    return { ...value, [other]: null } as RangeFieldValue;
+  }
+
+  /**
+   * A period of no length is not a period.
+   *
+   * This runs *after* the length limits, and that order is the whole point: a
+   * `minSpan` can rescue two ends that met, by pushing the untouched one out,
+   * and refusing them earlier would take that rescue away. What is left here
+   * is a period nothing can save.
+   *
+   * It happened on an ordinary gesture. A whole day ends at the midnight
+   * after it, so clicking the day just before the start of a finished period
+   * put the end exactly on the start: zero length, which an exclusive end
+   * makes match no record at all, under a trigger reading `10/09/2026 00:00`
+   * like a perfectly good single moment. The untouched end is dropped and
+   * armed, the same answer `ordered` gives to a period that runs backwards —
+   * this is someone beginning again, and saying so reads better than a period
+   * of no length.
+   */
+  function notEmpty(value: RangeFieldValue, touched: Edge): RangeFieldValue {
+    const { start, end } = value;
+    if (!start || !end || Temporal.Instant.compare(start, end) !== 0) return value;
+    const other: Edge = touched === 'start' ? 'end' : 'start';
+    // Locked, so it cannot move out of the way: the click is refused rather
+    // than emitting a period that matches nothing.
+    if (off(other)) return draft;
     armed = other;
     armedByHand = false;
     return { ...value, [other]: null } as RangeFieldValue;
@@ -1301,20 +1344,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     armedByHand = false;
     cameFrom = preset.name;
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
-    if (isMoments(picked)) {
-      choose({ start: picked.start, end: picked.end }, { close: !s.confirm });
-      return;
-    }
-    // A shortcut named in days means those days entirely — first midnight to
-    // the midnight after the last — whether or not the screen shows hours.
-    // Building it from the hours on screen would quietly drop the last day.
-    choose(
-      {
-        start: midnight(picked.start),
-        end: midnight(picked.end.add({ days: 1 })),
-      },
-      { close: !s.confirm },
-    );
+    // Through the same ceiling a drag goes through. A shortcut used to reach
+    // `choose` directly, so `This quarter` handed out ninety-two days on a
+    // field that documents thirty — one click, and the query behind it was
+    // three times what the screen allows. The start is kept and the end is
+    // pulled in, which is what dragging a start does.
+    const asked: RangeFieldValue = isMoments(picked)
+      ? { start: picked.start, end: picked.end }
+      : // A shortcut named in days means those days entirely — first midnight
+        // to the midnight after the last — whether or not the screen shows
+        // hours. Building it from the hours on screen would drop the last day.
+        { start: midnight(picked.start), end: midnight(picked.end.add({ days: 1 })) };
+    const held = withinSpan(asked, 'start');
+    // A shortcut that had to be pulled in stays on screen. Closing would take
+    // the adjusted period and the sentence explaining it away in the same
+    // instant, and the reader would be left with a range they did not ask for
+    // and no word about why — which is the failure `maxSpan` was given a
+    // message for in the first place.
+    choose(held, { close: !s.confirm && clamped === null });
   }
 
   /**

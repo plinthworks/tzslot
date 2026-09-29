@@ -2030,7 +2030,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        * and not Monday's. The value that came with it, if any, is replaced —
        * the name is the more specific statement of the two.
        */
-      if ('preset' in settings && settings.preset) {
+      // A name the field itself just reported is an echo, not news. Every
+      // wrapper here writes its state and then pushes the whole settings
+      // object back down, the shortcut's name included — so resolving it again
+      // committed a fresh range, which reported, which pushed again. It never
+      // reached a fixed point and the browser stopped answering. A name that
+      // differs from the one in hand is a real instruction and still resolves;
+      // `clear` forgets the name, so the same shortcut can be asked for twice.
+      if ('preset' in settings && settings.preset && settings.preset !== cameFrom) {
         const named = presets().find((p) => p.name === settings.preset);
         if (named) {
           applyPreset(named);

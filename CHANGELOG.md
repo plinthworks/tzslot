@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.4.1
+
+A shortcut froze the browser. One press, and the page stopped answering.
+
+`update` promises never to report, and every framework wrapper here leans on
+that promise: a change is written to state, and the same pass pushes the whole
+settings object back down. A shortcut broke it. The name stayed in the
+settings, so each push resolved it again, committed a fresh range, reported
+that, and the wrapper pushed again. There was no fixed point — and because the
+cycle is synchronous the tab never got the chance to draw, or to answer a
+click.
+
+A name the field itself just reported is an echo, not an instruction, and is
+ignored. A name that differs from the one in hand is news and still resolves,
+which is what the block was for: a filter saved on Monday as "the last seven
+days" is Friday's seven days when it is reopened. Pressing a shortcut never
+went through `update` to begin with, so pressing the same one twice still
+answers both times, and `clear` forgets the name.
+
+The regression guarding it does not merely assert. With the fix taken out it
+hangs past even the test runner's own timeout, which is precisely what the
+browser was doing.
+
 ## 1.4.0
 
 A product critique, three code reviews and a migration onto a real screen,

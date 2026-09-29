@@ -48,10 +48,14 @@ describe('choosing with the mouse', () => {
     expect(classesOf('2026-09-10')).toContain('tz-range__day--start');
     expect(classesOf('2026-09-14')).toContain('tz-range__day--end');
     expect(classesOf('2026-09-12')).toContain('tz-range__day--within');
-    expect(onChange).toHaveBeenLastCalledWith({
-      start: Temporal.PlainDate.from('2026-09-10'),
-      end: Temporal.PlainDate.from('2026-09-14'),
-    });
+    expect(onChange).toHaveBeenLastCalledWith(
+      {
+        start: Temporal.PlainDate.from('2026-09-10'),
+        end: Temporal.PlainDate.from('2026-09-14'),
+      },
+      // The day actually pressed comes with it: the pair alone cannot say.
+      { pressed: Temporal.PlainDate.from('2026-09-14') },
+    );
   });
 
   it('a click before the start becomes the start, not a backwards range', () => {

@@ -160,6 +160,32 @@ export interface RangeFieldSettings {
   maxSpan: DurationLike | null;
   minSpan: DurationLike | null;
   /**
+   * A window of one length, and the reader only says where it starts.
+   *
+   * Given, the end is no longer theirs to choose: it follows the start at this
+   * distance, and the two are always written together. A screen whose rows
+   * cover a fixed forty-five minutes says `{ minutes: 45 }`.
+   *
+   * Every gesture that moves the start carries the end: a day pressed, a date
+   * typed, an hour changed, a shortcut, an arrow. The end cannot be typed into
+   * and no click arms it — it is read-only, which a screen reader is told; on
+   * screen its hour control and its cross are dimmed but the date box itself is
+   * not, so it reads as locked to a reader who is listening and merely inert to
+   * one who is looking.
+   *
+   * What it does not do: `singleDay` wins over it entirely, being the same idea
+   * with a length of a day. `minSpan` and `maxSpan` have nothing to hold and
+   * are not consulted. `min` and `max` hold the **start** — pushed back by the
+   * span, so the window stays whole rather than being shortened to fit. And a
+   * value handed in through `update({ value })` is kept as it came, length and
+   * all: the field is not the owner of a value it did not choose, and the next
+   * press on the start re-derives it.
+   *
+   * A duration, or the short form — `'45mn'`, `'2h'`. A span that is not
+   * positive is refused, and the start stands alone.
+   */
+  fixedSpan: DurationLike | null;
+  /**
    * Minutes between the options of the hour menu. Five by default — sixty
    * entries is a list nobody reads, and a menu always offers the minute it is
    * already showing whether or not it lands on the step.
@@ -167,6 +193,31 @@ export interface RangeFieldSettings {
   minuteStep: number;
   /** Nothing is reported until Apply is pressed. For searches that cost. */
   confirm: boolean;
+  /**
+   * When the change reaches the screen: at every touch, or once on the way out.
+   *
+   * `'change'`, the default, reports each time the value moves — two clicks on
+   * a calendar are two reports, and a screen that queries on each one queries
+   * twice.
+   *
+   * `'close'` holds the *report*, not the value. The field and the panel show
+   * every change as it happens, nothing is held hostage, and the screen hears
+   * once when the panel closes — with whatever is in hand at that moment, and
+   * only if something moved: the period, or the name of the shortcut it came
+   * from. Opening a panel and closing it again says nothing. Replacing "the
+   * last seven days" with the same seven days chosen by hand does say
+   * something, because the name a screen stores alongside the period has
+   * changed even though the dates have not. An Apply button is offered too,
+   * for a reader who prefers to say so.
+   *
+   * Escape and Cancel hand the value back as the screen last saw it. Nothing is
+   * reported, and the two cannot drift apart: a field showing one period while
+   * the screen queries another is worse than either.
+   *
+   * `confirm` wins if both are set — it already waits for Apply, and it waits
+   * by holding the value itself.
+   */
+  reportOn: 'change' | 'close';
   /**
    * How far one press of an arrow moves the period, and whether there are
    * arrows at all.
@@ -380,8 +431,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     snapMinutes: null,
     maxSpan: null,
     minSpan: null,
+    fixedSpan: null,
     minuteStep: 5,
     confirm: false,
+    reportOn: 'change',
     shift: false,
     months: 2,
     weekNumbers: false,
@@ -598,8 +651,15 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   /** Whether the whole field is off, or just one of its two ends. */
   const off = (edge?: Edge): boolean => {
+    // A fixed span makes the end derived, not chosen. Not every path asks —
+    // `crossOver` arms an edge without looking — so the click handler falls
+    // back rather than trusting this alone.
+    if (edge === 'end' && fixedOn()) return true;
     if (typeof s.disabled === 'boolean') return s.disabled;
-    if (!edge) return s.disabled.start === true && s.disabled.end === true;
+    // The whole field is off when neither end can be reached, whatever put them
+    // out of reach: `disabled: { start: true }` under a fixed span left an
+    // enabled trigger opening a panel where every click did nothing.
+    if (!edge) return off('start') && off('end');
     return s.disabled[edge] === true;
   };
   const zoned = (value: Instant) => value.toZonedDateTimeISO(s.timeZone);
@@ -794,11 +854,68 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     return first === last ? first! : `${first} – ${last}`;
   }
 
+  /**
+   * The value the screen has been told, and the shortcut name that came with
+   * it. Everything `reportOn: 'close'` does is decided by comparing against
+   * these two.
+   */
+  let reported: RangeFieldValue = s.value;
+  /*
+   * Seeded from `cameFrom`, not from `s.preset`, and they are not the same.
+   *
+   * `s.preset` is what the screen said; `cameFrom` is the name the field has
+   * applied, and it is what every report carries. Only `applyPreset` writes it,
+   * so a field built with `preset: 'last7Days'` has `s.preset` set and
+   * `cameFrom` null. Comparing against `s.preset` made them disagree from the
+   * first instant: opening and closing the panel without a single gesture
+   * reported, and reported `preset: null`, which wiped the stored name off a
+   * screen doing the saved-filter round trip.
+   *
+   * Null, then, because `cameFrom` is null until a shortcut is applied and it
+   * is declared further down — the two start life agreeing.
+   */
+  let reportedPreset: string | null = null;
+
+  /** Reports are being held until the panel closes. */
+  const deferred = (): boolean => s.reportOn === 'close' && !s.confirm;
+  const holding = (): boolean => deferred() && panel.isOpen;
+
   function commit(next: RangeFieldValue): void {
     s.value = next;
     s.preset = cameFrom;
     render();
+    // Held, not hidden: the field and the panel already show it. Only the
+    // screen waits, and only until the panel closes.
+    if (holding()) return;
+    reported = next;
+    reportedPreset = cameFrom;
     s.onChange?.(next, { preset: cameFrom });
+  }
+
+  /** What was held, said at last — and nothing if nothing moved. */
+  function flush(): void {
+    if (samePeriod(reported, s.value) && reportedPreset === cameFrom) return;
+    reported = s.value;
+    reportedPreset = cameFrom;
+    s.onChange?.(s.value, { preset: cameFrom });
+  }
+
+  /**
+   * The way out: the value goes back to what the screen last saw.
+   *
+   * Keeping it and staying silent would leave the field showing one period and
+   * the screen querying another, with nothing to tell the reader which is real.
+   */
+  function abandon(): void {
+    s.value = reported;
+    s.preset = cameFrom = reportedPreset;
+    draft = reported;
+    // The sentence explaining an end that was pulled in belongs to the period
+    // being abandoned. Left behind, a reader reopening an empty field was told
+    // it had been shortened to fit -- `withinSpan` clears it, but it returns
+    // early when an end is null or locked, so it never got the chance.
+    clamped = null;
+    render();
   }
 
   /** Chosen in the panel: reported at once, or held until Apply. */
@@ -1011,6 +1128,27 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const moveBy = Temporal.Duration.from(asShiftStep(by));
 
     /*
+     * A fixed window travels whole: the start moves, the end is re-derived.
+     *
+     * The ordinary path below rebuilds both ends from the days on screen, which
+     * a fixed span cannot survive. Measured: forty-five minutes became a flat
+     * 1440, and a window of one day — the very example the guide gives —
+     * collapsed to zero on the first press and ran backwards on the second,
+     * which `ordered` and `notEmpty` are there to make impossible and neither
+     * sits on this path.
+     *
+     * Both parts of the step apply to the same instant, so there is nothing to
+     * split here: a day and a half hour is a day and a half hour through the
+     * zone.
+     */
+    if (fixedOn()) {
+      const from = s.value.start;
+      if (!from) return;
+      report(fixedWindow(shiftInstant(from, moveBy, direction, s.timeZone)));
+      return;
+    }
+
+    /*
      * A step has a date part and a time part, and both are applied.
      *
      * Routing on "is the whole thing shorter than a day" lost the remainder:
@@ -1093,8 +1231,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // value that is already this one day moves nothing — yet the field
       // announced it anyway, so a screen opening on a single day pushed its
       // filter twice: once from its own code, once from this crossing. A
-      // reshape that does change the value is still reported, because a
-      // consumer holding the old one has no other way to learn it is stale.
+      // reshape that does change the value is still reported — on the way out,
+      // where reports are held — because a consumer holding the old one has no
+      // other way to learn it is stale.
       if (!samePeriod(asOneDay, s.value)) choose(asOneDay, { close: false });
       return;
     }
@@ -1121,7 +1260,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // chosen is a whole day.
     const timed = s.showTime;
     if (!wall.date) {
-      draft = { ...draft, [edge]: null } as RangeFieldValue;
+      // Under a fixed span the end is the start's shadow. Emptying the start
+      // alone left an end the reader could not reach — its own cross is
+      // disabled, because the end is not theirs — so it goes with it.
+      draft =
+        fixedOn() && edge === 'start'
+          ? EMPTY
+          : ({ ...draft, [edge]: null } as RangeFieldValue);
       choose(draft);
       return;
     }
@@ -1145,6 +1290,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         : edge === 'start'
           ? midnight(wall.date)
           : endOfDay(wall.date);
+    // Only the start ever reaches here: `off('end')` is true under a fixed
+    // span, so the guard at the top of this function returns for the end.
+    if (fixedOn()) {
+      draft = fixedWindow(at_);
+      choose(draft);
+      range?.goTo({ year: wall.date.year, month: wall.date.month });
+      return;
+    }
     draft = notEmpty(withinSpan(ordered({ ...draft, [edge]: withinBounds(at_) } as RangeFieldValue, edge), edge), edge);
     choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
@@ -1307,12 +1460,53 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * ceiling of 18:00 means as late as they are allowed, and a rejection they
    * have to decode helps nobody.
    */
+  /**
+   * Whether a fixed window is in force.
+   *
+   * `singleDay` is itself a window of one day and is read first by the
+   * calendar, so letting `fixedSpan` through the other gestures gave a field
+   * that called itself one day and held forty-five minutes: pressed, a day;
+   * typed, three quarters of an hour.
+   */
+  const fixedOn = (): boolean => s.fixedSpan !== null && !s.singleDay;
+
   const withinBounds = (at_: Instant): Instant => {
     const floor = asMoment(s.min, 'first');
     const ceiling = asMoment(s.max, 'last');
     if (floor && Temporal.Instant.compare(at_, floor) < 0) return floor;
     if (ceiling && Temporal.Instant.compare(at_, ceiling) > 0) return ceiling;
     return at_;
+  };
+
+  /**
+   * The window a fixed span makes, from where the reader put its start.
+   *
+   * One definition, because the four gestures that move it — a day pressed, a
+   * date typed, a shortcut, an arrow — had each grown their own and drifted.
+   *
+   * The span is added **through the zone**, so a day is a day on the wall and
+   * twenty-five real hours on the morning the clocks go back.
+   *
+   * `max` holds the *start*, pushed back by the span: clamping the end instead
+   * would quietly shorten a window whose whole point is its length. When the
+   * bounds are narrower than the span there is nowhere to put it, and `min`
+   * wins — an impossible setting, and the end then lies past `max`.
+   *
+   * A span that is not positive is refused rather than reported. It would emit
+   * a period running backwards, or one of no length, and this field promises
+   * both are impossible.
+   */
+  const fixedWindow = (asked: Instant): RangeFieldValue => {
+    const span = asDuration(s.fixedSpan!);
+    // Nothing was pulled in to fit, so no message about it should survive.
+    clamped = null;
+    const ceiling = asMoment(s.max, 'last');
+    const latest = ceiling ? shiftInstant(ceiling, span, -1, s.timeZone) : null;
+    let from = withinBounds(asked);
+    if (latest && Temporal.Instant.compare(from, latest) > 0) from = withinBounds(latest);
+    const to = shiftInstant(from, span, 1, s.timeZone);
+    if (Temporal.Instant.compare(to, from) <= 0) return { start: from, end: null };
+    return { start: from, end: to };
   };
 
   const presets = (): RangePreset[] =>
@@ -1355,7 +1549,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         // to the midnight after the last — whether or not the screen shows
         // hours. Building it from the hours on screen would drop the last day.
         { start: midnight(picked.start), end: midnight(picked.end.add({ days: 1 })) };
-    const held = withinSpan(asked, 'start');
+    // A fixed window keeps its length, whatever a shortcut asks for: the
+    // shortcut says where to go, the length is not its to change. Without this
+    // it slipped past -- `withinSpan` returns untouched when the other end is
+    // locked, and a fixed span locks the end.
+    const held = fixedOn() && asked.start ? fixedWindow(asked.start) : withinSpan(asked, 'start');
     // A shortcut that had to be pulled in stays on screen. Closing would take
     // the adjusted period and the sentence explaining it away in the same
     // instant, and the reader would be left with a range they did not ask for
@@ -1610,7 +1808,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           const picked = current !== null && current.equals(instant);
           button.classList.toggle('tz-datetime__reading--on', picked);
           button.setAttribute('aria-pressed', String(picked));
-          button.disabled = off();
+          button.disabled = off(edge);
           button.onclick = () => {
             draft = { ...draft, [edge]: instant } as RangeFieldValue;
             choose(draft);
@@ -1721,7 +1919,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       render();
       s.onOpen?.();
     },
-    onClose: () => {
+    onClose: (reason) => {
       range = null;
       presetList = null;
       presetColumn = null;
@@ -1734,6 +1932,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       panelShift = null;
       readingBoxes = null;
       inputs = null;
+      if (deferred()) {
+        // Escape is a way out, not a decision. Everything else — a click
+        // elsewhere, the trigger, the screen closing it — is someone finished.
+        if (reason === 'escape') abandon();
+        else flush();
+      }
       render();
       s.onClose?.();
     },
@@ -1906,12 +2110,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
       range = createDateRange(rangeHost, {
         injectStyles: false,
-        onChange: ({ start, end }) => {
-          // Only the armed field is filled. Which day was just pressed is
-          // whichever of the two the grid reports as new — it restarts its own
-          // selection when the click lands before the start, and that restart
-          // is not an instruction to us.
-          const clicked = end ?? start;
+        onChange: (_value, { pressed }) => {
+          // Only the armed field is filled, so all that matters here is which
+          // day the reader pressed — and the grid now says so.
+          //
+          // It used to be deduced as `end ?? start`, which is wrong whenever
+          // the grid swaps its ends: holding the 16th and pressing the 3rd, it
+          // reports 3 – 16, and the deduction read the 16th. The armed field
+          // was then set to where it already was, so a screen whose end is
+          // locked froze from the second press on — every later click reported
+          // an unchanged period.
+          const clicked = pressed;
           if (!clicked) return;
           if (s.singleDay) {
             /*
@@ -1928,10 +2137,50 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
             paintPanel();
             return;
           }
-          setEdge(armed, { date: clicked, time: timeOf(armed) ?? defaultTime(armed) });
+          /*
+           * A press before the start, with no end yet, is a correction.
+           *
+           * The reader is saying the period begins here -- not that it ends
+           * before it began, which is the only other reading and is
+           * impossible. Filling the armed end anyway made a backwards period
+           * that `ordered` then had to break up, so pressing a day earlier
+           * than the start threw the start away and the reader began again.
+           * The grid reads the same press as moving the start, and it is
+           * right.
+           *
+           * Narrow on purpose. Only the automatic flow -- a reader who armed a
+           * field themselves keeps it, they said which one -- and only while
+           * the end is still empty. A press after a finished period is the
+           * grid starting a new one, which is a separate question and is left
+           * exactly as it was.
+           */
+          const startDay = draft.start ? zoned(draft.start).toPlainDate() : null;
+          const correcting =
+            !armedByHand &&
+            armed === 'end' &&
+            draft.end === null &&
+            startDay !== null &&
+            Temporal.PlainDate.compare(clicked, startDay) < 0;
+          /*
+           * And never a press into an edge the reader cannot fill.
+           *
+           * `setEdge` returns for a locked edge, so an armed-but-locked end
+           * made the whole calendar inert: no value, no report, no word about
+           * why. Two ways in — `crossOver` arms the end without asking, and
+           * turning `fixedSpan` on mid-session locks an end already armed —
+           * and reopening the panel was the only cure.
+           */
+          const wanted = correcting ? 'start' : armed;
+          const edge = off(wanted) ? (wanted === 'start' ? 'end' : 'start') : wanted;
+          if (off(edge)) return;
+          if (edge !== wanted) armed = edge;
+          setEdge(edge, { date: clicked, time: timeOf(edge) ?? defaultTime(edge) });
           // The usual first-then-second flow, kept: a click on the start arms
           // the end. Unless the reader armed a field themselves, in which case
           // they are correcting that one and nothing else.
+          //
+          // A correction leaves `armed` on the end, which is what still needs
+          // filling -- so it falls through here untouched.
           if (!armedByHand && armed === 'start' && !off('end')) armed = 'end';
           paintPanel();
         },
@@ -1945,7 +2194,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        * period is not what they meant anyway — they meant to start again.
        * Clear does that, and it stands on the left, away from Apply.
        */
-      if (s.confirm || s.clearable) {
+      if (s.confirm || s.clearable || deferred()) {
         const footer = el('div', 'tz-rangefield__footer');
         if (s.clearable) {
           const clear = el('button', 'tz-rangefield__clear');
@@ -1962,16 +2211,23 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           };
           footer.append(clear);
         }
-        if (s.confirm) {
+        if (s.confirm || deferred()) {
           const cancel = el('button', 'tz-rangefield__cancel');
           cancel.type = 'button';
           cancel.textContent = s.messages.cancel;
-          cancel.onclick = () => panel.close();
+          // Holding reports rather than the value, Cancel has a value to hand
+          // back — `confirm` never committed one, so it has nothing to undo.
+          cancel.onclick = () => {
+            if (deferred()) abandon();
+            panel.close();
+          };
           const apply = el('button', 'tz-rangefield__apply');
           apply.type = 'button';
           apply.textContent = s.messages.apply;
           apply.onclick = () => {
-            commit(draft);
+            // Holding reports, the value is already in place: closing is what
+            // says it. `confirm` is the one with a draft to commit.
+            if (!deferred()) commit(draft);
             panel.close();
           };
           footer.append(cancel, apply);
@@ -2005,6 +2261,29 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     },
     update(settings) {
       const wasSingle = s.singleDay;
+      /*
+       * A held report is said before the ground moves under it.
+       *
+       * `onClose` only flushes while the field is still holding, so turning
+       * `reportOn` back to `'change'` — or turning `confirm` on — left a change
+       * with no path out at all: no flush, no abandon, nothing. The field
+       * showed one period for ever and the screen queried another, which is
+       * exactly the drift this mode exists to prevent.
+       *
+       * `singleDay` is the same problem in another coat: the held change
+       * describes the old shape, and reshaping it silently would hand the
+       * screen a period it never agreed to.
+       *
+       * Read before `Object.assign`, so `s` still holds the old values.
+       */
+      if (
+        holding() &&
+        (('reportOn' in settings && settings.reportOn !== s.reportOn) ||
+          ('confirm' in settings && settings.confirm !== s.confirm) ||
+          ('singleDay' in settings && settings.singleDay !== s.singleDay))
+      ) {
+        flush();
+      }
       Object.assign(s, settings);
       // Same merge on the way in: a partial catalogue is a perfectly sensible
       // thing to hand a widget that already has one.
@@ -2017,6 +2296,11 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // do with the old one no longer applies.
       if ('value' in settings) {
         draft = s.value;
+        // The screen wrote it, so the screen knows it: there is nothing held
+        // to report, and Escape should hand back *this* rather than whatever
+        // was on screen before it arrived.
+        reported = s.value;
+        reportedPreset = cameFrom;
         armEndNext = false;
         // A value handed in is a period, not a shortcut — unless a shortcut
         // came with it, which the next block reads.
@@ -2056,8 +2340,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       draft = EMPTY;
       armEndNext = false;
       commit(draft);
+      // Held like a reader's gesture, its effect depended on how the reader
+      // happened to leave the panel: Escape undid it, a click elsewhere let it
+      // through. A screen calling this has already decided.
+      if (holding()) flush();
     },
     destroy() {
+      // A widget being torn down is not a reader finishing. Flushing here fired
+      // `onChange` into a half-dead Angular component -- measured: `NG0953:
+      // Unexpected emit for destroyed OutputRef` -- and the change was lost
+      // anyway. Handing the value back first leaves `flush` nothing to say.
+      if (deferred()) abandon();
       panel.close({ restoreFocus: false });
       listening.abort();
       back.remove();

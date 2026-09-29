@@ -25,5 +25,5 @@
 
 | | Type | |
 |---|---|---|
-| `onChange` | `((value: DateRangeValue) => void) \| undefined` | Called when the user chooses, changes or clears the value. |
+| `onChange` | `((value: DateRangeValue, from: { pressed: PlainDate \| null }) => void) \| undefined` | The range, and the day the reader actually pressed. The pair alone is not enough to know that: clicking before the start makes this calendar swap the two ends, so a caller deducing the pressed day from the pair reads the *other* end. `pressed` is null when the range was emptied rather than chosen. |
 

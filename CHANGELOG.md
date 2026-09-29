@@ -1,5 +1,131 @@
 # Changelog
 
+## 1.5.0
+
+A filter screen asked for a window of a fixed length, and finding out why it
+could not have one turned up a lie the calendar had been telling all along.
+
+### The calendar now says which day was pressed
+
+`createDateRange` reports the range and, alongside it, the day the reader
+actually pressed. The pair alone cannot say: a press before the start makes the
+calendar swap its two ends -- which is right, it is what someone correcting a
+mis-click means -- so a caller deducing the pressed day from the pair reads the
+*other* end. The range field deduced it that way, and acted on a day nobody had
+touched.
+
+The symptom was worst where the end could not move: the field set the start to
+where it already was, so a press before the current start changed nothing and
+sent a request for an unchanged period. Presses after the start were fine, which
+is what made it hard to see. Everywhere else it was quieter and still wrong --
+pressing the 3rd when the start was the 10th gave you a range on the 10th, in
+silence.
+
+Nothing else changes: on a first press, on a press after the start, and on the
+press that begins a new range, the deduction and the truth agreed. The second
+argument is additive, so a callback written `(value) => {}` is untouched.
+
+### A press before the start is a correction
+
+It used to fill the armed end, which made a period running backwards that
+`ordered` then had to break up -- so the start was thrown away and the reader
+began again. The reader meant the period starts here; there is no other reading,
+since an end before its own start is impossible.
+
+Narrow on purpose: only in the automatic first-then-second flow, and only while
+the end is still empty. A reader who armed a field themselves keeps it, and a
+press after a finished period is the calendar starting a new one, which is a
+separate question and is left exactly as it was.
+
+### A press never lands on an edge that cannot take it
+
+`setEdge` returns for a locked edge, so an armed-but-locked end made the whole
+calendar inert: no value, no report, no word about why, and only reopening the
+panel recovered. Two ways in, both reachable before this release with
+`disabled: { end: true }` -- `crossOver` arms the end without asking whether it
+is reachable, and `update` deliberately leaves `armed` alone, so locking an end
+that happened to be armed aimed the next click at a door that was shut. The
+press now falls back to the edge that can take it.
+
+`off()` with no argument -- "the whole field is out of play" -- now asks whether
+either end can be reached, rather than reading `disabled` alone. A field whose
+start was disabled under a fixed span had an enabled trigger and a panel where
+nothing worked.
+
+### `reportOn: 'close'`
+
+A field reports every time the value moves, so two clicks on a calendar are two
+reports and a screen that queries on each one queries twice — the second answer
+arriving to replace the first, both paid for.
+
+This holds the **report**, not the value. Every change shows on the field and in
+the panel as it happens; the screen hears once, when the panel closes, and only if
+something moved — opening and closing a panel without touching anything says
+nothing, where `commit` has never had an equality guard of its own. "Something"
+is the period or the name of the shortcut it came from: replacing "the last
+seven days" with the same seven days chosen by hand is a change to a screen that
+stores the name.
+
+Escape and Cancel hand the value back as the screen last saw it, and say
+nothing. Keeping the change while staying silent would leave the field showing
+one period and the screen querying another, with nothing to tell the reader
+which is real. An Apply button is offered as well, for a reader who would rather
+say so than click away.
+
+It is not `confirm`, which waits by keeping the value to itself — close a
+`confirm` panel without pressing Apply and the choice is gone. Here nothing is
+held back from the reader; only the outward word waits. `confirm` wins if both
+are set.
+
+Internally the panel now says **why** it closed, which is what makes the
+difference between a way out and a decision possible. That reason is not on the
+public surface — `createPanel` is not exported and a field's own `onClose` is
+unchanged — so nothing in your code has to know about it.
+
+Two doors that holding a report opened, and that are shut: a widget destroyed
+with a change in hand hands the value back rather than reporting into a
+half-dead component, and changing `reportOn`, `confirm` or `singleDay` while a
+change is held says it first, instead of leaving it with no way out at all.
+
+### `fixedSpan`
+
+A window of one length, where the reader only says where it starts:
+
+    readonly window = { minutes: 45 };
+    <tz-range-field [fixedSpan]="window" ... />
+
+Every gesture that moves the start carries the end -- a day pressed, a date
+typed, an hour changed, a shortcut, an arrow -- and the two ends are always
+written together, so a screen has no rule of its own to run after each change.
+It is the idea behind `singleDay` with a length of your own, and it stands aside
+wherever `singleDay` is also set.
+
+The distance is added **in the zone**: a span of a day across the morning the
+clocks go back is twenty-five real hours and still one day on the wall, which is
+the whole reason this library exists.
+
+What it deliberately does not do, because a review asked each question and the
+honest answer is worth writing down: `minSpan` and `maxSpan` have nothing to
+hold and are not consulted. `min` and `max` hold the **start**, pushed back by
+the span, so the window stays whole instead of being shortened to fit -- and
+when the bounds are narrower than the span there is nowhere to put it and `min`
+wins. A span that is not positive is refused rather than reported, since a
+backwards period is the one thing this field promises never to emit. A value
+handed in through `update({ value })` is kept as it came, length and all: the
+field does not own a value it did not choose, and the next press re-derives it.
+And the end is read-only rather than disabled -- a screen reader is told, its
+hour control and its cross are dimmed, but the date box itself is not, so to a
+reader who is only looking it reads as inert rather than as locked.
+
+What screens did before was lock the end with `disabled: { end: true }` and
+re-derive it after each change. That says the opposite of what they meant --
+that the end never moves -- and the field refused every press past it before the
+screen was ever asked.
+
+The ambiguous-hour reading buttons, on the morning an hour happens twice, now
+follow the lock on their own end instead of the lock on the whole field. They
+could move a locked end on their own, which no other gesture could.
+
 ## 1.4.1
 
 A shortcut froze the browser. One press, and the page stopped answering.

@@ -55,7 +55,15 @@ export interface DateRangeSettings {
    * them cross a month boundary, and one month means navigating mid-choice.
    */
   months: number;
-  onChange: ((value: DateRangeValue) => void) | undefined;
+  /**
+   * The range, and the day the reader actually pressed.
+   *
+   * The pair alone is not enough to know that: clicking before the start makes
+   * this calendar swap the two ends, so a caller deducing the pressed day from
+   * the pair reads the *other* end. `pressed` is null when the range was
+   * emptied rather than chosen.
+   */
+  onChange: ((value: DateRangeValue, from: { pressed: PlainDate | null }) => void) | undefined;
 }
 
 export interface DateRangeOptions extends Partial<DateRangeSettings> {
@@ -487,10 +495,10 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     return false;
   }
 
-  function commit(next: DateRangeValue): void {
+  function commit(next: DateRangeValue, pressed: PlainDate | null = null): void {
     s.value = next;
     render();
-    s.onChange?.(next);
+    s.onChange?.(next, { pressed });
   }
 
   function choose(date: PlainDate): void {
@@ -500,7 +508,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
 
     // A complete range, or none at all, means this click starts a new one.
     if (!start || end) {
-      commit({ start: date, end: null });
+      commit({ start: date, end: null }, date);
       return;
     }
 
@@ -512,7 +520,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
       render();
       return;
     }
-    commit({ start: from, end: to });
+    commit({ start: from, end: to }, date);
   }
 
   function shift(delta: number): void {

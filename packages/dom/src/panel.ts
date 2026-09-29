@@ -1,6 +1,15 @@
 import { FIELD_CSS, ensureStyles } from './styles.js';
 
 /** Anchored under the field, or centred over the page. */
+/**
+ * Why a panel closed, because it is not always the same answer.
+ *
+ * `escape` is a way out: a reader pressing it expects to leave nothing behind.
+ * `outside` — a click anywhere else, or on a dialog's backdrop — is someone
+ * finished and moving on. `api` is the screen or a button of its own asking.
+ */
+export type CloseReason = 'escape' | 'outside' | 'api';
+
 export type FieldMode = 'popup' | 'dialog';
 
 export interface PanelOptions {
@@ -30,14 +39,14 @@ export interface PanelOptions {
    */
   initialFocus?: ((panel: HTMLElement) => HTMLElement | null | undefined) | undefined;
   onOpen?: (() => void) | undefined;
-  onClose?: (() => void) | undefined;
+  onClose?: ((reason: CloseReason) => void) | undefined;
 }
 
 export interface PanelController {
   readonly isOpen: boolean;
   readonly element: HTMLElement | null;
   open(): void;
-  close(options?: { restoreFocus?: boolean }): void;
+  close(options?: { restoreFocus?: boolean; reason?: CloseReason }): void;
   /** After something inside changed size. */
   place(): void;
   /** Put the focus inside an open panel — the way in for a field that is typed into. */
@@ -199,7 +208,7 @@ export function createPanel(options: PanelOptions): PanelController {
     doc.addEventListener(
       'keydown',
       (event) => {
-        if (event.key === 'Escape') close({ restoreFocus: true });
+        if (event.key === 'Escape') close({ restoreFocus: true, reason: 'escape' });
       },
       on,
     );
@@ -211,12 +220,12 @@ export function createPanel(options: PanelOptions): PanelController {
       (event) => {
         const where = event.target as Node;
         if (!dialog && !panel.contains(where) && !trigger().contains(where)) {
-          close({ restoreFocus: false });
+          close({ restoreFocus: false, reason: 'outside' });
         }
       },
       on,
     );
-    backdrop?.addEventListener('click', () => close({ restoreFocus: true }), on);
+    backdrop?.addEventListener('click', () => close({ restoreFocus: true, reason: 'outside' }), on);
     if (!dialog) {
       win.addEventListener('resize', place, on);
       // Capture, so scrolling any ancestor — not only the window — moves it.
@@ -240,7 +249,10 @@ export function createPanel(options: PanelOptions): PanelController {
     landing?.focus();
   }
 
-  function close({ restoreFocus = true }: { restoreFocus?: boolean } = {}): void {
+  function close({
+    restoreFocus = true,
+    reason = 'api',
+  }: { restoreFocus?: boolean; reason?: CloseReason } = {}): void {
     if (!opened) return;
     const { panel, backdrop, dispose, listening, overflow } = opened;
     opened = null;
@@ -252,7 +264,7 @@ export function createPanel(options: PanelOptions): PanelController {
     // Said before the focus moves: a field that opens on focus needs to know
     // the panel has closed, or handing the focus back opens it straight again
     // and Escape closes nothing.
-    options.onClose?.();
+    options.onClose?.(reason);
     // Back to the field, or the keyboard user lands at the top of the document.
     if (restoreFocus) trigger().focus();
   }

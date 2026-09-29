@@ -216,6 +216,77 @@ createRangeField(element, { timeZone: 'Europe/Paris', minSpan: { days: 2 } });
 
 Les deux acceptent aussi les formes courtes ci-dessous : `maxSpan: '3d'`.
 
+### `fixedSpan`
+
+Pas une limite mais une longueur. Le lecteur dit où la fenêtre commence et la fin
+suit à cette distance — elle n'est jamais à lui, aucun clic ne l'arme, et chaque
+geste qui déplace le début l'emporte avec lui.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', fixedSpan: { minutes: 45 } });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', fixedSpan: { minutes: 45 }, showTime: true, shift: { minutes: 15 }, presets: [], title: 'Trois quarts d\'heure' }" />
+
+Donnez-lui un `shift` et les chevrons à côté du champ déplacent la fenêtre
+entière — le début voyage, la fin garde sa distance. Sans `shift`, il n'y a pas
+de chevrons à montrer, ce qui vaut pour n'importe quel champ.
+
+Une fenêtre d'un jour, déplacée d'un jour :
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  fixedSpan: { days: 1 },
+  shift: { days: 1 },
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', fixedSpan: { days: 1 }, shift: { days: 1 }, presets: [], title: 'Un jour à la fois' }" />
+
+Amenez celle-ci sur le 25 octobre 2026 et le résumé annonce 25 heures, parce que
+ce matin-là en compte une de plus. La fenêtre fait toujours un jour.
+
+La distance est ajoutée à travers le fuseau : `fixedSpan: { days: 1 }` vaut un
+jour sur le cadran — vingt-cinq heures réelles le matin où les pendules
+reculent, vingt-trois le matin où elles avancent.
+
+`minSpan` et `maxSpan` n'ont rien à retenir à côté et ne sont pas consultés.
+`min` et `max` retiennent le début, reculé de la longueur, pour que la fenêtre
+reste entière au lieu d'être raccourcie.
+
+## Quand l'écran l'apprend
+
+Un champ rapporte chaque fois que la valeur bouge. Deux clics dans un
+calendrier font deux rapports, et un écran qui interroge à chaque fois
+interroge deux fois — la seconde réponse remplaçant la première, toutes deux
+payées.
+
+`reportOn: 'close'` retient le **rapport**, pas la valeur. Chaque changement
+s'affiche dans le champ et dans le panneau au moment où il arrive ; l'écran
+l'apprend une fois, à la fermeture, et seulement si quelque chose a bougé — la
+période, ou le nom du raccourci d'où elle vient.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', reportOn: 'close' });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', reportOn: 'close', presets: [], title: 'Dit une fois, en sortant' }" />
+
+Cliquez deux jours et regardez la ligne sous le composant : elle ne bouge pas.
+Cliquez n'importe où en dehors du panneau et elle bouge, une fois.
+
+Échap et Annuler rendent la valeur telle que l'écran l'a vue en dernier, sans
+rien dire. Garder le changement en restant muet laisserait le champ montrer une
+période pendant que l'écran en interroge une autre, sans rien pour dire au
+lecteur laquelle est vraie. Un bouton **Appliquer** est là pour qui préfère le
+dire plutôt que de cliquer ailleurs.
+
+Ce n'est pas `confirm`, qui attend en gardant la valeur pour lui : fermez un
+panneau `confirm` sans presser Appliquer et le choix est perdu. Ici rien n'est
+retenu au lecteur — seule la parole vers l'extérieur attend. `confirm` l'emporte
+si les deux sont posés.
+
 ## Les raccourcis
 
 ### `presets`

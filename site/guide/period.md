@@ -211,6 +211,76 @@ createRangeField(element, { timeZone: 'Europe/Paris', minSpan: { days: 2 } });
 
 Both take the short forms below as well: `maxSpan: '3d'`.
 
+### `fixedSpan`
+
+Not a limit but a length. The reader says where the window starts and the end
+follows at that distance — it is never theirs to choose, no click arms it, and
+every gesture that moves the start carries it along.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', fixedSpan: { minutes: 45 } });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', fixedSpan: { minutes: 45 }, showTime: true, shift: { minutes: 15 }, presets: [], title: 'Three quarters of an hour' }" />
+
+Give it a `shift` and the arrows beside the field move the whole window — the
+start travels, the end keeps its distance. Without `shift` there are no arrows
+to show, which is true of any field.
+
+A window of one day, stepped a day at a time:
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  fixedSpan: { days: 1 },
+  shift: { days: 1 },
+});
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', fixedSpan: { days: 1 }, shift: { days: 1 }, presets: [], title: 'One day at a time' }" />
+
+Step that one onto 25 October 2026 and the summary reads 25 hours, because that
+morning has one. The window is still a day.
+
+The distance is added through the zone, so `fixedSpan: { days: 1 }` is one day on
+the wall — twenty-five real hours on the morning the clocks go back, twenty-three
+on the morning they go forward.
+
+`minSpan` and `maxSpan` have nothing to hold alongside it and are not consulted.
+`min` and `max` hold the start, pushed back by the span, so the window stays
+whole rather than being shortened to fit.
+
+## When the screen hears about it
+
+A field reports every time the value moves. Two clicks on a calendar are two
+reports, and a screen that queries on each one queries twice — the second
+answer arriving to replace the first, both paid for.
+
+`reportOn: 'close'` holds the **report**, not the value. Every change shows on
+the field and in the panel as it happens; the screen hears once, when the panel
+closes, and only if something moved — the period, or the name of the shortcut it
+came from.
+
+```js
+createRangeField(element, { timeZone: 'Europe/Paris', reportOn: 'close' });
+```
+
+<Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', reportOn: 'close', presets: [], title: 'Told once, on the way out' }" />
+
+Click two days and watch the line below the widget: it does not move. Click
+anywhere outside the panel and it does, once.
+
+Escape and Cancel hand the value back as the screen last saw it, and say
+nothing. Keeping the change but staying silent would leave the field showing
+one period while the screen queries another, with nothing to tell the reader
+which is real. An **Apply** button is there for a reader who would rather say
+so than click away.
+
+This is not `confirm`, which waits by keeping the value to itself: close a
+`confirm` panel without pressing Apply and the choice is gone. Here nothing is
+held back from the reader — only the outward word waits. `confirm` wins if both
+are set.
+
 ## The shortcuts
 
 ### `presets`

@@ -121,10 +121,43 @@ export class RangeField implements ControlValueAccessor {
    */
   readonly maxSpan = input<DurationLike | null>(null);
   readonly minSpan = input<DurationLike | null>(null);
+  /**
+   * A window of one length: the reader says where it starts, the end follows.
+   *
+   * For a screen whose rows cover a fixed three quarters of an hour. The end
+   * cannot be typed into and no click arms it, and every gesture that moves the
+   * start — a day, a typed date, an hour, a shortcut, an arrow — carries the end
+   * with it, so the screen has no rule of its own to run after each change.
+   *
+   * Bind a field, not a literal: `{ minutes: 45 }` written in the template is
+   * a new object on every pass, and the widget is told its settings changed
+   * each time.
+   *
+   *     readonly window = { minutes: 45 };
+   *     <tz-range-field [fixedSpan]="window" ... />
+   *
+   * See the dom setting for what it deliberately leaves alone — `singleDay`,
+   * the span limits, and a value pushed in from outside.
+   */
+  readonly fixedSpan = input<DurationLike | null>(null);
   /** Minutes between the options of the hour menu. Five by default. */
   readonly minuteStep = input(5);
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
+  /**
+   * When the change reaches your screen: at every touch, or once on the way out.
+   *
+   * `'close'` for a screen that pays for every query. The field and the panel
+   * show each change as it happens — nothing is held back from the reader — and
+   * `(valueChange)` fires once when the panel closes, only if something moved:
+   * the period, or the name of the shortcut it came from. An Apply button is
+   * offered as well.
+   *
+   * Escape and Cancel hand the value back as your screen last saw it, and say
+   * nothing: a field showing one period while the screen queries another is
+   * worse than either.
+   */
+  readonly reportOn = input<'change' | 'close'>('change');
   /**
    * Arrows that step the whole period without opening the panel.
    *
@@ -243,8 +276,10 @@ export class RangeField implements ControlValueAccessor {
     snapMinutes: this.snapMinutes(),
     maxSpan: this.maxSpan(),
     minSpan: this.minSpan(),
+    fixedSpan: this.fixedSpan(),
     minuteStep: this.minuteStep(),
     confirm: this.confirm(),
+    reportOn: this.reportOn(),
     shift: this.shift(),
     showPresets: this.showPresets(),
     showStep: this.showStep(),
@@ -282,6 +317,12 @@ export class RangeField implements ControlValueAccessor {
   private readonly field: RangeFieldInstance = createRangeField(inject(ElementRef).nativeElement, {
     messages: this.messages(),
     onChange: (value, from) => {
+      // `gone` guarded the two outputs and not this one, which is the only
+      // handler teardown could still reach once a report could be held:
+      // writing a `model()` after destruction logs `NG0953`. The widget also
+      // hands the value back on destroy rather than reporting it, so this is
+      // the second lock on the same door.
+      if (this.gone) return;
       this.value.set(value);
       // `preset` is a model, so writing it is `(presetChange)`. A screen that
       // stores the name alongside the period gets a filter that still means

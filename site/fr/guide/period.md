@@ -287,6 +287,25 @@ panneau `confirm` sans presser Appliquer et le choix est perdu. Ici rien n'est
 retenu au lecteur — seule la parole vers l'extérieur attend. `confirm` l'emporte
 si les deux sont posés.
 
+Le champ à moment l'a aussi, et c'est là que la session est la plus longue — un
+jour, puis une heure, puis une minute font trois rapports pour une seule
+décision, sur un panneau qui reste volontairement ouvert entre les trois :
+
+```js
+createDateTimeField(element, { timeZone: 'Europe/Paris', reportOn: 'close' });
+```
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', reportOn: 'close' }" />
+
+`confirm` est un réglage du champ d'intervalle, donc la phrase plus haut sur sa
+priorité ne s'applique pas ici : le champ à moment n'a ni bouton Appliquer ni
+pied de panneau où en mettre un. Fermer le panneau, c'est dire qu'on a fini ;
+Échap, c'est dire le contraire, et il rend le moment tel que votre écran l'a vu
+en dernier.
+
+Le champ à date simple ne l'a pas, et n'en a pas besoin : choisir un jour ferme
+son panneau dans le même souffle, il n'y a jamais de second geste à attendre.
+
 ## Les raccourcis
 
 ### `presets`

@@ -1,5 +1,66 @@
 # Changelog
 
+## 1.6.0
+
+### `reportOn: 'close'` on the moment field
+
+A screen migrating onto 1.5.0 found the setting only half there: the range field
+could hold its report and the moment field could not, so half an application
+queried once per visit and the other half once per gesture.
+
+It is where the saving is largest. A range is two clicks; a moment is a day,
+then an hour, then a minute — three reports for one decision, on a panel that
+deliberately stays open between them. Held, the reader sees each change as it
+happens and the screen hears once, on the way out, and only if the moment really
+moved. Escape hands it back as the screen last saw it and says nothing.
+
+There is no Apply button here, because this panel has no footer to put one in:
+closing it is how a reader says they are done.
+
+Destroying a field with a change in hand hands the value back rather than
+reporting into a consumer that is going away, and `clear()` from the screen is
+obeyed at once rather than waiting on how the reader happens to leave. The first
+came across from the range field's own review; the second had to be found again
+here, along with three more.
+
+### A held report could be wiped by the framework handing the value back — 1.5.0 shipped this
+
+While a report is held the consumer's copy is a step behind by design: it is the
+last thing it was told. But every wrapper here pushes the whole settings object
+down when **any** input changes — a placeholder, a locale, a ticking `today`, a
+form disabling the control — and that object carries the stale value.
+
+Taken as an instruction, it overwrote the reader's half-finished choice *and*
+re-based the field's idea of what had been reported, so the flush on close had
+nothing left to say either. The change was not merely overwritten; it was
+unrecoverable, silently. Measured on the range field as published: a day chosen,
+an unrelated input changed, and the field went back to the old period with no
+report ever made.
+
+A value equal to the one last reported is now an echo, not an instruction — the
+same distinction 1.4.1 drew for a shortcut's name. A value that differs is the
+screen saying something new, and is still taken. Both fields.
+
+### Escape, and what it hands back
+
+On the moment field, `onClose` runs before the panel restores focus, so a reader
+who had never left the text input kept seeing the moment Escape had just thrown
+away — and the next blur resurrected and reported it.
+
+And the panel is rebuilt from a draft, not from the value, with the two readings
+of a repeated hour kept separately again. Restoring the value alone left the
+calendar on the abandoned day and an empty field asking which reading of 02:00
+it was; one keystroke in the minute box then committed that day, on the reading
+the reader had **not** picked. The range field learned this as `clamped`: an
+explanation belongs to the value it explained.
+
+`clear()` while holding also said nothing on an already-empty field, which the
+documented contract requires.
+
+The plain date field does **not** get it, and does not need it: `pick()` closes
+its panel in the same breath, so `'close'` would report at the same instant as
+`'change'`. A setting that does nothing is worse than no setting.
+
 ## 1.5.0
 
 A filter screen asked for a window of a fixed length, and finding out why it

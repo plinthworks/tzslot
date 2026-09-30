@@ -233,3 +233,40 @@ describe('what the second review found', () => {
     expect(field.isOpen).toBe(false);
   });
 });
+
+describe('a framework handing the value back while a report is held', () => {
+  it('keeps the reader half-finished choice, and still says it on the way out', () => {
+    // The consumer's copy is a step behind by design while a report is held,
+    // and every wrapper pushes the whole settings object down when any input
+    // changes — a placeholder, a locale, a ticking `today`. That object carries
+    // the stale value. Taken as an instruction it wiped the reader's choice and
+    // re-based `reported`, so the flush on close had nothing to say either:
+    // the change was not overwritten, it was unrecoverable. Shipped in 1.5.0.
+    const known = { start: Temporal.Instant.from('2026-09-01T00:00:00Z'), end: null };
+    make({ value: known });
+    field.open();
+    press('10');
+
+    field.update({ value: known, placeholder: 'something else' });
+    expect(days(field.value)).toBe('2026-09-10..-');
+
+    outside();
+    expect(reports).toHaveLength(1);
+    expect(days(reports[0]!)).toBe('2026-09-10..-');
+  });
+
+  it('still takes a value that is genuinely new', () => {
+    make({ value: { start: Temporal.Instant.from('2026-09-01T00:00:00Z'), end: null } });
+    field.open();
+    press('10');
+    // Different from the last report: the screen is saying something, not
+    // echoing. It wins, and Escape hands back *this* rather than what was on
+    // screen before it arrived.
+    const fresh = { start: Temporal.Instant.from('2026-09-20T00:00:00Z'), end: null };
+    field.update({ value: fresh });
+    expect(days(field.value)).toBe('2026-09-20..-');
+    escape();
+    expect(days(field.value)).toBe('2026-09-20..-');
+    expect(reports).toHaveLength(0);
+  });
+});

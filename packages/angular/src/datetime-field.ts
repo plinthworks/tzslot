@@ -119,6 +119,26 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
 
   /** The text can be typed as well as chosen. On by default. */
   readonly editable = input(true);
+  /**
+   * When the change reaches your screen: at every gesture, or once on the way out.
+   *
+   * A session here is a day, then an hour, then a minute — three
+   * `(valueChange)` events for one decision, and three queries on a screen that
+   * pays for them. `'close'` holds the report, not the value: the reader sees
+   * every change as it happens and your screen hears once, when the panel
+   * closes, only if the moment really moved.
+   *
+   * Escape hands the moment back as your screen last saw it and says nothing,
+   * and a field destroyed with a change in hand hands it back too rather than
+   * reporting into a component that is going away.
+   *
+   * One thing to know: `value` — and the form control — stay at the last
+   * *reported* moment for the whole session, which is what "held" means. The
+   * field ignores that value being handed back to it while it holds, so an
+   * unrelated input changing mid-session cannot wipe the reader's work; a value
+   * that genuinely differs is still taken as an instruction.
+   */
+  readonly reportOn = input<'change' | 'close'>('change');
 
   /** Separators appear as the figures are typed, like a card number. On by default. */
   readonly mask = input(true);
@@ -190,6 +210,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     defaultTime: this.defaultTime(),
     disabled: this.disabled() || this.formDisabled(),
     editable: this.editable(),
+    reportOn: this.reportOn(),
     mask: this.mask(),
     format: this.format(),
     dateStyle: this.dateStyle(),

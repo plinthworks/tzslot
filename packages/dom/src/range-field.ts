@@ -2284,7 +2284,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       ) {
         flush();
       }
+      /*
+       * A value equal to the one last reported is an echo, not an instruction.
+       *
+       * While a report is held the consumer is a step behind by design: its
+       * copy is the last thing it was told. Every framework wrapper here pushes
+       * the whole settings object down when *any* input changes — a placeholder,
+       * a locale, a ticking `today` — and that object carries the stale value.
+       * Taking it wiped the reader's half-finished choice, and re-based
+       * `reported` on the way, so the flush on close had nothing left to say
+       * either: the change was not merely overwritten, it was unrecoverable.
+       *
+       * A value that differs from the last report is the screen saying
+       * something new, and is taken.
+       */
+      const echoed =
+        holding() && 'value' in settings && samePeriod(settings.value as RangeFieldValue, reported);
+      const inProgress = s.value;
       Object.assign(s, settings);
+      if (echoed) s.value = inProgress;
       // Same merge on the way in: a partial catalogue is a perfectly sensible
       // thing to hand a widget that already has one.
       if (settings.messages) s.messages = { ...EN, ...settings.messages };
@@ -2294,7 +2312,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // them landed on it.
       // A value from outside is a new subject: whatever the panel was about to
       // do with the old one no longer applies.
-      if ('value' in settings) {
+      if ('value' in settings && !echoed) {
         draft = s.value;
         // The screen wrote it, so the screen knows it: there is nothing held
         // to report, and Escape should hand back *this* rather than whatever

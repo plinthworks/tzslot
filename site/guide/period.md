@@ -281,6 +281,25 @@ This is not `confirm`, which waits by keeping the value to itself: close a
 held back from the reader — only the outward word waits. `confirm` wins if both
 are set.
 
+The moment field has it too, and it is where a session is longest — a day, then
+an hour, then a minute is three reports for one decision, on a panel that
+deliberately stays open between them:
+
+```js
+createDateTimeField(element, { timeZone: 'Europe/Paris', reportOn: 'close' });
+```
+
+<Live widget="DateTimeField" :options="{ timeZone: 'Europe/Paris', reportOn: 'close' }" />
+
+`confirm` is a range-field setting, so the sentence above about it winning does
+not apply here — the moment field has no Apply button and no footer to put one
+in. Closing the panel is how a reader says they are done; Escape is how they say
+they are not, and it hands the moment back as your screen last saw it.
+
+The plain date field does not have it, and does not need one: choosing a day
+closes its panel in the same breath, so there is never a second gesture to wait
+for.
+
 ## The shortcuts
 
 ### `presets`

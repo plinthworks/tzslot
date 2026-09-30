@@ -118,6 +118,23 @@ export interface DateTimeFieldSettings {
   onChange: ((value: Instant | null) => void) | undefined;
   onOpen: (() => void) | undefined;
   onClose: (() => void) | undefined;
+  /**
+   * When the change reaches the screen: at every touch, or once on the way out.
+   *
+   * `'change'`, the default, reports each time the moment moves — a day, then
+   * an hour, then a minute is three reports, and a screen that queries on each
+   * one queries three times.
+   *
+   * `'close'` holds the *report*, not the value. The field and the panel show
+   * every change as it happens, nothing is kept from the reader, and the screen
+   * hears once when the panel closes — and only if the moment really moved.
+   *
+   * Escape hands the value back as the screen last saw it and says nothing: a
+   * field showing one moment while the screen queries another is worse than
+   * either. There is no Apply button here, because this panel has no footer to
+   * put one in — closing it is how a reader says they are done.
+   */
+  reportOn: 'change' | 'close';
 }
 
 export interface DateTimeFieldOptions extends Partial<DateTimeFieldSettings> {
@@ -199,6 +216,7 @@ export function createDateTimeField(
     onChange: undefined,
     onOpen: undefined,
     onClose: undefined,
+    reportOn: 'change',
     ...initial,
   };
 
@@ -548,16 +566,61 @@ export function createDateTimeField(
     commit(found.instants[0]!);
   }
 
+  /** The moment the screen has been told. `reportOn: 'close'` compares to it. */
+  let reported: Instant | null = s.value;
+
+  /** Reports are being held until the panel closes. */
+  const deferred = (): boolean => s.reportOn === 'close';
+  const holding = (): boolean => deferred() && panel.isOpen;
+
+  const differs = (a: Instant | null, b: Instant | null): boolean =>
+    (a === null) !== (b === null) || (a !== null && b !== null && !a.equals(b));
+
   function commit(value: Instant | null): void {
     // Only a different moment is reported. Opening the panel moves the focus
     // out of the text field, which re-reads it — and re-reading the same text
     // must not look like a change to a form.
-    const changed =
-      (value === null) !== (s.value === null) ||
-      (value !== null && s.value !== null && !value.equals(s.value));
+    const changed = differs(value, s.value);
+    // Read before `render`, which can close the panel when the field is
+    // disabled — and a close flushes. Read after, `holding()` would already be
+    // false and the same value would go out twice.
+    const held = holding();
     s.value = value;
     render();
-    if (changed) s.onChange?.(value);
+    // Held, not hidden: the field and the panel already show it. Only the
+    // screen waits, and only until the panel closes.
+    if (held) return;
+    if (changed) {
+      reported = value;
+      s.onChange?.(value);
+    }
+  }
+
+  /** What was held, said at last — and nothing if nothing moved. */
+  function flush(): void {
+    if (!differs(reported, s.value)) return;
+    reported = s.value;
+    s.onChange?.(s.value);
+  }
+
+  /**
+   * The way out: the moment goes back to what the screen last saw.
+   *
+   * Keeping it and staying silent would leave the field showing one moment and
+   * the screen querying another, with nothing to tell the reader which is real.
+   */
+  function abandon(): void {
+    s.value = reported;
+    // The panel is rebuilt from `draft`, not from the value, and the two
+    // readings of a repeated hour live in `readings`/`notice`. Restoring the
+    // value alone left the calendar on the abandoned day and the note asking
+    // which reading an empty field was — and the next keystroke committed that
+    // day, on the reading the reader had not picked. The range field learned
+    // this as `clamped`: an explanation belongs to the value it explained.
+    draft = readOff(reported, s.timeZone);
+    readings = [];
+    notice = null;
+    render();
   }
 
   function render(): void {
@@ -718,13 +781,19 @@ export function createDateTimeField(
       render();
       s.onOpen?.();
     },
-    onClose: () => {
+    onClose: (reason) => {
       calendar = null;
       timeInput = null;
       timeMenus = null;
       slots = null;
       note = null;
       choice = null;
+      if (deferred()) {
+        // Escape is a way out, not a decision. Everything else — a click
+        // elsewhere, the trigger, the screen closing it — is someone finished.
+        if (reason === 'escape') abandon();
+        else flush();
+      }
       render();
       s.onClose?.();
     },
@@ -903,7 +972,22 @@ export function createDateTimeField(
     },
     update(settings) {
       const was = { value: s.value, timeZone: s.timeZone };
+      // A held report is said before the ground moves under it: `onClose` only
+      // flushes while the field is still holding, so turning `reportOn` back to
+      // `'change'` would leave that change with no way out at all.
+      if (holding() && 'reportOn' in settings && settings.reportOn !== s.reportOn) flush();
+      // A moment equal to the one last reported is an echo, not an instruction:
+      // while a report is held the consumer's copy is the last thing it was
+      // told, and every wrapper pushes the whole settings object down when any
+      // input changes. Taking it wiped the reader's half-finished moment and
+      // re-based `reported`, so the flush on close had nothing to say either.
+      const echoed =
+        holding() && 'value' in settings && !differs(settings.value as Instant | null, reported);
+      const inProgress = s.value;
       Object.assign(s, settings);
+      if (echoed) s.value = inProgress;
+      // A moment the screen wrote is a moment the screen knows.
+      else if ('value' in settings) reported = s.value;
       // Only a moment that is genuinely different starts again. A framework
       // handing back the value it was just given must not wipe the choice
       // between the two readings of a repeated hour.
@@ -929,13 +1013,24 @@ export function createDateTimeField(
       // unchanged value — right for a re-read of the text, wrong here: the
       // reader pressed Clear, and the documented contract says so.
       const was = s.value;
+      const held = holding();
       commit(null);
-      if (was === null) s.onChange?.(null);
+      // A screen calling this has already decided; held, its effect would have
+      // depended on how the reader happened to leave the panel. And Clear says
+      // so even on an already-empty field — the documented contract — which
+      // `flush` alone cannot do, since nothing moved for it to compare.
+      if (held) {
+        reported = null;
+        if (was !== null || !differs(reported, s.value)) s.onChange?.(null);
+      } else if (was === null) s.onChange?.(null);
     },
     setIcon(next) {
       iconSlot.replaceChildren(next);
     },
     destroy() {
+      // Reporting here would fire into a half-dead consumer and lose the change
+      // all the same. Handing the value back leaves `flush` nothing to say.
+      if (deferred()) abandon();
       panel.close({ restoreFocus: false });
       listening.abort();
       back.remove();

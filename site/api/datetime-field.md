@@ -40,6 +40,7 @@
 | `buttons` | `readonly CalendarButton[]` | `[]` | Buttons under the grid: 'today', 'clear'. None by default. |
 | `weekNumbers` | `boolean` | `false` | A column of ISO week numbers down the left of the panel's calendar. |
 | `messages` | `TzslotMessages` | `EN` | The words the widget says. One bundle, English and French included. |
+| `reportOn` | `'change' \| 'close'` | `'change'` | When the change reaches the screen: at every touch, or once on the way out. `'change'`, the default, reports each time the moment moves — a day, then an hour, then a minute is three reports, and a screen that queries on each one queries three times. `'close'` holds the *report*, not the value. The field and the panel show every change as it happens, nothing is kept from the reader, and the screen hears once when the panel closes — and only if the moment really moved. Escape hands the value back as the screen last saw it and says nothing: a field showing one moment while the screen queries another is worse than either. There is no Apply button here, because this panel has no footer to put one in — closing it is how a reader says they are done. |
 
 ### Callbacks
 

@@ -1,5 +1,42 @@
 # Changelog
 
+## 1.6.1
+
+The calendar mark sits at the head of a moment field, as it already did on a
+period field and on a moment field that cannot be typed into.
+
+It was at the tail, and only when the field was editable. The reason was real
+but it belonged to the implementation: an `<input>` has no children, so the mark
+has to be a sibling positioned over the field, and it has to be a button because
+clicking an input places the caret rather than opening the panel. None of that
+says which *side* it goes on. A reader saw the same mark in two places on one
+screen and had nothing to go on but which field happened to accept typing.
+
+The side is now logical rather than left-and-right, so it follows the writing
+direction, and the room reserved for it is taken from the start side only — a
+screen setting `--tz-field-padding` keeps the other three, which the old
+`padding-right` quietly overrode.
+
+A screen that had moved the mark itself should drop that rule. `.tz-field__icon`
+is the slot in both fields; `.tz-field__icon-button .tz-field__icon` is the one
+inside the editable moment field alone.
+
+### `<tz-date-field [today]>`
+
+The one widget of five whose Angular wrapper had no `today` input, though the
+generated API table has been promising it all along — it is read from the dom
+settings, which always had it. A screen had no way to say which day the field
+should mark, or which month its panel opens on.
+
+### Two tests that depended on the machine's clock
+
+One clicked a calendar arrow before the first change detection, so the `today`
+it pinned had not reached the widget yet and the grid was on the real month.
+The other pinned nothing at all. Both passed for a year because the real month
+happened to be the one they assumed, and both went red on 1 October — which is
+the worst possible day to learn it, and exactly the kind of red people start
+ignoring.
+
 ## 1.6.0
 
 ### `reportOn: 'close'` on the moment field

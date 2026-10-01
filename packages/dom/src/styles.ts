@@ -233,14 +233,21 @@ export const FIELD_CSS = `
 .tz-field__wrap { display: inline-flex; align-items: stretch; position: relative; }
 .tz-field__trigger--editable {
   min-width: var(--tz-field-width, 12rem);
-  padding-right: 2rem;
+  /* Room for the mark, at the head — the same side a field that is not typed
+     into puts it. It used to be reserved at the tail, which moved the calendar
+     to the end of one of the two fields for no reason a reader could see: a
+     date is a date, and where its mark sits should not depend on whether the
+     field happens to be an input. Logical, so it follows the writing
+     direction, and only the start side, so a screen setting its own
+     --tz-field-padding keeps the other three. */
+  padding-inline-start: 2rem;
   font: var(--tz-font, inherit);
   font-variant-numeric: tabular-nums;
 }
 .tz-field__trigger--invalid { border-color: var(--tz-danger, currentColor); }
 .tz-field__icon-button {
   position: absolute;
-  right: 0;
+  inset-inline-start: 0;
   top: 0;
   bottom: 0;
   display: inline-flex;

@@ -268,6 +268,10 @@ export function createDateTimeField(
    *
    * When the field is editable the slot moves into its own button, which
    * opens the panel; the mark is the affordance there rather than decoration.
+   * An `<input>` has no children to put it in, so it has to be a sibling —
+   * but it stays at the head, where the range field puts its own. Which side
+   * the mark sits on is not something a reader should have to work out from
+   * whether the field can be typed into.
    */
   iconSlot.append(icon ?? drawIcon('calendar', doc));
   const iconButton = doc.createElement('button');

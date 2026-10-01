@@ -19,13 +19,17 @@ import { Temporal } from '@tzslot/core';
   imports: [ReactiveFormsModule, Calendar, DateField, DateTimeField],
   template: `
     <form [formGroup]="form">
-      <tz-date-field formControlName="day" />
-      <tz-datetime-field formControlName="at" />
-      <tz-calendar formControlName="other" [locale]="'en-GB'" />
+      <tz-date-field formControlName="day" [today]="today" />
+      <tz-datetime-field formControlName="at" [today]="today" />
+      <tz-calendar formControlName="other" [locale]="'en-GB'" [today]="today" />
     </form>
   `,
 })
 class Host {
+  /* Pinned: these tests click a day in September 2026, and a calendar with
+     nothing selected opens on the month of today. Left to the real clock they
+     went red on 1 October. */
+  readonly today = Temporal.PlainDate.from('2026-09-18');
   readonly form = new FormGroup({
     day: new FormControl<unknown>(null),
     at: new FormControl<unknown>(null),

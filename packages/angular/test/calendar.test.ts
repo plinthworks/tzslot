@@ -121,6 +121,11 @@ describe('selecting', () => {
 
 describe('navigating with the mouse', () => {
   it('moves a month at a time, and across a year', () => {
+    // `qa` does not run change detection, and `beforeEach` does not either, so
+    // pressing an arrow first left `[today]` unapplied and the grid on the real
+    // month. It passed for a year because the real month was September 2026 —
+    // the one pinned here — and went red on 1 October.
+    fixture.detectChanges();
     const [prev, next] = qa<HTMLButtonElement>('button.tz-cal__nav');
     next!.click();
     expect(title()).toBe('October 2026');

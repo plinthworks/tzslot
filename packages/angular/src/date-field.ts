@@ -60,6 +60,15 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
   readonly locale = input<string | undefined>(this.defaults.locale);
   /** Left out, the locale decides — see `provideTzslot` to settle it once. */
   readonly firstDayOfWeek = input<Weekday | undefined>(this.defaults.firstDayOfWeek);
+  /**
+   * Which day counts as today: the one marked in the grid, and the month the
+   * panel opens on when nothing is chosen.
+   *
+   * The other four widgets had this and this one did not, which left a screen
+   * with no way to say what "today" is — and a test with no way to stop
+   * depending on the machine's clock.
+   */
+  readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly min = input<PlainDate | null>(null);
   readonly max = input<PlainDate | null>(null);
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
@@ -121,6 +130,7 @@ export class DateField implements ControlValueAccessor, AfterViewInit {
     ariaLabel: this.ariaLabel(),
     locale: this.locale(),
     firstDayOfWeek: this.firstDayOfWeek(),
+    today: this.today(),
     min: this.min(),
     max: this.max(),
     isDateDisabled: this.isDateDisabled(),

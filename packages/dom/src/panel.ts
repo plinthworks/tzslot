@@ -106,6 +106,17 @@ function carryTheme(field: HTMLElement, panel: HTMLElement): void {
  * cannot drift apart on Escape, on a click elsewhere, or on where the focus
  * goes when they close.
  */
+/**
+ * The panels that are open, oldest first.
+ *
+ * Two things need to know about each other across instances. Escape belongs to
+ * the topmost one: its handler sits on the document, so without this every open
+ * panel heard the same press and closed — and with a report held, leaving one
+ * field abandoned another field's change. And the scroll lock has to be undone
+ * by whoever took it, not by whoever happens to close last.
+ */
+const stack: HTMLElement[] = [];
+
 export function createPanel(options: PanelOptions): PanelController {
   const { source, container } = options;
   const trigger = () => (typeof options.trigger === 'function' ? options.trigger() : options.trigger);
@@ -117,7 +128,8 @@ export function createPanel(options: PanelOptions): PanelController {
     backdrop: HTMLElement | null;
     dispose: () => void;
     listening: AbortController;
-    overflow: string;
+    /** The page's own value, kept only by the panel that locked it. */
+    overflow: string | null;
   } | null = null;
 
   /**
@@ -156,6 +168,22 @@ export function createPanel(options: PanelOptions): PanelController {
     panel.style.left = `${left}px`;
   }
 
+  /**
+   * Whether a stop is really on screen, ancestors included.
+   *
+   * `hidden` on the node itself was not enough: a field hides a whole end by
+   * putting the attribute on the wrapper, so the input inside it kept the
+   * attribute-free look of a perfectly good tab stop. It then sat last in the
+   * list, and being unfocusable the wrap-around test could never match — so
+   * Tab walked out of a panel whose entire job is to hold it.
+   */
+  function onScreen(node: HTMLElement, panel: HTMLElement): boolean {
+    for (let at: HTMLElement | null = node; at && at !== panel; at = at.parentElement) {
+      if (at.hasAttribute('hidden')) return false;
+    }
+    return true;
+  }
+
   /** Tab stays inside a panel that is open; leaving it would strand the keyboard. */
   function trapTab(panel: HTMLElement, event: KeyboardEvent): void {
     if (event.key !== 'Tab') return;
@@ -167,7 +195,7 @@ export function createPanel(options: PanelOptions): PanelController {
       panel.querySelectorAll<HTMLElement>(
         'button:not(:disabled), input:not(:disabled), select:not(:disabled), textarea:not(:disabled), a[href], [tabindex]',
       ),
-    ).filter((node) => node.getAttribute('tabindex') !== '-1' && !node.hasAttribute('hidden'));
+    ).filter((node) => node.getAttribute('tabindex') !== '-1' && onScreen(node, panel));
     const first = stops[0];
     const last = stops[stops.length - 1];
     if (!first || !last) return;
@@ -208,7 +236,10 @@ export function createPanel(options: PanelOptions): PanelController {
     doc.addEventListener(
       'keydown',
       (event) => {
-        if (event.key === 'Escape') close({ restoreFocus: true, reason: 'escape' });
+        // The topmost panel only. One press used to close every open panel.
+        if (event.key === 'Escape' && stack[stack.length - 1] === panel) {
+          close({ restoreFocus: true, reason: 'escape' });
+        }
       },
       on,
     );
@@ -232,10 +263,18 @@ export function createPanel(options: PanelOptions): PanelController {
       win.addEventListener('scroll', place, { ...on, capture: true, passive: true });
     }
 
-    // A dialog holds the page still behind it; a popup follows it instead.
-    const overflow = doc.documentElement.style.overflow;
+    /*
+     * A dialog holds the page still behind it; a popup follows it instead.
+     *
+     * Saved only by the panel that locks it. A popup saved the value too, and
+     * restored it on the way out — so a dialog opening first, then a popup,
+     * then both closing in that order left `hidden` on the page for good and
+     * nothing on screen explained why it had stopped scrolling.
+     */
+    const overflow = dialog ? doc.documentElement.style.overflow : null;
     if (dialog) doc.documentElement.style.overflow = 'hidden';
 
+    stack.push(panel);
     opened = { panel, backdrop, dispose, listening, overflow };
     place();
     // Painted before it is focused. onOpen is what fills the panel from the
@@ -260,7 +299,9 @@ export function createPanel(options: PanelOptions): PanelController {
     dispose();
     panel.remove();
     backdrop?.remove();
-    doc.documentElement.style.overflow = overflow;
+    const at = stack.indexOf(panel);
+    if (at !== -1) stack.splice(at, 1);
+    if (overflow !== null) doc.documentElement.style.overflow = overflow;
     // Said before the focus moves: a field that opens on focus needs to know
     // the panel has closed, or handing the focus back opens it straight again
     // and Escape closes nothing.

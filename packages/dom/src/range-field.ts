@@ -718,7 +718,22 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         end: range_.end ? midnight(range_.end.add({ days: 1 })) : null,
       };
     }
-    const endTime = times.end ?? (hasDefaultTime('end') ? defaultTime('end') : null);
+    /*
+     * An end sitting at midnight is not an hour the reader picked.
+     *
+     * It is what `days()` leaves behind: an exclusive end opens a day, so it
+     * pulls it back to the last day the period actually holds. Read back as
+     * 00:00 it lands on *that* day's own midnight, and the period loses a day
+     * on every press — measured 168h, 144h, 120h … 0, and then running
+     * backwards, which `ordered` and `notEmpty` promise is impossible and
+     * neither of them sits on this path.
+     *
+     * `setEdge` has had the rule since the beginning, as `allOfTheDay`: a day
+     * given an end with no hour means all of it. The arrows never got it.
+     */
+    const pickedEnd =
+      times.end && !times.end.equals(Temporal.PlainTime.from('00:00')) ? times.end : null;
+    const endTime = pickedEnd ?? (hasDefaultTime('end') ? defaultTime('end') : null);
     return {
       start: range_.start ? resolveEdge('start', range_.start, times.start ?? defaultTime('start')) : null,
       end: range_.end

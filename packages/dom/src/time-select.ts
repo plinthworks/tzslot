@@ -132,6 +132,25 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
     });
   }
 
+  /**
+   * Does this wall time exist on the day and in the zone being chosen on?
+   *
+   * Off the step grid is not the same as not there. A value at 09:07 with a
+   * step of fifteen exists perfectly well and belongs in the menu; 02:00 on
+   * the morning Lord Howe moves its clocks does not, and offering it would
+   * legitimise a time the widget is about to move anyway.
+   *
+   * Asked by building the wall time and seeing whether it comes back
+   * unchanged: a skipped time is shifted forward, an ambiguous one keeps its
+   * face. Without a day or a zone there is nothing that could be missing.
+   */
+  function wallTimeExists(hour: number, minute: number): boolean {
+    if (s.date === null || s.timeZone === undefined) return true;
+    const day = Temporal.PlainDate.from(s.date);
+    const asked = day.toPlainDateTime(Temporal.PlainTime.from({ hour, minute }));
+    return asked.toZonedDateTime(s.timeZone).toPlainDateTime().equals(asked);
+  }
+
   /** One entry per choosable hour: twice over for the hour that happens twice. */
   function realHours(slots: Slot[]): { hour: number; offset: string | null; name: string }[] {
     const seen = new Map<string, { hour: number; offset: string | null; name: string }>();
@@ -150,7 +169,20 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
         seen.set(`${hour}|`, { hour, offset: null, name: '' });
       }
     }
-    return [...seen.values()];
+    // The hour it already holds, wherever it came from — the same rule
+    // `minuteValues` has carried from the start, and the only one of the four
+    // menu builders that had it. A value off the step grid went missing from
+    // the control meant to show it: the field read 09:07 and the menu beside
+    // it was blank. An ambiguous hour is already in, with both readings.
+    const held = s.value;
+    if (
+      held &&
+      ![...seen.values()].some((e) => e.hour === held.hour) &&
+      wallTimeExists(held.hour, held.minute)
+    ) {
+      seen.set(`${held.hour}|`, { hour: held.hour, offset: null, name: '' });
+    }
+    return [...seen.values()].sort((a, b) => a.hour - b.hour);
   }
 
   /** The minutes that exist inside the hour — and the reading — already chosen. */
@@ -161,7 +193,13 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       if (offset !== null && !slot.offsets.includes(offset)) continue;
       out.push(slot.time.minute);
     }
-    return out;
+    // And here, which is the path a period field always takes: it hands down a
+    // day and a zone, so this is the builder its minute menu is drawn from.
+    const held = s.value;
+    if (held && held.hour === hour && !out.includes(held.minute) && wallTimeExists(hour, held.minute)) {
+      out.push(held.minute);
+    }
+    return out.sort((a, b) => a - b);
   }
 
   function hourValues(): number[] {
@@ -172,7 +210,9 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       if (max && h > max.hour) break;
       out.push(h);
     }
-    return out;
+    const held = s.value?.hour;
+    if (held !== undefined && !out.includes(held)) out.push(held);
+    return out.sort((a, b) => a - b);
   }
 
   /** The minutes on offer inside the hour already chosen. */

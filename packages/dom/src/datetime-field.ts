@@ -73,6 +73,17 @@ export interface DateTimeFieldSettings {
   showStep: boolean;
   /** How the time is chosen: a compact field, two menus, or the day's times. */
   timeLayout: TimeLayout;
+  /**
+   * What the minute arrows of the compact field move by.
+   *
+   * This is the one that moves minutes on the default `'input'` layout, and
+   * it is 30 — a booking screen wanting quarters sets it to 15 and is often
+   * surprised that `minuteStep` did not do it. The three are not
+   * interchangeable: `minuteStep` fills the menus of `timeLayout: 'select'`
+   * and is inert anywhere else, `snapMinutes` rounds a *typed* reading onto a
+   * grid, and this moves the arrows. A screen that wants quarters everywhere
+   * sets all three.
+   */
   stepMinutes: number;
   /** With 'select': minutes between the options. Every minute by default. */
   minuteStep: number;

@@ -12,7 +12,7 @@
 | `allDay` | `boolean` | `false` | Whole days rather than moments: midnight to midnight, no times shown. Two-way — the switch inside the widget sets it, and so can you. |
 | `allDaySwitch` | `boolean` | `true` | Whether that switch is offered at all. |
 | `timeLayout` | `TimeLayout` | `'input'` | How each end asks for its time: a compact field, two menus, or the day's times. |
-| `stepMinutes` | `number` | `30` | Minutes between the times offered. |
+| `stepMinutes` | `number` | `30` | What the minute arrows of the compact field move by. This is the one that moves minutes on the default `'input'` layout, and it is 30 — a booking screen wanting quarters sets it to 15 and is often surprised that `minuteStep` did not do it. The three are not interchangeable: `minuteStep` fills the menus of `timeLayout: 'select'` and is inert anywhere else, `snapMinutes` rounds a *typed* reading onto a grid, and this moves the arrows. A screen that wants quarters everywhere sets all three. |
 | `minuteStep` | `number` | `1` | With 'select': minutes between the options. Every minute by default. |
 | `minTime` | `PlainTime \| string \| undefined` | — | The earliest time offered. |
 | `maxTime` | `PlainTime \| string \| undefined` | — | The latest time offered. |

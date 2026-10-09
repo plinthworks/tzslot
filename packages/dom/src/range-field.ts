@@ -725,8 +725,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * pulls it back to the last day the period actually holds. Read back as
      * 00:00 it lands on *that* day's own midnight, and the period loses a day
      * on every press — measured 168h, 144h, 120h … 0, and then running
-     * backwards, which `ordered` and `notEmpty` promise is impossible and
-     * neither of them sits on this path.
+     * backwards. A reader may now write a backwards period on purpose, but
+     * not by pressing an arrow: a window that travels keeps its length and
+     * its direction, whatever they are.
      *
      * `setEdge` has had the rule since the beginning, as `allOfTheDay`: a day
      * given an end with no hour means all of it. The arrows never got it.
@@ -1149,8 +1150,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * a fixed span cannot survive. Measured: forty-five minutes became a flat
      * 1440, and a window of one day — the very example the guide gives —
      * collapsed to zero on the first press and ran backwards on the second,
-     * which `ordered` and `notEmpty` are there to make impossible and neither
-     * sits on this path.
+     * which is nothing a reader asked for — an arrow moves a window, it does
+     * not turn it inside out.
      *
      * Both parts of the step apply to the same instant, so there is nothing to
      * split here: a day and a half hour is a day and a half hour through the
@@ -1329,58 +1330,47 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   /**
-   * A period whose two ends are the right way round.
+   * Two ends the wrong way round are a choice, not a mistake.
    *
-   * The calendar's own swap logic is bypassed here, because a click fills the
-   * armed field and nothing else. Someone who arms the start and clicks a day
-   * after the end has said something impossible; the other end follows rather
-   * than the click being refused, which is what the range calendar does when
-   * it is left to itself, and it never emits `start > end`.
+   * This used to drop the end the reader had not just touched and ask for it
+   * again. It was meant as help and it was the most expensive thing the field
+   * did: a start set on purpose, an end brought back onto it, and the start
+   * gone with nothing said. The reader had to do it twice.
+   *
+   * A period that runs backwards matches no record, so the screen shows
+   * nothing and the summary line says why. That is a cheaper lesson than
+   * losing work, and the calendar paints no band over it.
    */
   function ordered(value: RangeFieldValue, touched: Edge): RangeFieldValue {
     const { start, end } = value;
     if (!start || !end || Temporal.Instant.compare(start, end) <= 0) return value;
     const other: Edge = touched === 'start' ? 'end' : 'start';
-    if (off(other)) {
-      // Locked, so it cannot move out of the way: the click is refused rather
-      // than emitting a period that runs backwards.
-      return draft;
-    }
-    // The end that is now impossible is dropped, and it is the one to fill
-    // next: this is someone beginning a new period, and saying so reads
-    // better than a period of no length at all.
-    armed = other;
-    armedByHand = false;
-    return { ...value, [other]: null } as RangeFieldValue;
+    /*
+     * One exception, and it is a refusal rather than a loss: nothing already
+     * chosen goes away, the move simply does not happen.
+     *
+     * I justified it at first by saying the reader would have no way back,
+     * and that was wrong — the end they just touched is always theirs to move
+     * again. The reason is narrower. `disabled` on an end is a screen saying
+     * that end is not part of the conversation; walking a start past it would
+     * hand that screen a backwards period it gave the reader no means to
+     * produce on the locked side, and none to undo there either. A reader
+     * with two free ends writing one is making a choice; a screen that locked
+     * an end and receives one is getting a surprise.
+     */
+    if (off(other)) return draft;
+    return value;
   }
 
   /**
-   * A period of no length is not a period.
+   * And neither is a period of no length, while one is being written.
    *
-   * This runs *after* the length limits, and that order is the whole point: a
-   * `minSpan` can rescue two ends that met, by pushing the untouched one out,
-   * and refusing them earlier would take that rescue away. What is left here
-   * is a period nothing can save.
-   *
-   * It happened on an ordinary gesture. A whole day ends at the midnight
-   * after it, so clicking the day just before the start of a finished period
-   * put the end exactly on the start: zero length, which an exclusive end
-   * makes match no record at all, under a trigger reading `10/09/2026 00:00`
-   * like a perfectly good single moment. The untouched end is dropped and
-   * armed, the same answer `ordered` gives to a period that runs backwards —
-   * this is someone beginning again, and saying so reads better than a period
-   * of no length.
+   * 14:00 to 14:00 is where a reader passes through on the way to 14:00 to
+   * 14:15. Dropping an end there cost them the start they had just set, which
+   * is the gesture that started all of this.
    */
-  function notEmpty(value: RangeFieldValue, touched: Edge): RangeFieldValue {
-    const { start, end } = value;
-    if (!start || !end || Temporal.Instant.compare(start, end) !== 0) return value;
-    const other: Edge = touched === 'start' ? 'end' : 'start';
-    // Locked, so it cannot move out of the way: the click is refused rather
-    // than emitting a period that matches nothing.
-    if (off(other)) return draft;
-    armed = other;
-    armedByHand = false;
-    return { ...value, [other]: null } as RangeFieldValue;
+  function notEmpty(value: RangeFieldValue, _touched: Edge): RangeFieldValue {
+    return value;
   }
 
   /**
@@ -1507,9 +1497,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * bounds are narrower than the span there is nowhere to put it, and `min`
    * wins — an impossible setting, and the end then lies past `max`.
    *
-   * A span that is not positive is refused rather than reported. It would emit
-   * a period running backwards, or one of no length, and this field promises
-   * both are impossible.
+   * A span that is not positive is refused rather than reported. A reader may
+   * write a backwards period by hand and mean it; a *setting* that produces
+   * one on every press is a screen's mistake, and obeying it in silence would
+   * hide the mistake rather than show it.
    */
   const fixedWindow = (asked: Instant): RangeFieldValue => {
     const span = asDuration(s.fixedSpan!);
@@ -1845,13 +1836,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const { start, end } = draft;
       const info = start && end ? getRangeInfo(start, end, s.timeZone) : null;
       const length = info && !isRangeProblem(info) ? formatDuration(info.duration) : null;
+      /*
+       * And it says so when there is no length to give.
+       *
+       * The field used to make an end before a start impossible, so this line
+       * had one job. Now that a reader may write one — deliberately, and get
+       * an empty result from it — going blank is the worst answer: the one
+       * element whose job is to explain the period falls silent exactly when
+       * there is something to explain. The words are already in both
+       * catalogues, and the sibling range widget has always used them.
+       */
+      const problem = info && isRangeProblem(info) ? s.messages.endBeforeStart : null;
       summaryLine.textContent = length
         ? // The identifier, not the localized name: "Europe/Paris" is shorter
           // than "heure d'été d'Europe centrale" and cannot be mistaken for
           // another zone that happens to share an offset today.
           s.messages.periodSummary({ length, zone: s.timeZone })
-        : '';
-      summaryLine.hidden = !length;
+        : (problem ?? '');
+      summaryLine.hidden = !length && !problem;
     }
     if (liveRegion) {
       const said = display(draft);

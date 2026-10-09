@@ -391,11 +391,23 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
     }
     grid.setAttribute('aria-label', blocks.length > 1 ? `${first} – ${monthName(last.year, last.month)}` : first);
 
-    // The end as it would be if the pointer stopped here, so the run under the
-    // cursor is the run that will be chosen.
     const { start, end } = s.value;
-    const finish = start && !end ? hovered : end;
-    const [from, to] = start && finish && before(finish, start) ? [finish, start] : [start, finish];
+    /*
+     * The end as it would be if the pointer stopped here, so the run under the
+     * cursor is the run that will be chosen — and dragging left of the start
+     * previews the band a click would give, which is why a *preview* swaps.
+     *
+     * A value does not. An end that precedes its start is a period that
+     * matches no record, and swapping it painted an ordinary six-day band with
+     * the two roles inverted: the field read 10/09 as the start while the grid
+     * marked the 5th as the start and told a screen reader so. Left unswapped,
+     * each end keeps its own mark and `within` is empty by construction — two
+     * dates, no band, which is the whole of the feedback.
+     */
+    const previewing = start !== null && end === null;
+    const finish = previewing ? hovered : end;
+    const [from, to] =
+      previewing && start && finish && before(finish, start) ? [finish, start] : [start, finish];
 
     renderedOut = new Set();
     let notes = false;

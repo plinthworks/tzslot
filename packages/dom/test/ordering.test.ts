@@ -3,13 +3,19 @@ import { createRangeField, type RangeFieldInstance, type RangeFieldValue } from 
 import { Temporal } from '@tzslot/core';
 
 /**
- * A period never runs backwards.
+ * A period may run backwards, and the field does not pretend otherwise.
  *
- * The calendar's own swap logic is bypassed in this widget, because a click
- * fills the armed field and nothing else — which is the whole point of having
- * two. That left one way to emit `start > end`: arm a field and click past
- * the other end. Nothing said so, and a consumer's
- * `at >= :from AND at < :to` then returns nothing at all.
+ * It used to be impossible: arming a field and clicking past the other end
+ * made the field drop that other end and ask for it again. The intention was
+ * to spare the reader a period that matches nothing. The price was their own
+ * work — a start set on purpose, an end brought back behind it, and the start
+ * gone with nothing said.
+ *
+ * So both ends stand now. A consumer's `at >= :from AND at < :to` returns no
+ * rows, which the reader can see, and the panel says why rather than going
+ * quiet: the summary line reads the words the catalogue already had. What the
+ * calendar must *not* do is paint it as an ordinary band — that is tested
+ * here too, because it is the claim the whole change rests on.
  */
 const paris = 'Europe/Paris';
 let host: HTMLElement;
@@ -36,6 +42,20 @@ const inOrder = () => {
   const { start, end } = field.value;
   return !start || !end || Temporal.Instant.compare(start, end) <= 0;
 };
+/** What the consumer was handed, as two days. */
+const inReport = (value: RangeFieldValue) => {
+  const day_ = (i: RangeFieldValue['start']) =>
+    i ? i.toZonedDateTimeISO(paris).toPlainDate().toString() : '-';
+  return `${day_(value.start)} .. ${day_(value.end)}`;
+};
+/** The days the grid paints as inside the period. */
+const banded = () =>
+  [...panel().querySelectorAll<HTMLElement>('.tz-range__day--within')].map((c) => c.dataset['date']);
+/** The days it marks as an end of it, either one. */
+const marked = () =>
+  [...panel().querySelectorAll<HTMLElement>('.tz-range__day--start, .tz-range__day--end')]
+    .map((c) => c.dataset['date'])
+    .sort();
 
 beforeEach(() => {
   host = document.createElement('div');
@@ -48,7 +68,7 @@ afterEach(() => {
 });
 
 describe('a start pushed past the end', () => {
-  it('drops the end that has become impossible, and asks for it again', () => {
+  it('keeps the end it has just run past, and lets the reader sort it out', () => {
     make();
     field.open();
     day('2026-09-10').click();
@@ -58,15 +78,27 @@ describe('a start pushed past the end', () => {
     armStart();
     day('2026-09-25').click();
 
-    // A new period begun, not a period of no length: the end is what to fill
-    // next, and it is armed.
-    expect(shown()).toBe('25/09/2026 – …');
-    expect(field.value.end).toBe(null);
-    expect(inOrder()).toBe(true);
-    expect(reported.every((v) => !v.start || !v.end || Temporal.Instant.compare(v.start, v.end) <= 0)).toBe(true);
+    // It used to drop the end and ask for it again, which cost the reader the
+    // end they had already chosen, in silence.
+    expect(field.value.start!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-25');
+    expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-21');
+    expect(inOrder()).toBe(false);
+
+    // The two assertions that make this load-bearing, and that the first
+    // rewrite dropped: what the field shows, and what the consumer is handed.
+    // The whole argument for the change is that the screen queries and gets
+    // nothing back — which only holds if the backwards period is reported.
+    // 21 Sept at midnight *closes* the 20th, so that is the day both the
+    // trigger and the grid name — the exclusive end, as everywhere else.
+    expect(shown()).toBe('25/09/2026 – 20/09/2026');
+    expect(inReport(reported.at(-1)!)).toBe('2026-09-25 .. 2026-09-21');
+
+    // And the claim the change rests on: no band over a period that cannot be.
+    expect(banded()).toEqual([]);
+    expect(marked()).toEqual(['2026-09-20', '2026-09-25']);
   });
 
-  it('and an end pulled before the start does the same', () => {
+  it('and an end pulled before the start keeps the start', () => {
     make();
     field.open();
     day('2026-09-10').click();
@@ -75,11 +107,13 @@ describe('a start pushed past the end', () => {
 
     panel().querySelectorAll<HTMLInputElement>('.tz-dateinput__input')[1]!.dispatchEvent(new Event('focus'));
     day('2026-09-05').click();
-    expect(field.value.start).toBe(null);
-    expect(inOrder()).toBe(true);
+    // The gesture the screen's reader complained about: a start set on
+    // purpose, an end brought back behind it, and the start gone.
+    expect(field.value.start!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-10');
+    expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-06');
   });
 
-  it('with hours, the same: the impossible end is dropped', () => {
+  it('with hours, the same: both ends stand', () => {
     make({ showTime: true, timeLayout: 'input' });
     field.update({
       value: {
@@ -91,9 +125,9 @@ describe('a start pushed past the end', () => {
     armStart();
     day('2026-09-25').click();
 
-    expect(inOrder()).toBe(true);
-    expect(field.value.end).toBe(null);
-    expect(shown()).toBe('25/09/2026 10:00 – …');
+    expect(inOrder()).toBe(false);
+    expect(field.value.end).not.toBe(null);
+    expect(shown()).toBe('25/09/2026 10:00 – 18/09/2026 17:00');
   });
 
   it('a locked end refuses the move instead of running backwards', () => {

@@ -144,16 +144,38 @@ Les flèches fonctionnent aussi sur une telle période, et ça compte : « à
 partir du 18 » devient « à partir du 17 » d’un clic, sans rouvrir le
 calendrier. Le pas réglé par l’écran s’applique, jusqu’au quart d’heure.
 
-Les deux bornes nulles signifient que rien n’a encore été choisi. C’est le
-seul cas qu’un écran doit encore distinguer, et c’est le cas évident.
+Les deux bornes nulles signifient que rien n’a encore été choisi — le cas
+évident, et celui que tout écran traite déjà.
+
+Il y en a un second, et il est récent. Un lecteur peut écrire une période dont
+la fin précède le début, ou dont les deux bornes sont le même instant. Le champ
+rendait les deux impossibles en jetant la borne qu’il venait de ne pas
+toucher — ce qui lui coûtait son travail en silence ; il ne le fait plus. Une
+telle période ne correspond à aucun enregistrement, donc la requête ci-dessous
+ne rend rien, ce qui est une réponse lisible — à condition que l’écran
+n’attende pas une erreur. Le panneau le dit déjà tant qu’il est ouvert, dans la
+ligne de résumé sous le calendrier.
 
 ```ts
 const { start, end } = value;
 if (!start && !end) return tout;
 if (!end) return lignes.filter((r) => r.at >= start);
 if (!start) return lignes.filter((r) => r.at < end);
+// Rien ne correspond quand la fin ne suit pas le début. Le dire, plutôt que
+// de lancer une requête dont la réponse vide ressemble à « aucune donnée ».
+if (Temporal.Instant.compare(start, end) >= 0) return impossible;
 return lignes.filter((r) => r.at >= start && r.at < end);
 ```
+
+Un écran ne voit jamais ni l’une ni l’autre de ces deux formes, et il vaut
+mieux le savoir. Avec `disabled: { end: true }`, le début est arrêté à la fin
+verrouillée au lieu de la traverser : le clic est refusé, rien de déjà choisi
+n’est perdu, et rien n’est émis — une fin verrouillée, c’est l’écran qui dit
+que cette borne ne fait pas partie de la conversation, donc lui remettre une
+période que son lecteur n’a aucun moyen de défaire de ce côté serait une
+surprise, pas un choix. L’arrêt inclut la fin elle-même : un début ne peut pas
+non plus venir s’y poser. `fixedSpan` et `fixedWindow` verrouillent la fin par
+nature et se comportent de la même façon.
 
 Sans `openEnded`, une seule borne choisie reste ce qu’elle a toujours été : une
 sélection à moitié faite. Le champ le dit — `14/09/2026 – …` — plutôt que de

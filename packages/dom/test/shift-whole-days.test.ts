@@ -9,7 +9,9 @@ import { Temporal } from '@tzslot/core';
  * is right. `fromDays()` read that midnight back as an hour the reader had
  * picked, and put the end on that day's own midnight — a day short. Pressing
  * an arrow seven times emptied a week; pressing it once more ran the period
- * backwards, which this field promises never to emit.
+ * backwards. A reader may write a backwards period on purpose now, but an
+ * arrow asked to move a week and returning one of less than nothing is not
+ * that — it is the widget losing a day on every press.
  *
  * Covered only with `showTime` off, or with 09:00–17:00 hours. The midnight
  * end that every shortcut produces was the uncovered case.

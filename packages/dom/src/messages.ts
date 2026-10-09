@@ -124,6 +124,13 @@ export interface TzslotMessages {
    */
   readonly periodSummary: (parts: { length: string; zone: string }) => string;
   readonly endBeforeStart: string;
+  /**
+   * Two ends on the same instant. Not the same thing as one before the other,
+   * and it deserves its own words: an exclusive end makes a period of no
+   * length match no record, and `The end is before the start` would be a plain
+   * untruth about a pair that is merely equal.
+   */
+  readonly emptyPeriod: string;
   readonly rangeCrossesUnavailable: string;
 
   /** The daily range: its two parts, and the two ends of the hours. */
@@ -237,6 +244,7 @@ export const EN: TzslotMessages = {
   spanClamped: (limit) => `The other end moved: this period is held to ${limit}.`,
   periodSummary: ({ length, zone }) => `${length} · ${zone}`,
   endBeforeStart: 'The end is before the start.',
+  emptyPeriod: 'This period has no length.',
   rangeCrossesUnavailable: 'That range crosses an unavailable day.',
   days: 'Days',
   hours: 'Hours',
@@ -333,6 +341,7 @@ export const FR: TzslotMessages = {
   spanClamped: (limit) => `L'autre borne a bougé : cette période est limitée à ${limit}.`,
   periodSummary: ({ length, zone }) => `${length} · ${zone}`,
   endBeforeStart: 'La fin précède le début.',
+  emptyPeriod: 'Cette période est vide.',
   rangeCrossesUnavailable: 'Cette plage traverse un jour indisponible.',
   days: 'Jours',
   hours: 'Horaires',

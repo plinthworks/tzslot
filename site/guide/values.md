@@ -139,16 +139,36 @@ The arrows work on it too, and that matters: "from the 18th" becomes "from the
 17th" with one press, without reopening the calendar. Whatever step the screen
 set applies, down to a quarter of an hour.
 
-Both ends null means nothing has been chosen yet. That is the one case a
-screen still has to tell apart, and it is the obvious one.
+Both ends null means nothing has been chosen yet — the obvious case, and the
+one every screen already handles.
+
+There is a second one, and it is newer. A reader may write a period whose end
+precedes its start, or one whose two ends are the same instant. The field used
+to make both impossible by throwing away the end they had not just touched,
+which cost them their work in silence; it no longer does. Such a period matches
+no record, so the query below returns nothing, which is a legible answer — but
+only if the screen is not expecting an error. The panel already says so while
+it is open, in the summary line under the calendar.
 
 ```ts
 const { start, end } = value;
 if (!start && !end) return everything;
 if (!end) return rows.filter((r) => r.at >= start);
 if (!start) return rows.filter((r) => r.at < end);
+// Nothing matches when the end does not follow the start. Say so, rather than
+// running a query whose empty answer looks like "no data".
+if (Temporal.Instant.compare(start, end) >= 0) return impossible;
 return rows.filter((r) => r.at >= start && r.at < end);
 ```
+
+One screen never sees either shape, and should know it does. With
+`disabled: { end: true }` the start is stopped at the locked end instead of
+walked through it: the press is refused, nothing already chosen is lost, and
+nothing is reported — a locked end is the screen saying that end is not part
+of the conversation, so handing it a period its reader has no means to undo on
+that side would be a surprise rather than a choice. The stop includes the end
+itself, so a start cannot land on it either. `fixedSpan` and `fixedWindow`
+lock the end by their nature and behave the same way.
 
 Without `openEnded`, a single chosen end is still what it always was: a
 selection half made. The field says so — `14/09/2026 – …` — rather than

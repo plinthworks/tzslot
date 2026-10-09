@@ -87,20 +87,41 @@ describe('a shortcut obeys maxSpan', () => {
   });
 });
 
-describe('a period of no length is never reported', () => {
-  it('clicking the day before the start does not collapse the period', () => {
+describe('a period of no length is reported, and said out loud', () => {
+  it('collapsing a period onto its start keeps it and explains it', () => {
+    /*
+     * This replaces a test that asserted the opposite and never ran.
+     *
+     * It reached for the day cell with `?.`, found nothing, and then asserted
+     * on the value the field started with — which of course was not collapsed.
+     * It was green for the same reason an empty test is green. Two lessons
+     * kept here: the cell is addressed by `data-date` rather than by the digit
+     * printed in it, and its presence is asserted before it is clicked.
+     *
+     * The behaviour it claimed is gone anyway. 2.0.0 keeps what the reader
+     * pressed. A day clicked as an end *closes* that day, so with the end
+     * armed, clicking the day before the start puts the end exactly on the
+     * start: zero length, which an exclusive end makes match no record — so
+     * the field writes both ends and says why, rather than refusing the press
+     * or going quiet.
+     */
     const w = make({ value: span(10, 16), showTime: false });
     w.open();
-    const cell = (d: string) =>
-      [...w.panel().querySelectorAll<HTMLButtonElement>('.tz-range__day')]
-        .find((b) => b.textContent?.trim() === d && !b.classList.contains('tz-range__day--outside'));
-    // The end is armed after a complete range; clicking the 9th makes the end
-    // land exactly on the start, because a whole day ends at the next midnight.
-    cell('9')?.click();
+    // Arm the end; a bare click on a finished period would start a new one.
+    w.panel()
+      .querySelectorAll<HTMLInputElement>('.tz-dateinput__input')[1]!
+      .dispatchEvent(new Event('focus'));
+    const cell = w.panel().querySelector<HTMLButtonElement>('[data-date="2026-09-09"]');
+    expect(cell).not.toBeNull(); // the assertion the old test was missing
+
+    cell!.click();
     const v = w.said.at(-1)!;
-    const zero = v.start !== null && v.end !== null
-      && v.start.epochMilliseconds === v.end.epochMilliseconds;
-    expect(zero).toBe(false);
+    expect(v.start!.epochMilliseconds).toBe(v.end!.epochMilliseconds);
+
+    // Both ends are written: collapsing the pair would read as a single date.
+    expect(w.text()).toBe('10/09/2026 00:00 – 10/09/2026 00:00');
+    // And the panel does not leave the reader to deduce it from `0m`.
+    expect(w.panel().querySelector('.tz-rangefield__summary')!.textContent).toBe(FR.emptyPeriod);
     w.done();
   });
 });

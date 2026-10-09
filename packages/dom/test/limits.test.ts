@@ -86,10 +86,14 @@ describe('a period held to a length', () => {
   it('a minimum works the same way, in the other direction', () => {
     make({ minSpan: '2h', value: both('2026-09-18T08:00:00Z', '2026-09-18T15:00:00Z') }); // 10:00–17:00
     field.open();
-    // The hour settles before the minutes, so this lands twice: 10:00 pulls
-    // the start to 08:00, and 10:30 is then already long enough.
+    // The hour settles before the minutes, so the edit lands in two steps —
+    // and the first of them puts the end exactly on the start. A length limit
+    // has nothing to hold there, so it waits: the clamp happens once, at
+    // 10:30, and gives exactly the two hours asked for. It used to fire on
+    // the empty step as well, pulling the start to 08:00 and leaving two and
+    // a half hours, which is not what `minSpan: '2h'` says.
     setHour(1, '10:30');
-    expect(shown()).toBe('18/09/2026 08:00 – 18/09/2026 10:30');
+    expect(shown()).toBe('18/09/2026 08:30 – 18/09/2026 10:30');
   });
 
   it('the second click sets the end and pulls the start, as a filter screen does', () => {

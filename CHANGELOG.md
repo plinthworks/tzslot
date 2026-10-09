@@ -1,8 +1,102 @@
 # Changelog
 
-## 1.6.1
+## 2.0.0
 
-The calendar mark sits at the head of a moment field, as it already did on a
+The period field stops destroying what its reader has just chosen.
+
+Everything else here follows from that one decision, and the major is for it.
+Arming the start of a finished period and clicking past the end used to drop
+the end and ask for it again — a start set on purpose, an end brought back
+behind it, and the work gone with nothing said. It was meant as help. It was
+the most expensive thing the field did, and the reader had to do it twice.
+
+So the field's domain is wider than it was, and a screen reading `value` has
+to expect what it could previously rule out. That is the whole of the upgrade.
+
+### Breaking: a period may run backwards, or have no length
+
+Both ends now stand where the reader put them. `value.start` may sit after
+`value.end`, and the two may be equal.
+
+A screen that assumed otherwise should say so where it reads the pair:
+
+```ts
+if (Temporal.Instant.compare(start, end) >= 0) return impossible;
+```
+
+Nothing is hidden from the reader meanwhile. An exclusive end makes both
+shapes match no record, so the screen shows nothing — and rather than go quiet
+the panel says why on its summary line, from the catalogue: `endBeforeStart`
+for a backwards period, and a new `emptyPeriod` for one of no length. A
+hand-written `messages` object needs that key. The calendar paints no band
+over either, and the trigger writes both ends instead of collapsing an equal
+pair to one moment, which would have read as a single date.
+
+One refusal survives, narrowed and now consistent at its own edge. With
+`disabled: { end: true }` a start is stopped at the locked end rather than
+walked through it: that lock is a screen saying the end is not part of the
+conversation, so handing it a period the reader has no means to undo on that
+side is a surprise, not a choice. The test used to be strictly greater, so a
+start landing *on* the locked end went through and was reported as zero
+length while one day further was refused — the reason covers both, and both
+now answer the same. A refused press reports nothing at all, where three
+refused presses used to send three identical periods.
+
+`fixedSpan`, `fixedWindow` and a disabled end behave exactly as they did in
+1.6.0. A negative `fixedSpan` is still refused rather than reported, for a
+reason that is not the withdrawn promise: a setting is a mistake in the screen,
+not a gesture by its reader, and there is nobody at the keyboard to see it.
+
+A side effect worth naming: `minSpan` and `maxSpan` now wait for a period that
+runs forward before holding it to a length. A two-step edit used to be clamped
+twice, so a minimum of two hours could yield two and a half; it yields exactly
+two.
+
+### Breaking: `createDateRange` keeps the value it is handed
+
+It used to swap a backwards pair on the way in. A caller deducing the pressed
+day from the pair it got back was told the wrong end.
+
+A *preview* still swaps, and that is the point of the distinction: while the
+reader is dragging towards an end, the band under the pointer is where a click
+would land. Painting an unswapped preview marked the 5th as the start of a
+six-day band and told a screen reader so.
+
+### Breaking: Escape closes the topmost panel
+
+Its handler sits on the document, so one press closed every open panel — and a
+screen with two fields has two open whenever a reader opens one before the
+other has finished closing. With `reportOn: 'close'`, leaving one field that
+way abandoned the other's held change.
+
+The scroll lock now belongs to whoever took it, too. A popup saved the page's
+`overflow` as well and handed it back on the way out, so a dialog opening
+first, then a popup, then both closing in that order left the page locked for
+good with nothing on screen to explain it.
+
+### Breaking: an hour or minute menu may offer a reading off its own grid
+
+`minuteValues` has said since the beginning that a value the control holds is
+always in its own menu — "a menu built on a step of five has nothing to offer
+a time sitting at 00:15; it would show a blank, and picking anything at all
+would move a time the reader never asked to move". Three of the four menu
+builders did not have the rule, and the one a period field uses was among
+them: the field read 09:07 and the minute menu beside it was empty.
+
+A screen counting the options in a menu will now find one more whenever the
+held reading is not on the step. A reading that does not exist on the wall —
+the hour the clocks skip — is still kept out.
+
+### Breaking: the shift arrows no longer lose a day
+
+`days()` pulls an exclusive end back to the last day a period holds, which is
+right; `fromDays()` read that midnight back as an hour the reader had picked
+and put the end on that day's own midnight — a day short. Seven presses
+emptied a week, and the eighth ran it backwards.
+
+A screen that had compensated for the drift should stop.
+
+### The calendar mark sits at the head of a moment field, as it already did on a
 period field and on a moment field that cannot be typed into.
 
 It was at the tail, and only when the field was editable. The reason was real
@@ -208,7 +302,9 @@ hold and are not consulted. `min` and `max` hold the **start**, pushed back by
 the span, so the window stays whole instead of being shortened to fit -- and
 when the bounds are narrower than the span there is nowhere to put it and `min`
 wins. A span that is not positive is refused rather than reported, since a
-backwards period is the one thing this field promises never to emit. A value
+backwards period is the one thing this field promises never to emit. [2.0.0
+withdrew that promise for a reader's own gestures; the refusal of a negative
+`fixedSpan` stands, for the narrower reason given there.] A value
 handed in through `update({ value })` is kept as it came, length and all: the
 field does not own a value it did not choose, and the next press re-derives it.
 And the end is read-only rather than disabled -- a screen reader is told, its
@@ -276,7 +372,9 @@ kept and the end pulled in. And a shortcut that had to be pulled in leaves the
 panel **open**, because closing it would take the adjusted period and the
 sentence explaining it away in the same instant.
 
-A period of no length was reported as though it were one. A whole day ends at
+A period of no length was reported as though it were one. [2.0.0 reports it
+again, on purpose, and says so on the summary line instead of refusing the
+press.] A whole day ends at
 the midnight after it, so clicking the day just before the start of a finished
 period put the end exactly on the start: zero length, which an exclusive end
 makes match no record at all, under a trigger reading `10/09/2026 00:00` like
@@ -442,7 +540,9 @@ The first four are mine, from the same afternoon.
 - **The field wrote a period of no length backwards.** Two clicks on one day
   give both ends the same midnight, and an end read inclusively is then the day
   before the start: `24/09/2026 – 23/09/2026`, over a day nobody touched. It
-  says the moment once.
+  says the moment once. [2.0.0 writes both ends — `24/09/2026 00:00 –
+  24/09/2026 00:00` — because a period of no length is now a period a reader
+  can hold, and collapsing it would make it read as a single moment.]
 - **"Never shows a date nobody chose" held only when both ends were midnight.**
   Deciding for the pair, one default hour brought the other end's exclusive
   midnight back: `defaultTimes: { start: '09:00' }` and a click on the 26th

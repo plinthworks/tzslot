@@ -145,4 +145,26 @@ describe('a start pushed past the end', () => {
     expect(shown()).toBe('10/09/2026 – 20/09/2026'); // unchanged
     expect(inOrder()).toBe(true);
   });
+
+  it('and refuses it at the wall itself, not one step past', () => {
+    // The boundary used to be strictly greater: a start landing *on* a locked
+    // end went through and was reported as a period of no length, while a
+    // start one day further was refused. The reason for the refusal — a screen
+    // that locked an end gave its reader no means to produce or undo this on
+    // the locked side — covers both, so the two now answer the same.
+    make({ disabled: { end: true } });
+    field.update({
+      value: {
+        start: Temporal.Instant.from('2026-09-09T22:00:00Z'), // 10 Sept
+        end: Temporal.Instant.from('2026-09-20T22:00:00Z'), // closes the 20th
+      },
+    });
+    field.open();
+    armStart();
+    const before = reported.length;
+    day('2026-09-21').click(); // the day the end opens: equal instants
+
+    expect(shown()).toBe('10/09/2026 – 20/09/2026');
+    expect(reported.length).toBe(before); // and nothing went out
+  });
 });

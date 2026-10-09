@@ -78,6 +78,23 @@ const isMoments = (range: DayRange | MomentRange): range is MomentRange =>
   range.start instanceof Temporal.Instant;
 
 export interface RangeFieldSettings {
+  /**
+   * The period, as two instants, either of which may be null.
+   *
+   * It may also run backwards, or have no length: the field keeps what its
+   * reader pressed rather than dropping the other end and asking for it
+   * again. An exclusive end makes both shapes match no record, so a screen
+   * reading the pair should say so where it reads them —
+   * `Instant.compare(start, end) >= 0` is the whole of the test — and the
+   * panel explains it to the reader meanwhile, on its summary line.
+   *
+   * The one exception is `disabled: { end: true }`: a start is stopped at the
+   * locked end rather than walked through it, because that lock is a screen
+   * saying the end is not part of the conversation.
+   *
+   * Handed in through `update({ value })` it is kept as it came, length and
+   * all — the field does not own a value it did not choose.
+   */
   value: RangeFieldValue;
   /** An IANA identifier. Days become moments on this zone's clocks. */
   timeZone: string;
@@ -334,6 +351,16 @@ export interface RangeFieldSettings {
   };
   /** The last word on the text the field shows. */
   displayWith: ((value: RangeFieldValue, timeZone: string) => string) | undefined;
+  /**
+   * Said when the end comes before the start, over the catalogue's word.
+   *
+   * The sibling `datetime-range` has had this since it shipped; this field
+   * had no way to say it, which only mattered once a backwards period became
+   * something a reader could write.
+   */
+  endBeforeStartMessage: string | undefined;
+  /** Said when the two ends meet, so the period holds nothing. */
+  emptyPeriodMessage: string | undefined;
   messages: TzslotMessages;
   /**
    * The name of the shortcut the value came from, when it came from one.
@@ -470,6 +497,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * incomplete catalogue; JavaScript, and anything passing one through
      * `provideTzslotMessages` from untyped code, does not.
      */
+    endBeforeStartMessage: undefined,
+    emptyPeriodMessage: undefined,
     messages: { ...EN, ...(initial.messages ?? {}) },
   };
 
@@ -699,7 +728,17 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const last = opensADay(value.end)
       ? end.toPlainDate().subtract({ days: 1 })
       : end.toPlainDate();
-    return { start, end: last };
+    /*
+     * Unless there is no period to close. An empty one sits *on* a day; pulled
+     * back it landed on the day before, which the period does not touch — and
+     * the grid then marked that day, selected it, and read it aloud as the end
+     * of the period. Two chips on two days for a period containing none.
+     *
+     * A period that genuinely runs backwards keeps its pulled-back end: both
+     * of its days are real, and the reader needs to see where each one is.
+     */
+    const empty = value.start !== null && Temporal.Instant.compare(value.start, value.end) === 0;
+    return { start, end: empty ? start : last };
   }
 
   /** And the other way: two days become two moments, whole or with times. */
@@ -867,7 +906,13 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     // not "14/09/2026 – …". The reader has to be able to tell the two apart.
     if (first && !last) return s.openEnded ? `${s.messages.fromDate} ${first}` : `${first} – …`;
     if (!first && last) return `${s.messages.untilDate} ${last}`;
-    return first === last ? first! : `${first} – ${last}`;
+    // Two ends that read alike are written once — a whole day is 00:00 to the
+    // next 00:00 and both render as the day, which is what that is for. A
+    // period of no length reads alike too, by accident, and collapsing it put
+    // `10/09/2026 00:00` on the trigger exactly as if the reader had chosen
+    // one moment on purpose. It used to be unreachable; it is a state they can
+    // now pass through, so it says what it is.
+    return first === last && !empty ? first! : `${first} – ${last}`;
   }
 
   /**
@@ -1314,9 +1359,22 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       range?.goTo({ year: wall.date.year, month: wall.date.month });
       return;
     }
+    const held = draft;
     draft = notEmpty(withinSpan(ordered({ ...draft, [edge]: withinBounds(at_) } as RangeFieldValue, edge), edge), edge);
-    choose(draft);
     range?.goTo({ year: wall.date.year, month: wall.date.month });
+    /*
+     * A refused move is a move that did not happen, so nothing goes out.
+     *
+     * Refusing means handing back the value that was already there, and that
+     * used to travel on to `choose` like any other: three clicks a locked end
+     * turns away sent the screen three identical periods, and a screen that
+     * refetches on every report paid for all three. The guard sits here and
+     * not in `commit` because an identical value is not always nothing — a
+     * reader pressing Clear on an empty field, or the same shortcut twice, is
+     * asking for an answer and gets one.
+     */
+    if (samePeriod(held, draft)) return;
+    choose(draft);
   }
 
   /**
@@ -1343,21 +1401,32 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   function ordered(value: RangeFieldValue, touched: Edge): RangeFieldValue {
     const { start, end } = value;
-    if (!start || !end || Temporal.Instant.compare(start, end) <= 0) return value;
-    const other: Edge = touched === 'start' ? 'end' : 'start';
+    if (!start || !end) return value;
+    // Strictly forward is always fine. Equal falls through with backwards,
+    // because a locked end turns both away for the same reason.
+    if (Temporal.Instant.compare(start, end) < 0) return value;
     /*
-     * One exception, and it is a refusal rather than a loss: nothing already
-     * chosen goes away, the move simply does not happen.
+     * A backwards period stands, with one exception — and the exception is a
+     * refusal, not a loss: nothing already chosen goes away, the move simply
+     * does not happen.
      *
-     * I justified it at first by saying the reader would have no way back,
-     * and that was wrong — the end they just touched is always theirs to move
-     * again. The reason is narrower. `disabled` on an end is a screen saying
-     * that end is not part of the conversation; walking a start past it would
-     * hand that screen a backwards period it gave the reader no means to
-     * produce on the locked side, and none to undo there either. A reader
-     * with two free ends writing one is making a choice; a screen that locked
-     * an end and receives one is getting a surprise.
+     * I justified it at first by saying the reader would have no way back, and
+     * that was wrong: an end they just touched is always theirs to move again.
+     * The reason is narrower. `disabled` on an end is a screen saying that end
+     * is not part of the conversation; walking a start past it would hand that
+     * screen a backwards period it gave the reader no means to produce on the
+     * locked side, and none to undo there either. A reader with two free ends
+     * writing one is making a choice; a screen that locked an end and receives
+     * one is getting a surprise.
+     *
+     * The wall stops the move at its own edge too. The test used to be
+     * strictly greater, so a start walked *onto* a locked end was waved
+     * through and reported as a period of no length, while one day further was
+     * refused — and the reason above covers both equally, so that boundary did
+     * not follow from it. A screen that locks an end keeps the behaviour it
+     * had before any of this.
      */
+    const other: Edge = touched === 'start' ? 'end' : 'start';
     if (off(other)) return draft;
     return value;
   }
@@ -1400,6 +1469,23 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * set an end six weeks out and then adjusted the start watched their end
      * jump and was told nothing at all.
      */
+    /*
+     * A length limit holds a period to a length. It has nothing to say about a
+     * pair that is not a period yet.
+     *
+     * `ordered` and `notEmpty` used to normalise the pair before this ran, so
+     * the room between the two ends was never negative and never zero. Now
+     * that both stand aside, it can be either — and either is unconditionally
+     * shorter than any `minSpan`, so the clamp fired and moved the end the
+     * reader had *not* touched. The gesture this release exists to protect
+     * went on destroying their start, one `minSpan` away: 14:00–18:00, drop
+     * the end to 14:00 meaning to add a quarter of an hour, and the start
+     * walked back to 13:00.
+     *
+     * So the limits apply to a period that runs forwards, and wait for the
+     * reader to finish writing one.
+     */
+    if (Temporal.Instant.compare(start, end) >= 0) return value;
     if (s.maxSpan) {
       const longest = Temporal.Duration.from(asDuration(s.maxSpan));
       const room = zoned(start).until(zoned(end));
@@ -1846,14 +1932,29 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
        * there is something to explain. The words are already in both
        * catalogues, and the sibling range widget has always used them.
        */
-      const problem = info && isRangeProblem(info) ? s.messages.endBeforeStart : null;
-      summaryLine.textContent = length
-        ? // The identifier, not the localized name: "Europe/Paris" is shorter
-          // than "heure d'été d'Europe centrale" and cannot be mistaken for
-          // another zone that happens to share an offset today.
-          s.messages.periodSummary({ length, zone: s.timeZone })
-        : (problem ?? '');
-      summaryLine.hidden = !length && !problem;
+      // A period of no length is a problem too, and `getRangeInfo` does not
+      // call it one — it answers `0m`, which is true and reads as a measured
+      // period rather than an empty one. The line that exists to explain says
+      // so instead.
+      const empty =
+        start !== null && end !== null && Temporal.Instant.compare(start, end) === 0;
+      const problem = empty
+        ? s.emptyPeriodMessage ?? s.messages.emptyPeriod
+        : info && isRangeProblem(info)
+          ? s.endBeforeStartMessage ?? s.messages.endBeforeStart
+          : null;
+      // The problem comes first, because an empty period does have a length to
+      // format — zero — and `0m · Europe/Paris` reads as a period someone
+      // measured rather than one that holds nothing.
+      summaryLine.textContent =
+        problem ??
+        (length
+          ? // The identifier, not the localized name: "Europe/Paris" is shorter
+            // than "heure d'été d'Europe centrale" and cannot be mistaken for
+            // another zone that happens to share an offset today.
+            s.messages.periodSummary({ length, zone: s.timeZone })
+          : '');
+      summaryLine.hidden = !problem && !length;
     }
     if (liveRegion) {
       const said = display(draft);

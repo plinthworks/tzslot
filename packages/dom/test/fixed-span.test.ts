@@ -155,7 +155,10 @@ describe('what a review found', () => {
   it('refuses a span that is not positive rather than reporting one', () => {
     make({ fixedSpan: { minutes: -45 }, showTime: true, timeLayout: 'input' });
     press('10');
-    // A backwards period is the one thing this field promises never to emit.
+    // Not because a backwards period is forbidden — a reader may now write one
+    // deliberately — but because a *setting* that says so is a mistake in the
+    // screen rather than a choice by its reader, and there is nobody at the
+    // keyboard to see it and undo it.
     expect(field.value.end).toBeNull();
   });
 

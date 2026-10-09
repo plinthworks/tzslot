@@ -6,7 +6,7 @@
 
 | Option | Type | Default | |
 |---|---|---|---|
-| `value` | `RangeFieldValue` | `EMPTY` |  |
+| `value` | `RangeFieldValue` | `EMPTY` | The period, as two instants, either of which may be null. It may also run backwards, or have no length: the field keeps what its reader pressed rather than dropping the other end and asking for it again. An exclusive end makes both shapes match no record, so a screen reading the pair should say so where it reads them — `Instant.compare(start, end) >= 0` is the whole of the test — and the panel explains it to the reader meanwhile, on its summary line. The one exception is `disabled: { end: true }`: a start is stopped at the locked end rather than walked through it, because that lock is a screen saying the end is not part of the conversation. Handed in through `update({ value })` it is kept as it came, length and all — the field does not own a value it did not choose. |
 | `timeZone` | `string` | `Temporal.Now.timeZoneId()` | An IANA identifier. Days become moments on this zone's clocks. |
 | `presets` | `readonly (PresetName \| RangePreset)[]` | `BUILT_IN` | Named ranges beside the calendar. The built-in names, or your own. |
 | `showPresets` | `boolean` | `true` | Whether the column of shortcuts is drawn at all. Separate from `presets` so a screen can hide it without forgetting the list: `presets: []` empties it, and then something has to remember what was in it to put it back. |
@@ -49,6 +49,8 @@
 | `fieldIconSide` | `'start' \| 'end'` | `'start'` |  |
 | `labels` | `{ start?: Node \| string \| null; end?: Node \| string \| null; between?: Node \| string \| null; }` | `{}` | What is written above each of the panel's two fields, and between them. Words by default — From / To in the messages — but a screen that prefers an arrow says so: `{ start: null, end: null, between: '»' }`. Anything that can be put in a document works, an SVG icon included. |
 | `displayWith` | `((value: RangeFieldValue, timeZone: string) => string) \| undefined` | — | The last word on the text the field shows. |
+| `endBeforeStartMessage` | `string \| undefined` | — | Said when the end comes before the start, over the catalogue's word. The sibling `datetime-range` has had this since it shipped; this field had no way to say it, which only mattered once a backwards period became something a reader could write. |
+| `emptyPeriodMessage` | `string \| undefined` | — | Said when the two ends meet, so the period holds nothing. |
 | `messages` | `TzslotMessages` | `{ ...EN, ...(initial.messages ?? {}) }` | The words the widget says. One bundle, English and French included. |
 | `preset` | `string \| null` | `null` | The name of the shortcut the value came from, when it came from one. Hand it back and the field resolves it again against today, which is what makes a saved filter keep meaning what it said. Without this, "the last seven days" was resolved at the moment of the click and the name thrown away: stored and reopened tomorrow, the same filter was a fixed window that had quietly stopped being the last seven days. Set alongside a `value`, the shortcut wins — it is the more specific statement of the two. |
 

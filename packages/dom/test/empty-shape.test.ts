@@ -108,9 +108,13 @@ describe('what a review found in 1.4.0', () => {
     const at = Temporal.Instant.from('2026-09-23T22:00:00Z');
     make({ showTime: true });
     field.update({ value: { start: at, end: at } });
-    // Said once, since both ends are the same moment — not twice, and not
-    // backwards.
-    expect(lu()).toBe('24/09/2026 00:00');
+    // Still not backwards, and still not over a day nobody touched — that is
+    // what this guards and it holds. But no longer said *once*: collapsing two
+    // identical ends into one string put `24/09/2026 00:00` on the trigger
+    // exactly as if the reader had chosen a single moment on purpose, which
+    // was harmless while a period of no length could not be reported and is
+    // not any more.
+    expect(lu()).toBe('24/09/2026 00:00 – 24/09/2026 00:00');
   });
 
   it('survives a catalogue that predates the words it needs', () => {

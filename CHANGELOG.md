@@ -1,5 +1,52 @@
 # Changelog
 
+## 2.0.1
+
+An hour menu in a dark page opened a list of white text on white.
+
+An `option` inherits the menu's text colour and none of its background. The
+popup is a surface the browser paints rather than the select's own box, so the
+dark background the closed control carries never reached the list it opened --
+while the light text inherited straight through. Only the row under the
+pointer was readable, because the browser's own highlight brings its own pair
+of colours with it.
+
+Nothing in the library targeted `option` at all, which is the whole of the
+defect: `color-scheme` resolves correctly here, and that is precisely why the
+text was light. My first explanation blamed Edge for not propagating it, and
+the closed control being right is the evidence that it does.
+
+Firefox was fine on the same page and the same stylesheet, which settles it:
+Gecko paints the popup from the select's own background, Blink paints a native
+surface that reads only what sits on the options. Two engines, one stylesheet,
+one of them white -- nothing about the cascade reaching the widget could
+produce that. Giving the options the colours the select already has is a no-op
+in Firefox and the whole fix in Edge.
+
+The options now carry a pair, from the same tokens as the closed menu, so
+overriding `--tz-time-bg` still moves both together. `Canvas` and `CanvasText`
+are the last resort rather than a literal, since those follow `color-scheme`
+where it resolves.
+
+Reported on Edge, in the moment field's `timeLayout: 'select'`; the same rule
+covers every widget that draws these menus. jsdom computes no popup, so the
+test pins that a rule reaches the options at all -- the part that was missing
+-- and not the colour the browser then paints.
+
+### `stepMinutes` was the only one of the three with no documentation
+
+A screen asking for quarter-hours set `minuteStep: 15` and `snapMinutes: 15`,
+and its minute arrows went on stepping by thirty. `minuteStep` fills the menus
+of `timeLayout: 'select'` and is inert on the default compact field;
+`snapMinutes` rounds a *typed* reading and moves nothing by itself. The arrows
+read `stepMinutes`, whose default is 30.
+
+An undocumented setting does not print an empty cell, which would at least
+have been honest — the generator borrowed another widget's sentence, so the
+API table said "Minutes between the times offered", describing a slot list on
+a field whose default layout has no slots. The three are documented together
+now, each against the layout it governs.
+
 ## 2.0.0
 
 The period field stops destroying what its reader has just chosen.

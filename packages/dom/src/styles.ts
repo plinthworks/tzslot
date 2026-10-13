@@ -824,6 +824,35 @@ export const TIMESELECT_CSS = `
   font-variant-numeric: tabular-nums;
   cursor: pointer;
 }
+/*
+ * An option inherits the menu's text colour but none of its background.
+ *
+ * Measured on Edge in a dark theme: the closed control was right, and the list
+ * it opened was white text on white. The popup is a surface the browser paints,
+ * not the select's own box, so the background set just above never reaches it
+ * -- while color itself inherits straight through. Light text, light surface,
+ * nothing readable; only the row under the pointer showed, because the
+ * browser's own highlight brings its own pair.
+ *
+ * So this is not color-scheme failing to propagate. It resolves correctly --
+ * that is why the closed control is dark and the text is light. What was
+ * missing is that nothing in the library gave an option a background.
+ *
+ * Firefox was reported fine on the same page and the same CSS, which is what
+ * settles it: Gecko paints the popup from the select's own background, Blink
+ * paints a native surface that reads only what sits on the options. Two
+ * engines, one stylesheet, one of them white -- nothing about the cascade
+ * reaching the widget could do that. Giving the options the colours the select
+ * already has is therefore a no-op in Firefox and the whole fix in Edge.
+ *
+ * The same tokens as the menu above, so overriding --tz-time-bg still moves
+ * both together. Canvas and CanvasText are the last resort rather than a
+ * literal, since they follow color-scheme where it resolves.
+ */
+.tz-timeselect__menu option {
+  background-color: var(--tz-time-bg, var(--tz-bg, Canvas));
+  color: var(--tz-time-fg, var(--tz-fg, CanvasText));
+}
 .tz-timeselect__menu:focus-visible {
   outline: var(--tz-focus-ring, 2px solid var(--tz-accent));
   outline-offset: 1px;

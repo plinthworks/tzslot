@@ -546,6 +546,21 @@ and which is one more click from being right. Nothing is lost either way.
 <tz-range-field [(value)]="period" [singleDay]="oneDay()" />
 ```
 
+Those two buttons are that checkbox. Press **One day**, open the field and
+pick a day; press **Two dates**, open it again, and the cursor is in the
+first of the two boxes — the start.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, today: Temporal.PlainDate.from('2026-10-14'), title: 'One day, then two' }"
+  :controls="[
+    { label: 'One day', run: (f) => f.update({ singleDay: true }) },
+    { label: 'Two dates', run: (f) => f.update({ singleDay: false }) },
+    { label: 'Open', run: (f) => f.open() },
+    { label: 'Clear', run: (f) => f.clear() },
+  ]"
+/>
+
 ## The calendar inside
 
 ### The months and the years

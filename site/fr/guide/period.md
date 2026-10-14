@@ -561,6 +561,21 @@ comme dans l'autre.
 <tz-range-field [(value)]="periode" [singleDay]="unSeulJour()" />
 ```
 
+Ces deux boutons sont cette case. Appuyez sur **Une journée**, ouvrez le champ
+et choisissez un jour ; appuyez sur **Deux dates**, rouvrez : le curseur est
+dans la première des deux boîtes — le début.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, today: Temporal.PlainDate.from('2026-10-14'), title: 'Une journée, puis deux' }"
+  :controls="[
+    { label: 'Une journée', run: (f) => f.update({ singleDay: true }) },
+    { label: 'Deux dates', run: (f) => f.update({ singleDay: false }) },
+    { label: 'Ouvrir', run: (f) => f.open() },
+    { label: 'Effacer', run: (f) => f.clear() },
+  ]"
+/>
+
 ## Le calendrier à l'intérieur
 
 ### Les mois et les années

@@ -543,9 +543,18 @@ createRangeField(element, { timeZone: 'Europe/Paris', singleDay: true });
 Les raccourcis qui demandent plus d'un jour sortent de la colonne tant que
 c'est actif, et reviennent ensuite — `presets` lui-même n'est pas touché.
 
-La bascule garde le jour de début. Au retour à deux champs, c'est la **fin**
-qui est armée, pas le début : le lecteur a déjà son jour et bascule justement
-pour ajouter une fin, donc son clic suivant doit allonger et non recommencer.
+La bascule garde le jour de début. Au retour à deux champs, le panneau s'ouvre
+sur le **début**, comme à toute autre ouverture — le curseur est là où le
+lecteur l'attend, dans la première des deux boîtes.
+
+C'était la fin qui était armée, au motif que le lecteur basculait justement
+pour en ajouter une et qu'armer le début jetterait le jour qu'il venait de
+choisir. La seconde moitié de ce raisonnement a cessé d'être vraie en 2.0.0 :
+un clic sur le début déplace le début et laisse l'autre borne en place. Un clic
+après la bascule pose donc le début et garde le jour comme fin — ce qui se lit
+à l'envers si le jour cliqué est postérieur, ce que la ligne de résumé dit tout
+haut, et ce qu'un clic de plus suffit à corriger. Rien n'est perdu dans un cas
+comme dans l'autre.
 
 ```html
 <!-- la case est la vôtre ; le champ change de forme dessous -->

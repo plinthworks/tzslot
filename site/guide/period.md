@@ -529,10 +529,17 @@ createRangeField(element, { timeZone: 'Europe/Paris', singleDay: true });
 Shortcuts that need more than a day are left out of the column while it is on,
 and come back when it is off — `presets` itself is not touched.
 
-Crossing over keeps the start day. Coming back to two fields the **end** is
-armed, not the start: the reader has their day already and is switching
-precisely to add an end, so their next click should extend rather than begin
-again.
+Crossing over keeps the start day. Coming back to two fields, the panel opens
+on the **start**, like every other opening — the cursor is where the reader
+left it, in the first of the two boxes.
+
+It used to arm the end instead, on the reasoning that the reader was switching
+precisely to add one and that arming the start would throw away the day they
+had just chosen. The second half of that stopped being true in 2.0.0: a click
+on the start moves the start and leaves the other end standing. So a click
+after crossing over sets the start and keeps the day as the end — which reads
+backwards if the day clicked is later, which the summary line says out loud,
+and which is one more click from being right. Nothing is lost either way.
 
 ```html
 <!-- the checkbox is yours; the field changes shape under it -->

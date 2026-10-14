@@ -187,6 +187,14 @@ How the repeated hour is shown. `'named'` — the default — writes the hour on
 and names the reading in force under the control. `'marked'` puts both in the
 menu, `02` and `02*`.
 
+The default here is `'named'`; the moment field and the period field default to
+`'marked'` instead, because their menus sit in a panel beside a calendar where
+the width of the longest word in the language costs more.
+
+The star is `messages.winterMark`, so it is whatever a screen puts there, and
+`messages.readingLegend` draws a line under the menus explaining it — undefined
+by default, so nothing appears unless it is asked for.
+
 <Live widget="TimeSelect" :options="{ locale: 'en-GB', minuteStep: 30, date: '2026-10-25', timeZone: 'Europe/Paris', readingStyle: 'marked', value: Temporal.PlainTime.from('02:30') }" />
 
 ### `offset`

@@ -187,6 +187,14 @@ Comment l'heure répétée est montrée. `'named'` — la valeur par défaut —
 l'heure une fois et nomme la lecture en vigueur sous le contrôle. `'marked'`
 met les deux dans le menu, `02` et `02*`.
 
+Le défaut vaut `'named'` ici ; le champ à moment et le champ période, eux,
+prennent `'marked'`, parce que leurs menus tiennent dans un panneau à côté d'un
+calendrier, où la largeur du mot le plus long de la langue coûte plus cher.
+
+L'étoile est `messages.winterMark`, donc c'est ce que l'écran y met, et
+`messages.readingLegend` dessine sous les menus une ligne qui l'explique —
+indéfinie par défaut, donc rien n'apparaît tant qu'on ne la demande pas.
+
 <Live widget="TimeSelect" :options="{ minuteStep: 30, date: '2026-10-25', timeZone: 'Europe/Paris', readingStyle: 'marked', value: Temporal.PlainTime.from('02:30') }" />
 
 ### `offset`

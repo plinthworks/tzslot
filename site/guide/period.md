@@ -926,6 +926,19 @@ createRangeField(element, {
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', confirm: true, messages: { ...EN, apply: 'Search', cancel: 'Never mind' }, title: 'Your own wording' }" />
 
+Two of the panel's sentences can also be given per instance, without touching
+the catalogue: `endBeforeStartMessage` when the end comes before the start, and
+`emptyPeriodMessage` when the two ends meet and the period holds nothing. They
+are what the summary line says instead of the catalogue's words.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  endBeforeStartMessage: 'No flights run backwards.',
+  emptyPeriodMessage: 'A stay has to last at least one night.',
+});
+```
+
 ### `today` and `now`
 
 The day the grid rings, and the moment the sub-day shortcuts count from. Both
@@ -1018,3 +1031,63 @@ one. Either way the closed field says which was chosen:
 On the morning an hour is skipped, it cannot be landed on at all: the arrows
 step over it and a time typed into the gap settles on the first moment that
 exists.
+
+### The mark is yours — `messages.winterMark`
+
+A star by default, and text like any other word the library says, so it comes
+from the catalogue a screen already hands over rather than from a setting of
+its own. Whatever is there is printed as it comes.
+
+```js
+import { EN } from '@tzslot/dom';
+
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  messages: { ...EN, winterMark: ' (std)' },
+});
+```
+
+The menu then offers `02` and `02 (std)`.
+
+### A line under the menus — `messages.readingLegend`
+
+Undefined by default, so nothing is drawn and no panel pays a row for an
+explanation it does not need. Give it a function and the line appears — only
+on a day that really repeats an hour, and only where the menus mark rather
+than name.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  messages: {
+    ...EN,
+    readingLegend: ({ mark, winter }) => `${mark} = ${winter} time`,
+  },
+});
+```
+
+A function and not a string on purpose: change `winterMark` to a dagger and
+the legend follows, instead of going on describing a star nobody can see.
+
+### Naming them instead — `readingStyle`
+
+`'marked'` is the default on both fields. `'named'` writes the words beside
+each reading in the menu — `02 — summer` and `02 — winter` — which needs no
+legend and no mark, and makes the menu as wide as the longest word in the
+language on every ordinary day as much as on this one.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  readingStyle: 'named',
+});
+```
+
+The compact field is not affected either way: `timeLayout: 'input'` says the
+words in full on its reading buttons, which have the room to.

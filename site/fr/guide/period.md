@@ -948,6 +948,20 @@ createRangeField(element, {
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', confirm: true, messages: { ...FR, apply: 'Rechercher', cancel: 'Laisser tomber' }, title: 'Vos propres formulations' }" />
 
+Deux des phrases du panneau peuvent aussi être données par instance, sans
+toucher au catalogue : `endBeforeStartMessage` quand la fin précède le début,
+et `emptyPeriodMessage` quand les deux bornes se rejoignent et que la période
+ne contient rien. C'est ce que la ligne de résumé dit à la place des mots du
+catalogue.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  endBeforeStartMessage: 'Aucun vol ne part à reculons.',
+  emptyPeriodMessage: 'Un séjour dure au moins une nuit.',
+});
+```
+
 ### `today` et `now`
 
 Le jour que la grille entoure, et le moment à partir duquel comptent les
@@ -1043,3 +1057,65 @@ choisie :
 Le matin où une heure est sautée, elle ne peut pas être atteinte du tout : les
 flèches l'enjambent, et une heure tapée dans le trou se pose sur le premier
 moment qui existe.
+
+### La marque vous appartient — `messages.winterMark`
+
+Une étoile par défaut, et du texte comme n'importe quel autre mot que la
+bibliothèque prononce : elle vient donc du catalogue que l'écran fournit déjà,
+pas d'un réglage à part. Ce qui s'y trouve est imprimé tel quel.
+
+```js
+import { FR } from '@tzslot/dom';
+
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  messages: { ...FR, winterMark: ' (H)' },
+});
+```
+
+Le menu offre alors `02` et `02 (H)`.
+
+### Une ligne sous les menus — `messages.readingLegend`
+
+Indéfinie par défaut : rien n'est dessiné, et aucun panneau ne paie une ligne
+pour une explication dont il n'a pas besoin. Donnez-lui une fonction et la
+ligne apparaît — seulement un jour qui répète vraiment une heure, et seulement
+là où les menus marquent au lieu de nommer.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  messages: {
+    ...FR,
+    readingLegend: ({ mark, winter }) => `${mark} : heure d'${winter}`,
+  },
+});
+```
+
+Une fonction et pas une chaîne, volontairement : changez `winterMark` pour un
+obèle et la légende suit, au lieu de continuer à décrire une étoile que
+personne ne voit.
+
+### Les nommer plutôt — `readingStyle`
+
+`'marked'` est le défaut sur les deux champs. `'named'` écrit les mots à côté
+de chaque lecture dans le menu — `02 — été` et `02 — hiver` — ce qui ne
+demande ni marque ni légende, et rend le menu aussi large que le mot le plus
+long de la langue tous les jours ordinaires de l'année autant que celui-ci.
+
+```js
+createRangeField(element, {
+  timeZone: 'Europe/Paris',
+  showTime: true,
+  timeLayout: 'select',
+  readingStyle: 'named',
+});
+```
+
+Le champ compact n'est concerné ni dans un cas ni dans l'autre :
+`timeLayout: 'input'` dit les mots en entier sur ses boutons de lecture, qui
+ont la place pour.

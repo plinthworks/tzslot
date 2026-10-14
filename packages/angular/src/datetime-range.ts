@@ -86,6 +86,8 @@ export class DateTimeRange implements ControlValueAccessor {
   readonly stepMinutes = input(30);
   /** With 'select': minutes between the options. Every minute by default. */
   readonly minuteStep = input(1);
+  /** The shape of an empty field, so the reader sees what is wanted. */
+  readonly mask = input(true);
   readonly hour12 = input<boolean | undefined>(undefined);
   /** The time a newly chosen day starts at. Midnight by default. */
   readonly defaultTime = input<PlainTime | string>('00:00');
@@ -135,6 +137,7 @@ export class DateTimeRange implements ControlValueAccessor {
     timeLayout: this.timeLayout(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
+    mask: this.mask(),
     hour12: this.hour12(),
     defaultTime: this.defaultTime(),
     editable: this.editable(),

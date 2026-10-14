@@ -208,6 +208,16 @@ export interface RangeFieldSettings {
    * already showing whether or not it lands on the step.
    */
   minuteStep: number;
+  /**
+   * How the menus tell the two readings of a repeated hour apart.
+   *
+   * A mark on the second, which is the default, or the words from the
+   * catalogue beside each. The mark itself is `messages.winterMark`, and
+   * `messages.readingLegend` explains it under the menus for a screen that
+   * wants a line there. This field has marked them since it shipped; the
+   * setting is what makes that a choice rather than a fact.
+   */
+  readingStyle: 'named' | 'marked';
   /** Nothing is reported until Apply is pressed. For searches that cost. */
   confirm: boolean;
   /**
@@ -460,6 +470,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     minSpan: null,
     fixedSpan: null,
     minuteStep: 5,
+    readingStyle: 'marked',
     confirm: false,
     reportOn: 'change',
     shift: false,
@@ -1816,7 +1827,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           value: wallOf(edge),
           withTime: s.showTime,
           timeLayout: s.timeLayout,
-          readingStyle: 'marked',
+          readingStyle: s.readingStyle,
           icon: s.fieldIcon,
           iconSide: s.fieldIconSide,
           stepMinutes: s.stepMinutes,

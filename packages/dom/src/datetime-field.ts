@@ -85,6 +85,18 @@ export interface DateTimeFieldSettings {
    * sets all three.
    */
   stepMinutes: number;
+  /**
+   * How the menus tell the two readings of a repeated hour apart.
+   *
+   * A mark on the second, which is the default and which both fields now use,
+   * or the words from the catalogue beside each. The mark itself is
+   * `messages.winterMark`, and `messages.readingLegend` explains it under the
+   * menus for a screen that wants a line there.
+   *
+   * Only the menus of `timeLayout: 'select'` read this. The compact field says
+   * the words in full on its reading buttons, which have the room to.
+   */
+  readingStyle: 'named' | 'marked';
   /** With 'select': minutes between the options. Every minute by default. */
   minuteStep: number;
   minTime: PlainTime | string | undefined;
@@ -203,6 +215,7 @@ export function createDateTimeField(
     showTime: true,
     snapMinutes: null,
     shift: false,
+    readingStyle: 'marked',
     showStep: true,
     timeLayout: 'input',
     stepMinutes: 30,
@@ -718,6 +731,7 @@ export function createDateTimeField(
           ? s.value.toZonedDateTimeISO(s.timeZone).offset
           : null,
       minuteStep: s.minuteStep,
+      readingStyle: s.readingStyle,
       minTime: s.minTime,
       maxTime: s.maxTime,
       locale: s.locale,
@@ -867,7 +881,7 @@ export function createDateTimeField(
            * Only the menus. The compact field keeps its reading buttons, which
            * say the words in full and have the room to.
            */
-          readingStyle: 'marked',
+          readingStyle: s.readingStyle,
           onChange: (time, offset) => {
             if (time === null) {
               draft = { date: draft.date, time: null };

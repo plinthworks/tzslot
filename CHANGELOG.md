@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.0.1
+## 2.1.0
 
 An hour menu in a dark page opened a list of white text on white.
 
@@ -66,6 +66,24 @@ of a panel the reader had only just opened.
 A click on the start now moves the start and leaves the day standing as the
 end. That can read backwards, which the panel says out loud and which is one
 click from being right — and nothing is lost either way.
+
+### Everything the dom can be told, an Angular screen can now say
+
+Checked mechanically rather than by reading: every key of every settings
+interface against the inputs of its wrapper. Four gaps, three of them real.
+
+`endBeforeStartMessage` and `emptyPeriodMessage` went into the period field in
+2.0.0 and were never wired to the wrapper, so the release that introduced them
+shipped them unreachable from Angular. `mask` existed on the moment field and
+the period field but not on `datetime-range`, for no reason but an oversight.
+(`onViewChange` was the false positive: it is a signal, not an input.)
+
+### `readingStyle`, on the fields rather than hidden inside them
+
+The period field had marked the readings since it shipped and the moment field
+now does too, both by a value written into the call rather than a setting — so
+a screen that wanted the words in a menu had no way to ask. It is a setting on
+both now, `'marked'` by default, which changes nothing and opens the door.
 
 ### `stepMinutes` was the only one of the three with no documentation
 

@@ -106,6 +106,8 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
   readonly stepMinutes = input(30);
   /** With timeLayout 'select': minutes between the options. Every minute by default. */
   readonly minuteStep = input(1);
+  /** A mark on the second reading of a repeated hour, or the words beside each. */
+  readonly readingStyle = input<'named' | 'marked'>('marked');
   readonly minTime = input<PlainTime | string | undefined>(undefined);
   readonly maxTime = input<PlainTime | string | undefined>(undefined);
   /** Only with timeLayout 'list': rules out slots while still showing them. */
@@ -203,6 +205,7 @@ export class DateTimeField implements ControlValueAccessor, AfterViewInit {
     showStep: this.showStep(),
     stepMinutes: this.stepMinutes(),
     minuteStep: this.minuteStep(),
+    readingStyle: this.readingStyle(),
     minTime: this.minTime(),
     maxTime: this.maxTime(),
     isSlotDisabled: this.isSlotDisabled(),

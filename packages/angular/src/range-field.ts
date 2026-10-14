@@ -142,6 +142,8 @@ export class RangeField implements ControlValueAccessor {
   readonly fixedSpan = input<DurationLike | null>(null);
   /** Minutes between the options of the hour menu. Five by default. */
   readonly minuteStep = input(5);
+  /** A mark on the second reading of a repeated hour, or the words beside each. */
+  readonly readingStyle = input<'named' | 'marked'>('marked');
   /** Nothing is reported until Apply is pressed. */
   readonly confirm = input(false);
   /**
@@ -241,6 +243,10 @@ export class RangeField implements ControlValueAccessor {
   }>({});
   /** Separators appear as figures are typed in those fields. */
   readonly mask = input(true);
+  /** Said when the end comes before the start, over the catalogue's word. */
+  readonly endBeforeStartMessage = input<string | undefined>(undefined);
+  /** Said when the two ends meet, so the period holds nothing. */
+  readonly emptyPeriodMessage = input<string | undefined>(undefined);
   readonly displayWith = input<((value: RangeFieldValue, timeZone: string) => string) | undefined>(undefined);
 
   readonly opened = output<void>();
@@ -278,6 +284,7 @@ export class RangeField implements ControlValueAccessor {
     minSpan: this.minSpan(),
     fixedSpan: this.fixedSpan(),
     minuteStep: this.minuteStep(),
+    readingStyle: this.readingStyle(),
     confirm: this.confirm(),
     reportOn: this.reportOn(),
     shift: this.shift(),
@@ -309,6 +316,8 @@ export class RangeField implements ControlValueAccessor {
     fieldIcon: this.fieldIcon(),
     fieldIconSide: this.fieldIconSide(),
     mask: this.mask(),
+    endBeforeStartMessage: this.endBeforeStartMessage(),
+    emptyPeriodMessage: this.emptyPeriodMessage(),
     displayWith: this.displayWith(),
     messages: this.messages(),
   }));

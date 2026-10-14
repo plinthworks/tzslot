@@ -550,9 +550,13 @@ Those two buttons are that checkbox. Press **One day**, open the field and
 pick a day; press **Two dates**, open it again, and the cursor is in the
 first of the two boxes — the start.
 
+The hours are showing, so the menus are there to see, but a day chosen while
+**One day** is on is the whole of it: midnight to the next midnight, whatever
+the menus say. They start mattering once there are two dates.
+
 <Live
   widget="RangeField"
-  :options="{ timeZone: 'Europe/Paris', months: 1, singleDay: true, today: Temporal.PlainDate.from('2026-10-14'), title: 'One day, then two' }"
+  :options="{ timeZone: 'Europe/Paris', months: 1, showTime: true, singleDay: true, today: Temporal.PlainDate.from('2026-10-14'), title: 'One day, then two' }"
   :controls="[
     { label: 'One day', run: (f) => f.update({ singleDay: true }) },
     { label: 'Two dates', run: (f) => f.update({ singleDay: false }) },

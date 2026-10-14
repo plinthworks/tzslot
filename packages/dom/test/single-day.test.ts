@@ -88,7 +88,7 @@ describe('singleDay', () => {
     expect(reads(host)).toBe('22/09/2026');
   });
 
-  it('arms the end coming back, so the next click extends rather than restarts', () => {
+  it('comes back on the start, where the reader expects the cursor', () => {
     const { host, field: f } = mount({ singleDay: true });
     f.open();
     day('2026-09-22').click();
@@ -97,11 +97,27 @@ describe('singleDay', () => {
     f.close();
     f.update({ singleDay: false });
     f.open();
+
+    /*
+     * It used to arm the end here, and send the cursor into the end's box.
+     *
+     * The reason written down was that arming the start would make the next
+     * click throw away the day just chosen -- true of the field that destroyed
+     * the end you had not touched, which 2.0.0 stopped doing. What the rule
+     * did meanwhile was drop the cursor into the second field of a panel the
+     * reader had only just opened.
+     */
+    const boxes = [...panel().querySelectorAll<HTMLInputElement>('.tz-dateinput__input')];
+    expect(document.activeElement).toBe(boxes[0]);
+    expect(panel().querySelector('.tz-rangefield__field--start.tz-dateinput--armed')).not.toBeNull();
+
+    // And the day is not thrown away: a click on the start moves the start and
+    // leaves the 22nd standing as the end. Backwards, which matches no record
+    // and which the panel says out loud -- the reader's own to sort out, and
+    // one click from being right.
     day('2026-09-25').click();
-    // The 22nd survived: without arming the end it would have become the start
-    // of a fresh selection and the day chosen a moment ago would be gone.
-    expect(iso(f.value.start)).toBe('2026-09-22');
-    expect(reads(host)).toBe('22/09/2026 – 25/09/2026');
+    expect(iso(f.value.start)).toBe('2026-09-25');
+    expect(reads(host)).toBe('25/09/2026 – 22/09/2026');
   });
 
   it('the attribute is obeyed — a display on the element would beat it', () => {

@@ -802,6 +802,19 @@ export const TIMESELECT_CSS = `
   align-items: center;
   gap: 0.375rem;
   font: var(--tz-font, inherit);
+  /* So the legend below can take a row of its own. The menus never wrap on
+     their own: the box is sized by its content, so there is nothing to wrap
+     against until something asks for the full width. */
+  flex-wrap: wrap;
+}
+/* Only ever seen on the morning an hour repeats, and only when a screen fills
+   the catalogue's readingLegend. The full basis is what puts it under the
+   menus rather than beside them. */
+.tz-timeselect__legend {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--tz-fg-muted, inherit);
 }
 .tz-timeselect__menu {
   border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));

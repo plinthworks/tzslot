@@ -855,6 +855,19 @@ export function createDateTimeField(
         ensureStyles(node, 'timeselect', TIMESELECT_CSS);
         timeMenus = createTimeSelect(timeHost, {
           injectStyles: false,
+          /*
+           * The menus mark the second reading; they do not name it.
+           *
+           * A period field has always done this and a moment field named them,
+           * so one screen carrying both showed "02" and "02*" in one list and
+           * "02 - summer" and "02 - winter" in the other, for the same hour of
+           * the same morning. The mark is the catalogue's, so a screen that
+           * wants a word puts a word there.
+           *
+           * Only the menus. The compact field keeps its reading buttons, which
+           * say the words in full and have the room to.
+           */
+          readingStyle: 'marked',
           onChange: (time, offset) => {
             if (time === null) {
               draft = { date: draft.date, time: null };

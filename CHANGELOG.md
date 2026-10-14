@@ -33,6 +33,40 @@ covers every widget that draws these menus. jsdom computes no popup, so the
 test pins that a rule reaches the options at all -- the part that was missing
 -- and not the colour the browser then paints.
 
+### The hour that happens twice is marked in every menu, not named in some
+
+A period field had always marked the second reading and a moment field named
+it, so one screen carrying both showed `02` and `02*` in one list and
+`02 — été` and `02 — hiver` in the other, for the same hour of the same
+morning. The menus mark it now, both of them.
+
+The mark is `winterMark` in the message catalogue, `*` by default. It is text
+a reader sees and a screen already hands the catalogue over, so there is no
+second mechanism to learn and nothing to decide about precedence: what a
+screen hands over wins, as it does for every other word.
+
+`readingLegend` is the line under the menus explaining the mark, and it is
+undefined by default — nothing is drawn. A function rather than a string, so
+the mark and its explanation cannot drift apart when one of them changes. It
+appears only where there is something to explain: a catalogue that defines it,
+a day that really repeats an hour, and menus marking rather than naming.
+
+Only the menus. The compact field keeps its reading buttons, which say the
+words in full and have the room to.
+
+### Leaving `singleDay` opens on the start
+
+It armed the end and put the cursor in the end's box. The reason written down
+was that arming the start would make the reader's next click throw away the
+day they had just chosen — true of the field that destroyed the end you had
+not touched, which 2.0.0 stopped doing. The rule outlived its reason by one
+release, and what it did meanwhile was drop the cursor into the second field
+of a panel the reader had only just opened.
+
+A click on the start now moves the start and leaves the day standing as the
+end. That can read backwards, which the panel says out loud and which is one
+click from being right — and nothing is lost either way.
+
 ### `stepMinutes` was the only one of the three with no documentation
 
 A screen asking for quarter-hours set `minuteStep: 15` and `snapMinutes: 15`,

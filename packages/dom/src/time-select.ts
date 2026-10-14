@@ -112,7 +112,19 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
   separator.textContent = ':';
   const minute = menu('minute');
   const meridiem = menu('meridiem');
-  host.append(hour, separator, minute);
+  /*
+   * The line that explains the mark, for a screen that wants one.
+   *
+   * Built always and shown almost never: it needs a catalogue that defines
+   * `readingLegend`, a day that actually repeats an hour, and menus marking
+   * rather than naming. Absent on every other day and every other screen,
+   * which is why it is `hidden` rather than left out -- the place is here, and
+   * filling it costs nothing anywhere else.
+   */
+  const legend = doc.createElement('p');
+  legend.className = 'tz-timeselect__legend';
+  legend.hidden = true;
+  host.append(hour, separator, minute, legend);
 
   const uses12 = () => s.hour12 ?? localeUses12Hour(s.locale);
   const bounds = () => ({ min: asTime(s.minTime), max: asTime(s.maxTime) });
@@ -320,6 +332,11 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
       const entries = time === null ? [] : offered.filter((o) => o.hour === time.hour);
       const reading =
         entries.find((o) => o.offset === s.offset)?.offset ?? entries[0]?.offset ?? null;
+      const explain = s.messages.readingLegend;
+      legend.hidden = !explain || starred.size === 0 || s.readingStyle !== 'marked';
+      legend.textContent = legend.hidden
+        ? ''
+        : explain!({ mark: s.messages.winterMark, winter: s.messages.winterTime });
       fillKeyed(
         hour,
         offered.map(({ hour: h, offset, name }) => {
@@ -330,7 +347,7 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
               offset === null
                 ? shownHour(h)
                 : s.readingStyle === 'marked'
-                  ? `${shownHour(h)}${starred.has(key) ? '*' : ''}`
+                  ? `${shownHour(h)}${starred.has(key) ? s.messages.winterMark : ''}`
                   : `${shownHour(h)} — ${name}`,
           };
         }),
@@ -345,6 +362,8 @@ export function createTimeSelect(host: HTMLElement, options: TimeSelectOptions =
         time === null ? null : String(time.minute),
       );
     } else {
+      legend.hidden = true;
+      legend.textContent = '';
       fill(hour, hourValues(), time?.hour ?? null, shownHour);
       fill(minute, minuteValues(), time?.minute ?? null, pad);
     }

@@ -654,15 +654,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    */
   let armedByHand = false;
   /**
-   * Arm the end the next time the panel opens.
-   *
-   * Turning singleDay off closes the panel — the switch is outside it — and
-   * opening again arms the start, which is what made the next click throw the
-   * chosen day away and begin a new selection. The intent has to outlive the
-   * close.
-   */
-  let armEndNext = false;
-  /**
    * The panel putting the cursor somewhere is not the reader choosing.
    *
    * Opening focuses the first field so the keyboard lands inside the panel;
@@ -1272,16 +1263,22 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * midnight: the reader loses the rest of their period, which is the price
    * of asking for one day and is visible at once.
    *
-   * Coming back, the end is armed rather than the start. The reader has their
-   * day already and is switching precisely to add an end — arming the start
-   * would make their next click throw that day away and begin again.
+   * Coming back, nothing is armed specially: the panel opens on the start,
+   * like every other opening.
+   *
+   * It used to arm the end, and the reason was that arming the start would
+   * make the reader's next click throw away the day they had just chosen.
+   * That was true of the field that destroyed the end you had not touched,
+   * and 2.0.0 stopped doing it — a click on the start now moves the start and
+   * leaves the end alone. The rule outlived its reason by one release, and
+   * what it did meanwhile was send the focus to the second field on a panel
+   * the reader had just opened, which nobody asked for.
    */
-  function crossOver(wasSingle: boolean): void {
+  function crossOver(): void {
     const { start, end } = days(s.value);
     if (s.singleDay) {
       armed = 'start';
       armedByHand = false;
-      armEndNext = false;
       // The day to keep: the start, or the end when that is all there was —
       // hiding the second field otherwise left a value on the trigger with no
       // control anywhere able to reach it.
@@ -1296,12 +1293,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       // where reports are held — because a consumer holding the old one has no
       // other way to learn it is stale.
       if (!samePeriod(asOneDay, s.value)) choose(asOneDay, { close: false });
-      return;
-    }
-    if (wasSingle && start) {
-      armed = 'end';
-      armedByHand = true;
-      armEndNext = true;
     }
   }
 
@@ -2031,9 +2022,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     label: () => s.ariaLabel ?? s.title ?? s.messages.chooseRange,
     onOpen: () => {
       draft = s.value;
-      armed = armEndNext && !off('end') ? 'end' : off('start') ? 'end' : 'start';
-      armedByHand = armEndNext;
-      armEndNext = false;
+      armed = off('start') ? 'end' : 'start';
+      armedByHand = false;
       render();
       s.onOpen?.();
     },
@@ -2069,10 +2059,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * left the reader outside it.
      */
     initialFocus: (node) => {
-      // The armed field, not simply the first one: coming back from a single
-      // day the end is armed, and focusing the start would arm it again
-      // through its own onFocus — the next click would then throw away the
-      // day just chosen.
+      // The armed field, not simply the first one: a screen that locks its
+      // start arms the end, and focusing a readonly box would leave the
+      // reader with a cursor in a field they cannot fill.
       const wanted = node.querySelector<HTMLElement>(
         `.tz-rangefield__field--${armed} .tz-dateinput__input:not([readonly])`,
       );
@@ -2284,9 +2273,10 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
            *
            * `setEdge` returns for a locked edge, so an armed-but-locked end
            * made the whole calendar inert: no value, no report, no word about
-           * why. Two ways in — `crossOver` arms the end without asking, and
-           * turning `fixedSpan` on mid-session locks an end already armed —
-           * and reopening the panel was the only cure.
+           * why. The way in is turning `fixedSpan` on mid-session, which locks
+           * an end that is already armed, and reopening the panel was the only
+           * cure. (`crossOver` was a second way in until it stopped arming the
+           * end at all.)
            */
           const wanted = correcting ? 'start' : armed;
           const edge = off(wanted) ? (wanted === 'start' ? 'end' : 'start') : wanted;
@@ -2321,7 +2311,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           clear.onclick = () => {
             cameFrom = null;
             draft = EMPTY;
-            armEndNext = false;
             armed = 'start';
             if (s.confirm) paintPanel();
             else commit(draft);
@@ -2437,7 +2426,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
         // was on screen before it arrived.
         reported = s.value;
         reportedPreset = cameFrom;
-        armEndNext = false;
         // A value handed in is a period, not a shortcut — unless a shortcut
         // came with it, which the next block reads.
         if (!('preset' in settings)) cameFrom = null;
@@ -2465,7 +2453,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
           return;
         }
       }
-      if ('singleDay' in settings && s.singleDay !== wasSingle) crossOver(wasSingle);
+      if ('singleDay' in settings && s.singleDay !== wasSingle) crossOver();
       render();
     },
     open: openPanel,
@@ -2474,7 +2462,6 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     clear() {
       cameFrom = null;
       draft = EMPTY;
-      armEndNext = false;
       commit(draft);
       // Held like a reader's gesture, its effect depended on how the reader
       // happened to leave the panel: Escape undid it, a click elsewhere let it

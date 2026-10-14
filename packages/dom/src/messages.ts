@@ -28,6 +28,25 @@ export interface TzslotMessages {
    */
   readonly summerTime: string;
   readonly winterTime: string;
+  /**
+   * The mark on the second reading, when the menus distinguish them by a mark
+   * rather than by the words above.
+   *
+   * It is text a reader sees, so it lives here rather than in a setting: a
+   * screen already hands this catalogue over, and what it hands over wins.
+   * Change it to a dagger, to a word, to anything -- the menu prints it as it
+   * comes.
+   */
+  readonly winterMark: string;
+  /**
+   * The line under the menus explaining the mark, when a screen wants one.
+   *
+   * Undefined draws nothing at all, which is the default: a mark that needs no
+   * explaining on an internal screen should not cost every panel a line. A
+   * function rather than a string so the mark and its explanation cannot drift
+   * apart when one of them is changed.
+   */
+  readingLegend?: ((parts: { mark: string; winter: string }) => string) | undefined;
   /** Which of the two is in force, once one has been chosen. */
   readingChosen(parts: { name: string; offset: string }): string;
 
@@ -182,6 +201,7 @@ export const EN: TzslotMessages = {
   whichReading: 'This hour happens twice. Which one?',
   summerTime: 'summer',
   winterTime: 'winter',
+  winterMark: '*',
   readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
   weekShort: 'Wk',
   weekLabel: 'Week',
@@ -279,6 +299,7 @@ export const FR: TzslotMessages = {
   whichReading: 'Cette heure a lieu deux fois. Laquelle ?',
   summerTime: 'été',
   winterTime: 'hiver',
+  winterMark: '*',
   readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
   weekShort: 'Sem.',
   weekLabel: 'Semaine',

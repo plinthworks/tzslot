@@ -802,14 +802,21 @@ export const TIMESELECT_CSS = `
   align-items: center;
   gap: 0.375rem;
   font: var(--tz-font, inherit);
-  /* So the legend below can take a row of its own. The menus never wrap on
-     their own: the box is sized by its content, so there is nothing to wrap
-     against until something asks for the full width. */
+}
+/* The legend takes a row of its own, and only then does anything wrap.
+   It was unconditional for one release, on the reasoning that an inline-flex
+   box is sized by its content so there would be nothing to wrap against. That
+   holds only where the box has the room it asks for: inside a narrow panel
+   column the two menus wrapped onto separate lines and the time area became a
+   slab. Scoped to the case it was written for, a panel with no legend lays out
+   exactly as it did before. */
+.tz-timeselect:has(> .tz-timeselect__legend:not([hidden])) {
   flex-wrap: wrap;
 }
 /* Only ever seen on the morning an hour repeats, and only when a screen fills
    the catalogue's readingLegend. The full basis is what puts it under the
    menus rather than beside them. */
+.tz-timeselect__legend[hidden] { display: none; }
 .tz-timeselect__legend {
   flex-basis: 100%;
   margin: 0;

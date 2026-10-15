@@ -3,9 +3,20 @@
  *
  * Native on Chrome, Firefox and Edge; absent from Safari and from Node before
  * it ships. The native one is used whenever it exists, but the polyfill is a
- * static import: a bundler includes it for every visitor, about 19 kB gzipped
- * of the core's 20. Measured, not assumed — an earlier version of this comment
+ * static import: a bundler includes it for every visitor, about 23 kB gzipped
+ * of the core's 24. Measured, not assumed — an earlier version of this comment
  * claimed the opposite.
+ *
+ * `/full` rather than the default entry, which knows only ISO 8601 and throws
+ * on any other calendar: "Unknown calendar islamic-umalqura; might need
+ * temporal-polyfill/full". A screen that displays Hijri months needs Temporal
+ * to count in them, not merely Intl to name them — the grid is built from
+ * month lengths and year boundaries, and those differ.
+ *
+ * It costs 3.8 kB gzipped over the basic entry, bundled and measured rather
+ * than estimated: 19,739 bytes against 23,663. An earlier estimate here said
+ * 7 kB, from adding the two calendar chunks' own gzipped sizes — which counts
+ * the code they share with everything else twice.
  *
  * Every other file imports Temporal from here rather than touching the global,
  * so there is one place that decides, and one place to change when Safari ships.
@@ -15,7 +26,7 @@
  * silently reintroduce the exact bug this library exists to fix — and it would
  * do it on the platform least able to tell you.
  */
-import { Temporal as Polyfill } from 'temporal-polyfill';
+import { Temporal as Polyfill } from 'temporal-polyfill/full';
 
 type TemporalNamespace = typeof Polyfill;
 

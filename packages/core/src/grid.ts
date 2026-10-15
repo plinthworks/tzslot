@@ -15,13 +15,26 @@ export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
  * There is no DST logic here on purpose. Which day it is does not depend on
  * whether the clocks changed that day; only what time it is does. Mixing the
  * two is what makes calendar code hard to read and easy to get wrong.
+ *
+ * `calendar` says which reckoning the year and month are counted in -- Hijri
+ * months are 29 or 30 days and begin on their own boundaries, so a grid of
+ * "Rabi al-Thani 1448" is not a grid of any Gregorian month.
+ *
+ * What comes back is always ISO, whatever was asked for. The calendar is a way
+ * of reading dates, not a way of storing them: the same rule this library
+ * applies to time zones, where a moment is kept in UTC and read on somebody's
+ * clocks. Returning Hijri dates instead would change every key, every
+ * comparison and every value a screen already holds, to say the same days in
+ * a different spelling. A caller that wants the Hijri day number for a cell
+ * asks the date for it -- `date.withCalendar(calendar).day`.
  */
 export function getMonthGrid(
   year: number,
   month: number,
   firstDayOfWeek: Weekday = 1,
+  calendar = 'iso8601',
 ): PlainDate[][] {
-  const first = Temporal.PlainDate.from({ year, month, day: 1 });
+  const first = Temporal.PlainDate.from({ year, month, day: 1, calendar }).withCalendar('iso8601');
 
   // How many days of the previous month lead the grid. The +7 before the
   // modulo is what keeps this correct when the month starts before the chosen
@@ -32,6 +45,20 @@ export function getMonthGrid(
   return Array.from({ length: 6 }, (_, week) =>
     Array.from({ length: 7 }, (_, day) => start.add({ days: week * 7 + day })),
   );
+}
+
+/**
+ * Whether a day belongs to the month a grid was built for.
+ *
+ * A grid shows six weeks, so the first and last rows carry days from either
+ * side. Telling them apart was a comparison of ISO month numbers, which is
+ * right for one calendar and wrong for the rest: in Hijri the month turns on
+ * a day that falls mid-Gregorian-month, so comparing the wrong pair of numbers
+ * greys out the middle of the grid and shows the edges as inside it.
+ */
+export function inMonth(date: PlainDate, year: number, month: number, calendar = 'iso8601'): boolean {
+  const read = calendar === 'iso8601' ? date : date.withCalendar(calendar);
+  return read.year === year && read.month === month;
 }
 
 /**

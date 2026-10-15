@@ -10,7 +10,7 @@ import type { PlainDate, Weekday } from '@tzslot/core';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { RANGE_CSS, ensureStyles } from './styles.js';
-import { paintCell, type RenderCell } from './cells.js';
+import { paintCell, readingKey, type RenderCell } from './cells.js';
 
 /** Either end may be unset while a range is being chosen. */
 export interface DateRangeValue {
@@ -599,7 +599,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
         Home: 0,
         End: coarseCells.length - 1,
       };
-      const wanted = moves[event.key];
+      const wanted = moves[readingKey(event.key, host)];
       if (wanted === undefined) return;
       event.preventDefault();
       coarseCells[Math.min(Math.max(wanted, 0), coarseCells.length - 1)]?.focus();
@@ -624,7 +624,7 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
       Home: () => from.subtract({ days: intoWeek }),
       End: () => from.add({ days: 6 - intoWeek }),
     };
-    const move = moves[event.key];
+    const move = moves[readingKey(event.key, host)];
     if (!move) return;
 
     event.preventDefault();

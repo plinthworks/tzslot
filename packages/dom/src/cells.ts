@@ -69,3 +69,27 @@ export function paintCell(
   cell.replaceChildren(number, small);
   return true;
 }
+
+/**
+ * What an arrow key means, which is not which way it points.
+ *
+ * Left and right mean "the day before" and "the day after", and in a
+ * right-to-left calendar the day after is drawn to the *left*. The grids read
+ * the key straight into a table of moves, so an Arabic reader pressing the
+ * arrow towards tomorrow went to yesterday -- and the cell that took focus was
+ * the one on the far side of where they were looking.
+ *
+ * Swapped here rather than in each table, so the six grids that navigate by
+ * arrow cannot drift apart. Up and down are untouched: a week is below the one
+ * before it in every writing direction.
+ *
+ * The direction is read from the element rather than from the document,
+ * because a page may be left-to-right with one container reversed, and the
+ * panel is told its own direction when it opens.
+ */
+export function readingKey(key: string, within: Element): string {
+  if (key !== 'ArrowLeft' && key !== 'ArrowRight') return key;
+  const view = within.ownerDocument.defaultView;
+  if (!view || view.getComputedStyle(within).direction !== 'rtl') return key;
+  return key === 'ArrowLeft' ? 'ArrowRight' : 'ArrowLeft';
+}

@@ -3,7 +3,7 @@ import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
-import type { RenderCell } from './cells.js';
+import { readingKey, type RenderCell } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { DAILY_CSS, SLOTS_CSS, TIME_CSS, TIMESELECT_CSS, ensureStyles } from './styles.js';
 
@@ -288,7 +288,7 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
       Home: 0,
       End: options.length - 1,
     };
-    const wanted = moves[event.key];
+    const wanted = moves[readingKey(event.key, host)];
     if (wanted === undefined || index < 0) return;
     event.preventDefault();
     const target = options[Math.min(Math.max(wanted, 0), options.length - 1)];

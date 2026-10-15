@@ -9,7 +9,7 @@ import {
 import type { PlainDate, Weekday } from '@tzslot/core';
 import { EN, type TzslotMessages } from './messages.js';
 import { CALENDAR_CSS, ensureStyles } from './styles.js';
-import { paintCell, type RenderCell } from './cells.js';
+import { paintCell, readingKey, type RenderCell } from './cells.js';
 
 /** Days, months or years — what the grid is currently choosing between. */
 export type CalendarView = 'days' | 'months' | 'years';
@@ -597,7 +597,7 @@ export function mountGrid<V>(
         Home: 0,
         End: coarseCells.length - 1,
       };
-      const wanted = moves[event.key];
+      const wanted = moves[readingKey(event.key, host)];
       if (wanted === undefined) return;
       event.preventDefault();
       coarseCells[Math.min(Math.max(wanted, 0), coarseCells.length - 1)]?.focus();
@@ -623,7 +623,7 @@ export function mountGrid<V>(
       Home: () => from.subtract({ days: intoWeek }),
       End: () => from.add({ days: 6 - intoWeek }),
     };
-    const move = moves[event.key];
+    const move = moves[readingKey(event.key, host)];
     if (!move) return;
 
     event.preventDefault();

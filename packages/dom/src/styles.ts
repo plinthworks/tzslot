@@ -62,10 +62,10 @@ export const CALENDAR_CSS = `
   justify-content: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);
   opacity: 0.55;
-  border-right: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
-  margin-right: 0.15rem;
+  border-inline-end: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+  margin-inline-end: 0.15rem;
 }
-.tz-cal__weeknumber--heading { border-right-color: transparent; }
+.tz-cal__weeknumber--heading { border-inline-end-color: transparent; }
 .tz-cal__weekday {
   text-align: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);
@@ -163,7 +163,7 @@ export const FIELD_CSS = `
   color: var(--tz-field-fg, var(--tz-fg));
   font: var(--tz-font, inherit);
   cursor: pointer;
-  text-align: left;
+  text-align: start;
 }
 .tz-field__trigger--empty .tz-field__text { opacity: var(--tz-field-placeholder-opacity, 0.6); }
 .tz-field__trigger:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -451,10 +451,10 @@ export const RANGE_CSS = `
   justify-content: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);
   opacity: 0.55;
-  border-right: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
-  margin-right: 0.15rem;
+  border-inline-end: 1px solid var(--tz-border, color-mix(in srgb, currentColor 20%, transparent));
+  margin-inline-end: 0.15rem;
 }
-.tz-range__weeknumber--heading { border-right-color: transparent; }
+.tz-range__weeknumber--heading { border-inline-end-color: transparent; }
 .tz-range__weekday {
   text-align: center;
   font-size: var(--tz-cal-weekday-size, 0.75em);
@@ -472,8 +472,18 @@ export const RANGE_CSS = `
   background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
   color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
 }
-.tz-range__day--start { border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem)) 0 0 var(--tz-cal-radius, var(--tz-radius, 0.25rem)); }
-.tz-range__day--end { border-radius: 0 var(--tz-cal-radius, var(--tz-radius, 0.25rem)) var(--tz-cal-radius, var(--tz-radius, 0.25rem)) 0; }
+/* The pill's open side faces into the period, so in a right-to-left calendar
+   -- where the period runs from the right -- both ends round the other way.
+   The logical pair follows the direction; the four-value shorthand did not,
+   and painted the rounded side into the middle of the band. */
+.tz-range__day--start {
+  border-start-start-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+  border-end-start-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+}
+.tz-range__day--end {
+  border-start-end-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+  border-end-end-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem));
+}
 .tz-range__day--start.tz-range__day--end { border-radius: var(--tz-cal-radius, var(--tz-radius, 0.25rem)); }
 .tz-range__day:disabled { opacity: 0.3; cursor: not-allowed; }
 .tz-range--notes { --tz-cal-cell-size: var(--tz-cal-note-cell-size, 2.75rem); }
@@ -526,20 +536,23 @@ export const DTR_CSS = `
 .tz-dtr__allday-knob {
   position: absolute;
   top: 50%;
-  left: 0.175rem;
+  /* Logical, so the knob rests on the side a reader starts from and travels
+     towards the side they finish on -- which is the right in Arabic. Written
+     as left, it slid the wrong way under a right-to-left reader. */
+  inset-inline-start: 0.175rem;
   width: 0.875rem;
   height: 0.875rem;
   border-radius: 50%;
   background: var(--tz-fg-muted, currentColor);
   transform: translateY(-50%);
-  transition: left 120ms ease, background-color 120ms ease;
+  transition: inset-inline-start 120ms ease, background-color 120ms ease;
 }
 .tz-dtr__allday-box--on {
   border-color: var(--tz-accent, currentColor);
   background: var(--tz-accent, currentColor);
 }
 .tz-dtr__allday-box--on .tz-dtr__allday-knob {
-  left: calc(100% - 1.05rem);
+  inset-inline-start: calc(100% - 1.05rem);
   background: var(--tz-accent-fg, canvas);
 }
 .tz-dtr__allday-box:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -564,7 +577,7 @@ export const DTR_CSS = `
   display: grid;
   max-height: var(--tz-dtr-slots-height, 15rem);
   overflow-y: auto;
-  padding-right: 0.25rem;
+  padding-inline-end: 0.25rem;
 }
 .tz-dtr__result {
   display: flex;
@@ -608,7 +621,7 @@ export const DAILY_CSS = `
   max-height: var(--tz-daily-list-height, 16rem);
   overflow-y: auto;
   align-content: start;
-  padding-right: 0.25rem;
+  padding-inline-end: 0.25rem;
 }
 .tz-daily__note { display: block; margin-top: 0.25rem; font-size: 0.75em; opacity: 0.7; }
 .tz-daily__result {
@@ -626,7 +639,7 @@ export const DAILY_CSS = `
 .tz-daily__unusual {
   flex-basis: 100%;
   margin: 0;
-  padding-left: 1.1rem;
+  padding-inline-start: 1.1rem;
   font-size: 0.9em;
   color: var(--tz-dtr-warning-fg, var(--tz-warning, currentColor));
 }
@@ -669,7 +682,7 @@ export const TIME_CSS = `
 .tz-time__arrow {
   flex: 1;
   border: 0;
-  border-left: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
+  border-inline-start: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
   padding: 0 0.3rem;
   background: transparent;
   color: inherit;
@@ -682,7 +695,7 @@ export const TIME_CSS = `
 .tz-time__arrow + .tz-time__arrow { border-top: 1px solid var(--tz-time-border, var(--tz-border, currentColor)); }
 .tz-time__separator { opacity: 0.6; }
 .tz-time__meridiem {
-  margin-left: 0.25rem;
+  margin-inline-start: 0.25rem;
   border: 1px solid var(--tz-time-border, var(--tz-border, currentColor));
   border-radius: var(--tz-time-radius, var(--tz-radius, 0.375rem));
   padding: var(--tz-time-pad-y, 0.375rem) 0.5rem;
@@ -910,14 +923,14 @@ export const DATEINPUT_CSS = `
 .tz-dateinput__icon {
   display: inline-flex;
   align-items: center;
-  padding-left: 0.6rem;
+  padding-inline-start: 0.6rem;
   opacity: 0.55;
   pointer-events: none; /* a hand aiming at the field must reach the field */
 }
 /* At the far end instead: the mark moves, the field does not. */
-.tz-dateinput__row--icon-end .tz-dateinput__icon { order: 9; padding: 0 0.6rem 0 0; }
-.tz-dateinput__row--icon-end .tz-dateinput__input { padding-left: 0.75rem; }
-.tz-dateinput__icon + .tz-dateinput__input { padding-left: 0.4rem; }
+.tz-dateinput__row--icon-end .tz-dateinput__icon { order: 9; padding: 0; padding-inline-end: 0.6rem; }
+.tz-dateinput__row--icon-end .tz-dateinput__input { padding-inline-start: 0.75rem; }
+.tz-dateinput__icon + .tz-dateinput__input { padding-inline-start: 0.4rem; }
 .tz-dateinput__input {
   flex: 0 1 auto;
   min-width: 0;
@@ -956,7 +969,7 @@ export const DATEINPUT_CSS = `
 /* The hour beside the day, not on a row of its own: one field, two halves.
    Its arrows sit above and below the figures, as they do in a panel, and the
    field around it is its frame — it brings none of its own here. */
-.tz-dateinput__time { padding-right: 0.3rem; }
+.tz-dateinput__time { padding-inline-end: 0.3rem; }
 .tz-dateinput__time.tz-time { width: auto; gap: 0.1rem; font-size: 1rem; }
 .tz-dateinput__time .tz-time__field { border: 0; background: transparent; min-width: 0; }
 .tz-dateinput__time .tz-time__input { width: 1.7rem; padding: 0; font-size: 1em; text-align: center; }
@@ -1128,7 +1141,7 @@ export const RANGEFIELD_CSS = `
   cursor: pointer;
 }
 .tz-rangefield__bound + .tz-rangefield__bound {
-  border-left: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
+  border-inline-start: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
 }
 .tz-rangefield__bound--on {
   background: var(--tz-accent, currentColor);
@@ -1144,7 +1157,8 @@ export const RANGEFIELD_CSS = `
   gap: 0.3rem;
   border: 1px solid var(--tz-border, color-mix(in srgb, currentColor 25%, transparent));
   border-radius: var(--tz-radius, 0.375rem);
-  padding: 0.2rem 0.2rem 0.2rem 0.5rem;
+  padding: 0.2rem;
+  padding-inline-start: 0.5rem;
   font-size: 0.85em;
 }
 .tz-rangefield__end-clear {
@@ -1218,8 +1232,8 @@ export const RANGEFIELD_CSS = `
   gap: 0.4rem;
   flex: 0 0 auto;
   width: var(--tz-rangefield-steps-width, 9rem);
-  padding-left: 1rem;
-  border-left: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
+  padding-inline-start: 1rem;
+  border-inline-start: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
 }
 /* It names the column, so it has to be read rather than sensed — the same
    reason FROM and TO were lifted off 0.6 and a normal weight. */
@@ -1265,7 +1279,7 @@ export const RANGEFIELD_CSS = `
   color: inherit;
   font: var(--tz-font, inherit);
   font-size: 0.875em;
-  text-align: left;
+  text-align: start;
   cursor: pointer;
 }
 .tz-rangefield__preset--on {
@@ -1284,7 +1298,7 @@ export const RANGEFIELD_CSS = `
 .tz-rangefield__pair { display: flex; gap: 1rem; }
 .tz-rangefield__time[hidden] { display: none; }
 .tz-rangefield__readings[hidden] { display: none; }
-.tz-rangefield__readings { margin-left: 0.25rem; }
+.tz-rangefield__readings { margin-inline-start: 0.25rem; }
 .tz-rangefield__time { display: flex; align-items: center; gap: 0.4rem; }
 .tz-rangefield__time-label { font-size: 0.8125em; opacity: 0.7; }
 .tz-rangefield__footer {
@@ -1333,9 +1347,9 @@ export const RANGEFIELD_CSS = `
   .tz-rangefield__presets {
     width: auto;
     max-height: none;
-    padding-left: 0;
+    padding-inline-start: 0;
     padding-top: 0.75rem;
-    border-left: 0;
+    border-inline-start: 0;
     border-top: 1px solid var(--tz-border, color-mix(in srgb, currentColor 18%, transparent));
   }
   /* Side by side and wrapping, so four steps are one or two lines rather than

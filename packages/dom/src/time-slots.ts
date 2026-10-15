@@ -1,5 +1,6 @@
 import { getDaySlots } from '@tzslot/core';
 import type { DaySlotsOptions, Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
+import { readingKey } from './cells.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { SLOTS_CSS, ensureStyles } from './styles.js';
 
@@ -259,7 +260,7 @@ export function createTimeSlots(host: HTMLElement, options: TimeSlotsOptions = {
       Home: 0,
       End: usable.length - 1,
     };
-    const wanted = moves[event.key];
+    const wanted = moves[readingKey(event.key, host)];
     if (wanted === undefined) return;
     event.preventDefault();
     const target = usable[Math.min(Math.max(wanted, 0), usable.length - 1)];

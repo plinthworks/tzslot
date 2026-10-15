@@ -84,6 +84,20 @@ function carryTheme(field: HTMLElement, panel: HTMLElement): void {
   const win = field.ownerDocument.defaultView;
   if (!win) return;
   const here = win.getComputedStyle(field);
+  /*
+   * And which way it reads, which nothing else here would tell it.
+   *
+   * The panel lives on the body, so an application that sets dir="rtl" on a
+   * container rather than on <html> had its field laid out right-to-left and
+   * the panel it opened laid out left-to-right. Everything in the panel that
+   * follows the writing direction -- the logical properties, the order of the
+   * two date boxes, the mirrored chevrons -- went the wrong way at once.
+   *
+   * Read from the field rather than copied from an attribute, because the
+   * direction in force is a computed thing: it may come from any ancestor, or
+   * from the page's own default.
+   */
+  panel.dir = here.direction === 'rtl' ? 'rtl' : 'ltr';
   const page = win.getComputedStyle(field.ownerDocument.documentElement);
   for (const name of CARRIED) {
     const value = here.getPropertyValue(name).trim();
@@ -163,7 +177,18 @@ export function createPanel(options: PanelOptions): PanelController {
      */
     const room = win.innerHeight - 2 * edge;
     const top = height >= room ? edge : Math.max(edge, Math.min(wanted, win.innerHeight - height - edge));
-    const left = Math.max(edge, Math.min(field.left, win.innerWidth - panel.offsetWidth - edge));
+    /*
+     * Anchored on the edge the reader starts from.
+     *
+     * It was always `field.left`, so a panel wider than its field spilled to
+     * the right. That is correct left-to-right and wrong the other way: in
+     * Arabic the two line up on their right edges and the panel grows
+     * leftwards. The clamp is unchanged and still wins — a panel is kept on
+     * screen before it is kept aligned.
+     */
+    const rtl = win.getComputedStyle(panel).direction === 'rtl';
+    const anchored = rtl ? field.right - panel.offsetWidth : field.left;
+    const left = Math.max(edge, Math.min(anchored, win.innerWidth - panel.offsetWidth - edge));
     panel.style.top = `${top}px`;
     panel.style.left = `${left}px`;
   }

@@ -81,6 +81,35 @@ export function formatWith(
 
 const escapeRegExp = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/**
+ * The marks Intl puts between the parts of a date in a right-to-left locale.
+ *
+ * `formatToParts` hands back literals carrying U+200F, so a pattern derived
+ * from an Arabic locale reads `dd<RLM>/MM<RLM>/yyyy`. They belong there: they
+ * are what keeps `20/09/2026` from being reordered on screen beside Arabic
+ * text. What they must not do is reach the parser, which built a regex
+ * demanding them literally -- so in every Arabic locale, typing `20/09/2026`
+ * was refused, and there is no key on any keyboard that produces one.
+ */
+const BIDI_MARKS = /[\u200E\u200F\u061C\u202A-\u202E\u2066-\u2069]/g;
+
+/**
+ * Arabic-Indic and Persian figures, as the Latin ones the parser reads.
+ *
+ * A reader whose keyboard writes ٢٠ is typing a twenty. `\d` matches neither
+ * range, so `Number('٢٠')` is NaN and the mask, which filtered on `[0-9]`,
+ * deleted every keystroke as it arrived: the field emptied itself while
+ * someone was typing into it.
+ */
+const toLatinFigures = (text: string) =>
+  text.replace(/[\u0660-\u0669\u06F0-\u06F9]/gu, (figure) => {
+    const code = figure.codePointAt(0)!;
+    return String(code - (code >= 0x06f0 ? 0x06f0 : 0x0660));
+  });
+
+/** What a reader typed, as the parser can read it. Display is untouched. */
+const asTyped = (text: string) => toLatinFigures(text).replace(BIDI_MARKS, '');
+
 /** How wide each token is when it is written padded, or null when it varies. */
 const WIDTHS: Record<string, number> = { yyyy: 4, MM: 2, dd: 2, HH: 2, hh: 2, mm: 2, a: 2 };
 
@@ -116,7 +145,10 @@ export function maskWith(pattern: string, text: string): string {
   const parts = pieces(pattern);
   if (parts.some((part) => part.token !== undefined && WIDTHS[part.token] === undefined)) return text;
 
-  const typed = [...text].filter((c) => /[0-9A-Za-z]/.test(c));
+  // Normalised on the way in only. The literals written back out below are
+  // the pattern's own, marks included, so the field still reads correctly
+  // beside Arabic text.
+  const typed = [...asTyped(text)].filter((c) => /[0-9A-Za-z]/.test(c));
   let at = 0;
   let out = '';
   /** The separator after a part that is full comes straight away: that is the help. */
@@ -162,7 +194,9 @@ export function parseWith(
 ): { date: PlainDate | null; time: PlainTime | null } | null {
   const order: string[] = [];
   let source = '^\\s*';
-  let rest = pattern;
+  // The marks come out of the pattern as well as the text: a regex that does
+  // not ask for them cannot be failed by their absence.
+  let rest = pattern.replace(BIDI_MARKS, '');
 
   while (rest.length > 0) {
     const match = TOKENS.exec(rest);
@@ -194,7 +228,7 @@ export function parseWith(
   }
   source += '\\s*$';
 
-  const found = new RegExp(source).exec(text);
+  const found = new RegExp(source).exec(asTyped(text));
   if (!found) return null;
 
   const parts: Record<string, string> = {};

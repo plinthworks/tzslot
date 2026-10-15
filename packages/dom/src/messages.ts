@@ -391,3 +391,125 @@ export const FR: TzslotMessages = {
       direction === 'back' ? 'reculent' : 'avancent'
     } de ${by} pendant cette période.`,
 };
+
+/**
+ * Arabic, shipped because a consumer asked for it.
+ *
+ * Two things about it are not translation, and both are deliberate.
+ *
+ * The figures are not here. `locale` decides them, not this catalogue: `ar-EG`
+ * and `ar-SA` write ٢٠, `ar` and `ar-MA` write 20, and a screen in Rabat using
+ * these words wants its own. Pairing one language with one numbering system
+ * would be the library deciding something that is not its business.
+ *
+ * And `dailySummary` counts properly. Arabic has six plural categories where
+ * English has two, which is why the catalogue's countable sentences are
+ * functions rather than templates with a hole in them -- the shape was built
+ * for this and this is the first language to use it.
+ */
+const DAYS_AR = new Intl.PluralRules('ar');
+const arabicDays = (days: number): string =>
+  ({
+    zero: 'أيام',
+    one: 'يوم',
+    two: 'يومان',
+    few: 'أيام',
+    many: 'يوماً',
+    other: 'يوم',
+  })[DAYS_AR.select(days)] ?? 'يوم';
+
+export const AR: TzslotMessages = {
+  chooseDate: 'اختر تاريخاً',
+  chooseDateTime: 'اختر تاريخاً ووقتاً',
+  timeLabel: 'الوقت',
+  whichReading: 'هذه الساعة تتكرر مرتين. أيّهما؟',
+  summerTime: 'صيفي',
+  winterTime: 'شتوي',
+  winterMark: '*',
+  readingChosen: ({ name, offset }) => `${name} (UTC${offset}).`,
+  weekShort: 'أسب',
+  weekLabel: 'الأسبوع',
+  previousMonth: 'الشهر السابق',
+  nextMonth: 'الشهر التالي',
+  chooseMonth: 'اختر شهراً',
+  chooseYear: 'اختر سنة',
+  today: 'اليوم',
+  clear: 'مسح',
+  availableTimes: 'الأوقات المتاحة',
+  skipped: 'محذوفة',
+  noTimes: 'لا توجد أوقات متاحة.',
+  from: 'من',
+  to: 'إلى',
+  allDay: 'طوال اليوم',
+  chooseRange: 'اختر فترة',
+  apply: 'تطبيق',
+  cancel: 'إلغاء',
+  presets: {
+    today: 'اليوم',
+    yesterday: 'أمس',
+    last7Days: 'آخر 7 أيام',
+    last14Days: 'آخر 14 يوماً',
+    last30Days: 'آخر 30 يوماً',
+    thisWeek: 'هذا الأسبوع',
+    lastWeek: 'الأسبوع الماضي',
+    thisMonth: 'هذا الشهر',
+    lastMonth: 'الشهر الماضي',
+    thisQuarter: 'هذا الربع',
+    lastQuarter: 'الربع الماضي',
+    nextQuarter: 'الربع القادم',
+    thisQuarterHour: 'ربع الساعة الحالي',
+    lastHour: 'الساعة السابقة',
+    thisHour: 'هذه الساعة',
+    nextHour: 'الساعة التالية',
+    tomorrow: 'غداً',
+    next7Days: 'الأيام السبعة القادمة',
+    next30Days: 'الثلاثون يوماً القادمة',
+    thisYear: 'هذه السنة',
+  },
+  previousPeriod: 'الفترة السابقة',
+  nextPeriod: 'الفترة التالية',
+  singleDate: 'التاريخ',
+  startDate: 'تاريخ البداية',
+  endDate: 'تاريخ النهاية',
+  stepLabel: 'الخطوة',
+  stepTooShort: 'أقصر من اليوم الذي يحمله هذا الحقل',
+  between: 'بين',
+  fromDate: 'من',
+  untilDate: 'حتى',
+  clearStart: 'بلا بداية',
+  clearEnd: 'بلا نهاية',
+  clearField: 'أفرغ هذا الحقل',
+  rangeStart: 'من',
+  rangeEnd: 'إلى',
+  dayIsStart: 'بداية الفترة',
+  dayIsEnd: 'نهاية الفترة',
+  dayWithin: 'ضمن الفترة',
+  selectedRange: (period) => `المحدد: ${period}`,
+  spanClamped: (limit) => `تحرّك الطرف الآخر: هذه الفترة محدودة بـ ${limit}.`,
+  periodSummary: ({ length, zone }) => `${length} · ${zone}`,
+  endBeforeStart: 'النهاية قبل البداية.',
+  emptyPeriod: 'هذه الفترة فارغة.',
+  rangeCrossesUnavailable: 'هذه الفترة تمرّ بيوم غير متاح.',
+  days: 'الأيام',
+  hours: 'الساعات',
+  timeFrom: 'من',
+  timeTo: 'حتى',
+  nextDay: 'اليوم التالي',
+  hourLabel: 'الساعة',
+  minuteLabel: 'الدقيقة',
+  meridiemLabel: 'قبل الظهر أو بعده',
+  am: 'ص',
+  pm: 'م',
+  dailySummary: ({ days, total }) => `${days} ${arabicDays(days)} · ${total}`,
+  unusualDay: ({ date, real, change }) =>
+    ({
+      back: `${date} يدوم ${real}: الساعات تتأخر.`,
+      forward: `${date} يدوم ${real}: الساعات تتقدم.`,
+      skipped: `${date}: وقت يقع في الساعة المحذوفة، فيُقرأ بعدها بساعة.`,
+      repeated: `${date}: وقت يقع في الساعة المتكررة؛ النافذة تشمل كلتيهما.`,
+    })[change],
+  nonExistentTime: (time) => `${time} لا يوجد في هذا التاريخ — الساعات تتقدم.`,
+  repeatedTime: (time, offset) => `${time} يتكرر مرتين في هذا التاريخ. هذه القراءة عند UTC${offset}.`,
+  clockChange: ({ direction, by, apparent, real }) =>
+    `الساعات ${direction} بمقدار ${by} خلال هذه الفترة، فتبدو ${apparent} لكنها تدوم ${real}.`,
+};

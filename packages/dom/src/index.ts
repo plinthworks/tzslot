@@ -91,7 +91,7 @@ export type {
   DailyRangeSettings,
   DailyRangeValue,
 } from './daily-range.js';
-export { EN, FR } from './messages.js';
+export { EN, FR, AR } from './messages.js';
 export type { TzslotMessages } from './messages.js';
 export {
   CALENDAR_CSS,

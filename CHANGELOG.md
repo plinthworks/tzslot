@@ -32,6 +32,14 @@ whole days, ending at the midnight that opens the 15th, exactly as before.
 day earlier than it used to for the same click, and the period it reports is
 one day shorter. A screen with `showTime: false` sees nothing change.
 
+One gesture follows from this and is worth naming. On a period field **with
+hours**, clicking the same day twice now gives a period of no length rather
+than a whole day: the second click means "the 8th at 00:00", which is where
+the first one already was. The panel says so on its summary line instead of
+going quiet. A whole day is still a whole day everywhere it is asked for as
+one — `singleDay` gives 24 hours with the hours on screen or off, and so does
+clicking a day twice on a field showing no hours.
+
 Six other tests asserted the old reading by name — "a named range of days
 keeps its last day, even on a screen showing hours". They were changed on
 purpose. The decision they recorded was a reasonable one; it is being

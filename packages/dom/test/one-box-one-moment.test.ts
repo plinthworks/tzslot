@@ -99,3 +99,65 @@ describe('the reader’s case, as reported', () => {
     expect(trigger()).toBe('16/10/2026 – 24/10/2026');
   });
 });
+
+describe('a whole day is still a whole day', () => {
+  it('with singleDay, hours on screen or off', () => {
+    for (const showTime of [true, false]) {
+      const panel = open(
+        { start: at('2026-10-08', '00:00'), end: at('2026-10-09', '00:00') },
+        { singleDay: true, showTime },
+      );
+      expect(panel).not.toBeNull();
+      const hours =
+        (field!.value.end!.epochMilliseconds - field!.value.start!.epochMilliseconds) / 3_600_000;
+      expect(hours).toBe(24);
+      field!.destroy();
+      host!.remove();
+      document.querySelectorAll('.tz-field__panel').forEach((n) => n.remove());
+    }
+  });
+
+  it('and clicking one day twice on a field with no hours', () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    field = createRangeField(host, {
+      timeZone: zone, locale: 'fr-FR', messages: FR, showTime: false, months: 1,
+      today: Temporal.PlainDate.from('2026-10-08'),
+    });
+    field.open();
+    const panel = document.querySelector<HTMLElement>('.tz-field__panel')!;
+    panel.querySelector<HTMLButtonElement>('[data-date="2026-10-08"]')!.click();
+    document
+      .querySelector<HTMLElement>('.tz-field__panel')!
+      .querySelector<HTMLButtonElement>('[data-date="2026-10-08"]')!
+      .click();
+    const hours =
+      (field.value.end!.epochMilliseconds - field.value.start!.epochMilliseconds) / 3_600_000;
+    expect(hours).toBe(24);
+  });
+
+  it('while the same two clicks with hours give a period of no length, and say so', () => {
+    // The consequence of "the day you click is the day you get": the second
+    // click means the 8th at 00:00, which is where the first one already was.
+    // 24 hours before 2.1.1, and the summary line now explains it rather than
+    // the field going quiet.
+    host = document.createElement('div');
+    document.body.append(host);
+    field = createRangeField(host, {
+      timeZone: zone, locale: 'fr-FR', messages: FR, showTime: true, months: 1,
+      today: Temporal.PlainDate.from('2026-10-08'),
+    });
+    field.open();
+    for (let i = 0; i < 2; i++) {
+      document
+        .querySelector<HTMLElement>('.tz-field__panel')!
+        .querySelector<HTMLButtonElement>('[data-date="2026-10-08"]')!
+        .click();
+    }
+    expect(field.value.start!.epochMilliseconds).toBe(field.value.end!.epochMilliseconds);
+    expect(
+      document.querySelector('.tz-field__panel')!.querySelector('.tz-rangefield__summary')!
+        .textContent,
+    ).toBe(FR.emptyPeriod);
+  });
+});

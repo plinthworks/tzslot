@@ -86,7 +86,30 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Journées entières' }" />
 
-`true` donne une heure à chaque jour choisi, minuit sauf indication de l'écran.
+`true` donne une heure à chaque jour choisi, minuit sauf indication de l'écran,
+**et le champ écrit ces heures** — minuit compris. Une période de neuf jours
+affiche `16/10/2026 00:00 – 25/10/2026 00:00`, c'est-à-dire exactement la
+valeur qu'elle porte.
+
+Jusqu'à la 2.1.1, une fin à minuit était écrite comme le jour qu'elle fermait :
+la même période affichait `16/10/2026 – 24/10/2026` pendant que la boîte de fin
+du panneau disait `24/10/2026` à côté de `00:00` — une date venue d'une lecture
+à côté d'une heure venue de l'autre, nommant un moment huit jours après le
+début alors que le calendrier en peignait neuf. Et cela basculait sur une
+minute : une fin à `00:00` se réduisait à une date nue, `00:01` non.
+
+Le calendrier et le résumé ne changent pas : ils comptent toujours en jours
+couverts, donc neuf jours peints et la ligne qui dit `9d`. La date de fin dans
+la boîte est le minuit qui ferme le neuvième, parce que cette boîte est
+éditable et doit nommer le moment qu'elle contient.
+
+Voici cette période. Ouvrez-la : les deux boîtes, les jours peints et la ligne
+en dessous décrivent les mêmes neuf jours, chacun dans ses propres termes.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, today: Temporal.PlainDate.from('2026-10-16'), value: { start: Temporal.Instant.from('2026-10-15T22:00Z'), end: Temporal.Instant.from('2026-10-24T22:00Z') }, title: 'Neuf jours, les deux bornes à minuit' }"
+/>
 **Ce champ n'a pas d'interrupteur *Toute la journée*** : deux minuits le
 disent déjà, il ne reste rien à déclarer au lecteur.
 [`createDateTimeRange`](../examples#une-journee-entiere-ou-un-intervalle) est

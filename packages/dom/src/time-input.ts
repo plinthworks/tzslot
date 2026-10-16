@@ -1,5 +1,6 @@
 import { Temporal, resolveWallTime } from '@tzslot/core';
 import type { PlainDate, PlainTime } from '@tzslot/core';
+import { toLatinFigures } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { TIME_CSS, ensureStyles } from './styles.js';
 
@@ -224,7 +225,16 @@ export function createTimeInput(host: HTMLElement, options: TimeInputOptions = {
   }
 
   function typed(part: 'hour' | 'minute', raw: string): void {
-    const digits = raw.replace(/\D/g, '').slice(0, 2);
+    /*
+     * The figures first, then everything that is not one.
+     *
+     * `\D` means "not an ASCII digit", so a reader typing ١٤ had both
+     * characters deleted as they arrived and the field wrote the empty string
+     * back over what they were doing. The same defect as the date field's,
+     * found in the same review, and left here when that one was fixed --
+     * which is what fixing an instance rather than a class looks like.
+     */
+    const digits = toLatinFigures(raw).replace(/\D/g, '').slice(0, 2);
     editing = {
       hour: part === 'hour' ? digits : hourField.input.value,
       minute: part === 'minute' ? digits : minuteField.input.value,

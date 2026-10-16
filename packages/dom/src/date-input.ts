@@ -162,7 +162,8 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
   host.append(caption, row, extra);
 
   const pattern = () => s.format ?? patternFor(s.locale);
-  const written = () => (s.value.date ? formatWith(pattern(), { date: s.value.date }, s.locale) : '');
+  const written = () =>
+    s.value.date ? formatWith(pattern(), { date: s.value.date }, s.locale, s.messages) : '';
   /**
    * Whether the reader is in the middle of writing something here.
    *
@@ -198,7 +199,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
       settle(EMPTY);
       return true;
     }
-    const parsed = parseWith(pattern(), text);
+    const parsed = parseWith(pattern(), text, s.messages);
     if (!parsed || (!parsed.date && !parsed.time)) {
       if (commit) {
         input.classList.add('tz-dateinput__input--invalid');
@@ -299,7 +300,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
       const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
       const atEnd = input.selectionStart === input.value.length;
       if (s.mask && shape && !deleting && atEnd) {
-        const helped = maskWith(shape, input.value);
+        const helped = maskWith(shape, input.value, s.messages);
         if (helped !== input.value) {
           input.value = helped;
           input.setSelectionRange(helped.length, helped.length);

@@ -1,6 +1,46 @@
 import { Temporal } from './temporal.js';
 import type { PlainDate } from './temporal.js';
 
+/** The calendars this library has been measured against, on both engines. */
+export type CalendarId =
+  | 'iso8601'
+  | 'gregory'
+  | 'islamic-umalqura'
+  | 'islamic-civil'
+  | 'islamic-tbla'
+  | 'persian'
+  | 'hebrew'
+  | 'buddhist'
+  | 'japanese'
+  | 'coptic'
+  | 'ethiopic'
+  | 'indian'
+  | 'chinese'
+  | 'roc';
+
+/**
+ * The identifier Temporal will accept, or a refusal that says what to use.
+ *
+ * `islamic` and `islamic-rgsa` are the trap. Neither Temporal nor the polyfill
+ * implements them -- measured on both -- while
+ * `Intl.DateTimeFormat('ar-SA-u-ca-islamic').resolvedOptions().calendar`
+ * answers exactly `'islamic'`. So the obvious thing, asking Intl which
+ * calendar a locale wants and passing it on, threw `Invalid calendar string`
+ * with nothing to suggest. `islamic-umalqura` is the one almost everyone
+ * means: it is what Saudi civil use follows, and what `ar-SA` resolves to
+ * when the locale does not name one.
+ */
+function resolveCalendar(calendar: string): string {
+  const wanted = calendar.toLowerCase();
+  if (wanted === 'islamic' || wanted === 'islamic-rgsa') {
+    throw new RangeError(
+      `Temporal does not implement the '${calendar}' calendar. Use 'islamic-umalqura' ` +
+        `for the tabular Umm al-Qura reckoning, or 'islamic-civil' for the arithmetic one.`,
+    );
+  }
+  return calendar;
+}
+
 /** Monday through Sunday, as ISO-8601 numbers them. */
 export type Weekday = 1 | 2 | 3 | 4 | 5 | 6 | 7;
 
@@ -32,9 +72,20 @@ export function getMonthGrid(
   year: number,
   month: number,
   firstDayOfWeek: Weekday = 1,
-  calendar = 'iso8601',
+  calendar: CalendarId | (string & {}) = 'iso8601',
 ): PlainDate[][] {
-  const first = Temporal.PlainDate.from({ year, month, day: 1, calendar }).withCalendar('iso8601');
+  /*
+   * A month outside the year is a mistake, not something to round off.
+   *
+   * The default is `constrain`, so asking for month 13 of a twelve-month year
+   * quietly built month 12 -- and then `inMonth` found nothing in it, because
+   * every day belonged to 12 while 13 had been asked for. A grid where all
+   * forty-two cells are greyed, and nothing anywhere saying why.
+   */
+  const first = Temporal.PlainDate.from(
+    { year, month, day: 1, calendar: resolveCalendar(calendar) },
+    { overflow: 'reject' },
+  ).withCalendar('iso8601');
 
   // How many days of the previous month lead the grid. The +7 before the
   // modulo is what keeps this correct when the month starts before the chosen
@@ -56,7 +107,12 @@ export function getMonthGrid(
  * a day that falls mid-Gregorian-month, so comparing the wrong pair of numbers
  * greys out the middle of the grid and shows the edges as inside it.
  */
-export function inMonth(date: PlainDate, year: number, month: number, calendar = 'iso8601'): boolean {
+export function inMonth(
+  date: PlainDate,
+  year: number,
+  month: number,
+  calendar: CalendarId | (string & {}) = 'iso8601',
+): boolean {
   /*
    * Converted every time, including to ISO.
    *
@@ -70,7 +126,7 @@ export function inMonth(date: PlainDate, year: number, month: number, calendar =
    * Temporal canonises the identifier itself, and the conversion is free when
    * it has nothing to do.
    */
-  const read = date.withCalendar(calendar);
+  const read = date.withCalendar(resolveCalendar(calendar));
   return read.year === year && read.month === month;
 }
 

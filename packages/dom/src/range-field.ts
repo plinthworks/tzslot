@@ -918,15 +918,19 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     const shape = pattern();
     const time = (at_: Instant | null, asDay: boolean) => {
       if (asDay || !at_) return '';
-      const written = formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale);
+      const written = formatWith('HH:mm', { time: zoned(at_).toPlainTime() }, s.locale, s.messages);
       // Which 02:30 was chosen is visible in the panel and nowhere else once
       // it closes, and a field that reads 02:30 twice over is a field the
       // reader cannot check. The name rides along in brackets.
       const reading = nameOfReading(at_, s.timeZone, s.messages);
       return reading ? ` ${written} (${reading})` : ` ${written}`;
     };
-    const first = start ? formatWith(shape, { date: start }, s.locale) + time(value.start, startIsDay) : null;
-    const last = end ? formatWith(shape, { date: end }, s.locale) + time(value.end, endIsDay) : null;
+    const first = start
+      ? formatWith(shape, { date: start }, s.locale, s.messages) + time(value.start, startIsDay)
+      : null;
+    const last = end
+      ? formatWith(shape, { date: end }, s.locale, s.messages) + time(value.end, endIsDay)
+      : null;
     // An open end is a statement, not an unfinished sentence: "From 14/09/2026",
     // not "14/09/2026 – …". The reader has to be able to tell the two apart.
     if (first && !last) return s.openEnded ? `${s.messages.fromDate} ${first}` : `${first} – …`;

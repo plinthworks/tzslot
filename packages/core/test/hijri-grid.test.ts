@@ -68,3 +68,45 @@ describe('the Gregorian grid is untouched', () => {
     expect(a.flat()[0]!.toString()).toBe('2026-08-31');
   });
 });
+
+describe('what the grid refuses, and how it says so', () => {
+  it('names the calendar to use instead of the one Intl hands you', () => {
+    /*
+     * The trap: `Intl.DateTimeFormat('ar-SA-u-ca-islamic').resolvedOptions()
+     * .calendar` answers 'islamic', and neither Temporal nor the polyfill
+     * implements it — measured on both engines. So the obvious move, asking
+     * Intl which calendar a locale wants and passing it on, threw
+     * "Invalid calendar string" with nothing to suggest.
+     */
+    expect(new Intl.DateTimeFormat('ar-SA-u-ca-islamic').resolvedOptions().calendar).toBe('islamic');
+    expect(() => getMonthGrid(1448, 4, 7, 'islamic')).toThrow(/islamic-umalqura/);
+    expect(() => getMonthGrid(1448, 4, 7, 'islamic-rgsa')).toThrow(/islamic-umalqura/);
+    expect(() => inMonth(Temporal.PlainDate.from('2026-09-20'), 1448, 4, 'islamic')).toThrow(
+      /islamic-umalqura/,
+    );
+    // And the one almost everyone means still works.
+    expect(() => getMonthGrid(1448, 4, 7, 'islamic-umalqura')).not.toThrow();
+  });
+
+  it('refuses a month the year does not have, instead of greying every cell', () => {
+    /*
+     * `constrain` is Temporal's default, so month 13 built month 12 — and
+     * then nothing was "in" the month asked for, because every day belonged
+     * to 12. Forty-two grey cells and no error.
+     */
+    expect(() => getMonthGrid(1448, 13, 7, 'islamic-umalqura')).toThrow();
+    expect(() => getMonthGrid(2026, 13, 1)).toThrow();
+    expect(() => getMonthGrid(2026, 0, 1)).toThrow();
+    expect(() => getMonthGrid(2026, 12, 1)).not.toThrow();
+  });
+
+  it('reads a date in the calendar it is given, not the one the date carries', () => {
+    const hijri = Temporal.PlainDate.from('2026-09-20').withCalendar('islamic-umalqura');
+    // It used to skip the conversion for 'iso8601' and read the date's own
+    // calendar, so this said false about a day that is in September 2026.
+    expect(inMonth(hijri, 2026, 9)).toBe(true);
+    // And the spelling of the argument no longer changes the answer.
+    expect(inMonth(hijri, 2026, 9, 'ISO8601')).toBe(true);
+    expect(inMonth(hijri, 1448, 4, 'islamic-umalqura')).toBe(true);
+  });
+});

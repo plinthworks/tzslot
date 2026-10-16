@@ -9,6 +9,16 @@ import { getDaySlots, getMonthGrid } from '../src/index.js';
  * milliseconds, because the component recomputes it on every input change,
  * and a picker that stutters when you change the time zone is a picker
  * nobody keeps.
+ *
+ * What these numbers are NOT is what a reader pays. The polyfill attaches a
+ * debug string to every Temporal object it builds — `_str_`, visible through
+ * `Object.getOwnPropertyNames`, computed with `toLocaleString('fullwide')` —
+ * and it does so only while the code is unminified, which is exactly how
+ * these tests run and exactly how no application ships. A consumer measuring
+ * their own bundle reported it at roughly half the CPU and a third of the
+ * memory per object. So the figures here are an upper bound with a large and
+ * unknown margin, and the right place to measure a budget is a minified
+ * build, not this file.
  */
 const time = (fn: () => unknown, runs: number): number => {
   fn();

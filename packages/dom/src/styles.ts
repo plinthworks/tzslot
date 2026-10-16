@@ -56,6 +56,26 @@ export const CALENDAR_CSS = `
 .tz-cal--weeks .tz-cal__week {
   grid-template-columns: var(--tz-cal-week-size, 1.75rem) repeat(7, var(--tz-cal-cell-size, 2rem));
 }
+/*
+ * A drawn chevron has no idea which way the text runs.
+ *
+ * The default arrows are the characters U+2039 and U+203A, which Unicode marks
+ * as mirrored: the browser turns them round for a right-to-left paragraph and
+ * nothing here has to. An SVG path does not have that property, so a screen
+ * passing icon('chevronLeft') as prev and icon('chevronRight') as next --
+ * the obvious thing, since those are the names the package exports -- got
+ * arrows pointing the wrong way in Arabic while everything around them
+ * reversed. The names are physical and public, so renaming them would break a
+ * consumer; turning them over costs one rule.
+ */
+.tz-icon--chevronLeft,
+.tz-icon--chevronRight {
+  transform: scaleX(var(--tz-chevron-flip, 1));
+}
+[dir='rtl'] .tz-icon--chevronLeft,
+[dir='rtl'] .tz-icon--chevronRight {
+  --tz-chevron-flip: -1;
+}
 .tz-cal__weeknumber {
   display: flex;
   align-items: center;
@@ -444,6 +464,26 @@ export const RANGE_CSS = `
 .tz-range--weeks .tz-range__weekdays,
 .tz-range--weeks .tz-range__week {
   grid-template-columns: var(--tz-cal-week-size, 1.75rem) repeat(7, var(--tz-cal-cell-size, 2rem));
+}
+/*
+ * A drawn chevron has no idea which way the text runs.
+ *
+ * The default arrows are the characters U+2039 and U+203A, which Unicode marks
+ * as mirrored: the browser turns them round for a right-to-left paragraph and
+ * nothing here has to. An SVG path does not have that property, so a screen
+ * passing icon('chevronLeft') as prev and icon('chevronRight') as next --
+ * the obvious thing, since those are the names the package exports -- got
+ * arrows pointing the wrong way in Arabic while everything around them
+ * reversed. The names are physical and public, so renaming them would break a
+ * consumer; turning them over costs one rule.
+ */
+.tz-icon--chevronLeft,
+.tz-icon--chevronRight {
+  transform: scaleX(var(--tz-chevron-flip, 1));
+}
+[dir='rtl'] .tz-icon--chevronLeft,
+[dir='rtl'] .tz-icon--chevronRight {
+  --tz-chevron-flip: -1;
 }
 .tz-range__weeknumber {
   display: flex;

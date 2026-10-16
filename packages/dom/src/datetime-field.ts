@@ -452,6 +452,7 @@ export function createDateTimeField(
             time: s.value.toZonedDateTimeISO(s.timeZone).toPlainTime(),
           },
           s.locale,
+          s.messages,
         )
       : new Intl.DateTimeFormat(s.locale, {
           dateStyle: s.dateStyle,
@@ -485,7 +486,7 @@ export function createDateTimeField(
       return true;
     }
     const shape = pattern();
-    const read = shape ? parseWith(shape, text) : null;
+    const read = shape ? parseWith(shape, text, s.messages) : null;
     if (!read?.date) return false;
     if (blocked(read.date)) return false;
     draft = { date: read.date, time: read.time ?? draft.time ?? startingTime() };
@@ -947,7 +948,7 @@ export function createDateTimeField(
       // and never while someone is deleting — putting a separator back that
       // was just removed makes a field impossible to correct.
       if (s.mask && shape && !deleting && atEnd && !named) {
-        const helped = maskWith(shape, typed.value);
+        const helped = maskWith(shape, typed.value, s.messages);
         if (helped !== typed.value) {
           typed.value = helped;
           typed.setSelectionRange(helped.length, helped.length);

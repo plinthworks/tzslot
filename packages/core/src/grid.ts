@@ -57,7 +57,20 @@ export function getMonthGrid(
  * greys out the middle of the grid and shows the edges as inside it.
  */
 export function inMonth(date: PlainDate, year: number, month: number, calendar = 'iso8601'): boolean {
-  const read = calendar === 'iso8601' ? date : date.withCalendar(calendar);
+  /*
+   * Converted every time, including to ISO.
+   *
+   * It used to skip the conversion when the calendar was already 'iso8601',
+   * which made the answer depend on two things it should not: the spelling of
+   * the argument, since 'ISO8601' took the slow path and gave a different
+   * answer to the same question; and the calendar the *date* happened to
+   * carry, since skipping the conversion reads whatever is on it. A date
+   * already in Hijri was reported as not being in September 2026, which it is.
+   *
+   * Temporal canonises the identifier itself, and the conversion is free when
+   * it has nothing to do.
+   */
+  const read = date.withCalendar(calendar);
   return read.year === year && read.month === month;
 }
 

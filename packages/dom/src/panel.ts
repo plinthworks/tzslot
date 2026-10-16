@@ -307,6 +307,18 @@ export function createPanel(options: PanelOptions): PanelController {
     // later, as the reader moved on — read the empty text back as a cleared
     // value.
     options.onOpen?.();
+    /*
+     * Placed again, now that there is something in it.
+     *
+     * `place()` above runs on an empty panel, and left-to-right that is fine:
+     * the anchor is the field's left edge, which does not depend on how wide
+     * the panel turns out to be. Right-to-left it does -- the anchor is
+     * `field.right - panel.offsetWidth` -- so the first placement used a width
+     * measured before `onOpen` filled the panel. Measured: 20px out, the right
+     * edge past the field's and past the window, corrected only by the next
+     * scroll or resize.
+     */
+    place();
     const landing = options.initialFocus
       ? options.initialFocus(panel)
       : panel.querySelector<HTMLElement>('button:not(:disabled)');

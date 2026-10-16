@@ -86,3 +86,45 @@ describe('the panel is told which way it reads', () => {
     other.remove();
   });
 });
+
+describe('a page holding two copies of Temporal', () => {
+  /*
+   * `instanceof` asks which copy a value came from, and a page can hold two:
+   * the polyfill ships a basic entry and a full one, separate module graphs
+   * with separate classes. A consumer importing one while the library imports
+   * the other had every check between them answer false.
+   *
+   * Only where the platform has no Temporal of its own — Safari, and server
+   * rendering — because elsewhere both entries resolve to the platform's and
+   * the question never comes up. The two places hardest to notice it in.
+   */
+  it('reads an instant by its shape, not by its class', async () => {
+    const { Temporal: other } = await import('temporal-polyfill');
+    const { Temporal: ours } = await import('@tzslot/core');
+    // The premise: two classes, and a value from one is not of the other.
+    const foreign = other.Instant.from('2026-09-20T08:00:00Z');
+    const mine = ours.Instant.from('2026-09-20T08:00:00Z');
+    if (other.Instant !== ours.Instant) {
+      expect(foreign instanceof ours.Instant).toBe(false);
+    }
+
+    const host = document.createElement('div');
+    document.body.append(host);
+    const said: unknown[] = [];
+    const field = createRangeField(host, {
+      timeZone: 'Europe/Paris',
+      presets: [{ name: 'foreign', label: 'From elsewhere', range: () => ({ start: foreign, end: foreign.add({ hours: 2 }) }) }],
+      onChange: (v) => said.push(v),
+    });
+    cleanup = () => { field.destroy(); host.remove(); };
+    field.open();
+    const shortcut = document.querySelector<HTMLButtonElement>('.tz-rangefield__preset');
+    expect(shortcut).not.toBeNull();
+
+    // It used to throw inside the handler and leave the field on its mask.
+    expect(() => shortcut!.click()).not.toThrow();
+    expect(host.querySelector('.tz-field__text')!.textContent).not.toBe('Start date – End date');
+    expect(said.length).toBeGreaterThan(0);
+    expect(mine.epochNanoseconds).toBe(foreign.epochNanoseconds);
+  });
+});

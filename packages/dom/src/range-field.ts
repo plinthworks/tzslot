@@ -73,9 +73,32 @@ export interface RangePreset {
   readonly range: (today: PlainDate, at: { now: Instant; timeZone: string }) => DayRange | MomentRange;
 }
 
+/**
+ * An instant, told by its shape rather than by its class.
+ *
+ * `instanceof` asks whether a value came from *this* copy of Temporal, and a
+ * page can hold two. The polyfill ships a basic entry and a full one, which
+ * are separate module graphs with separate classes: a consumer following the
+ * polyfill's own documentation imports one, this library imports the other,
+ * and every `instanceof` between them is false. Where the platform has
+ * Temporal of its own both resolve to it and the question never arises --
+ * which is why this is a Safari and server-rendering problem, the two places
+ * hardest to see it.
+ *
+ * What it cost, measured: a preset returning foreign instants was read as a
+ * range of days, and the next line called a method days do not have. The
+ * exception was not caught, and the field showed its empty mask as though the
+ * shortcut had done nothing.
+ *
+ * `epochNanoseconds` is an Instant's own property and no other Temporal type
+ * has it, so the shape is as good an answer as the class and does not care
+ * where the class came from.
+ */
+const isInstant = (value: unknown): value is Instant =>
+  typeof value === 'object' && value !== null && typeof (value as Instant).epochNanoseconds === 'bigint';
+
 /** True for what a preset shorter than a day returns. */
-const isMoments = (range: DayRange | MomentRange): range is MomentRange =>
-  range.start instanceof Temporal.Instant;
+const isMoments = (range: DayRange | MomentRange): range is MomentRange => isInstant(range.start);
 
 export interface RangeFieldSettings {
   /**
@@ -1537,12 +1560,12 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   /** A bound as a day, for the grid, whichever way it was given. */
   const asDay = (bound: PlainDate | Instant | null): PlainDate | null =>
-    bound === null ? null : bound instanceof Temporal.Instant ? zoned(bound).toPlainDate() : bound;
+    bound === null ? null : isInstant(bound) ? zoned(bound).toPlainDate() : bound;
 
   /** A bound as a moment, for the value — the day's edge when it is a day. */
   const asMoment = (bound: PlainDate | Instant | null, edge: 'first' | 'last'): Instant | null => {
     if (bound === null) return null;
-    if (bound instanceof Temporal.Instant) return bound;
+    if (isInstant(bound)) return bound;
     return edge === 'first' ? midnight(bound) : midnight(bound.add({ days: 1 }));
   };
 

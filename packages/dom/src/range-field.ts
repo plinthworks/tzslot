@@ -1787,6 +1787,16 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   function marks(preset: RangePreset, chosen: { start: PlainDate | null; end: PlainDate | null }): boolean {
+    /*
+     * A period of no length is not any named range.
+     *
+     * The comparison below is on days, and `days()` of an empty period gives
+     * the day it sits on — the same day "Today" gives. So two clicks on the
+     * 16th, which hold 16/10 00:00 to 16/10 00:00 and nothing in between, lit
+     * the Today shortcut as though the reader had pressed it. The summary line
+     * said the period was empty while the column said it was today.
+     */
+    if (draft.start !== null && draft.end !== null && draft.start.equals(draft.end)) return false;
     if (isSubDayPreset(preset.name) || !coversWholeDays(draft)) {
       const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
       if (!isMoments(picked)) return false;

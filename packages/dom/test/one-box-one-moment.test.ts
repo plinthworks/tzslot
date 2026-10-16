@@ -161,3 +161,57 @@ describe('a whole day is still a whole day', () => {
     ).toBe(FR.emptyPeriod);
   });
 });
+
+describe('a period of no length', () => {
+  it('lights no shortcut, whatever day it sits on', () => {
+    /*
+     * Two clicks on the same day hold `16/10 00:00` to `16/10 00:00`. The
+     * shortcut column compares days, and the day an empty period sits on is
+     * the same day Today gives — so Today lit up as though it had been
+     * pressed, while the summary line underneath said the period was empty.
+     *
+     * The reader's own choice stands: two clicks on one day with the hours on
+     * screen give a period of no length, and that is theirs to make. What the
+     * panel must not do is answer a different question in the next column.
+     */
+    host = document.createElement('div');
+    document.body.append(host);
+    field = createRangeField(host, {
+      timeZone: zone, locale: 'fr-FR', messages: FR, showTime: true, months: 1,
+      today: Temporal.PlainDate.from('2026-10-16'),
+      now: Temporal.ZonedDateTime.from('2026-10-16T10:00[Europe/Paris]').toInstant(),
+      presets: ['today', 'yesterday', 'last7Days'],
+    });
+    field.open();
+    for (let i = 0; i < 2; i++) {
+      document
+        .querySelector<HTMLElement>('.tz-field__panel')!
+        .querySelector<HTMLButtonElement>('[data-date="2026-10-16"]')!
+        .click();
+    }
+    const panel = document.querySelector<HTMLElement>('.tz-field__panel')!;
+    const lit = [...panel.querySelectorAll<HTMLButtonElement>('.tz-rangefield__preset')]
+      .filter((b) => b.getAttribute('aria-pressed') === 'true')
+      .map((b) => b.textContent);
+    expect(lit).toEqual([]);
+    expect(panel.querySelector('.tz-rangefield__summary')!.textContent).toBe(FR.emptyPeriod);
+  });
+
+  it('while a real whole day still lights Today', () => {
+    host = document.createElement('div');
+    document.body.append(host);
+    field = createRangeField(host, {
+      timeZone: zone, locale: 'fr-FR', messages: FR, showTime: true, months: 1,
+      today: Temporal.PlainDate.from('2026-10-16'),
+      now: Temporal.ZonedDateTime.from('2026-10-16T10:00[Europe/Paris]').toInstant(),
+      presets: ['today', 'yesterday'],
+      value: { start: at('2026-10-16', '00:00'), end: at('2026-10-17', '00:00') },
+    });
+    field.open();
+    const panel = document.querySelector<HTMLElement>('.tz-field__panel')!;
+    const lit = [...panel.querySelectorAll<HTMLButtonElement>('.tz-rangefield__preset')]
+      .filter((b) => b.getAttribute('aria-pressed') === 'true')
+      .map((b) => b.textContent);
+    expect(lit).toEqual(["Aujourd'hui"]);
+  });
+});

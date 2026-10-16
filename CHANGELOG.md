@@ -40,6 +40,14 @@ going quiet. A whole day is still a whole day everywhere it is asked for as
 one — `singleDay` gives 24 hours with the hours on screen or off, and so does
 clicking a day twice on a field showing no hours.
 
+### A shortcut no longer lights up for a period of no length
+
+The shortcut column compares days, and the day an empty period sits on is the
+same day *Today* gives. So two clicks on the 16th — holding `16/10 00:00` to
+`16/10 00:00`, with nothing in between — lit *Today* as though it had been
+pressed, while the summary line underneath said the period was empty. One
+panel answering two different questions.
+
 Six other tests asserted the old reading by name — "a named range of days
 keeps its last day, even on a screen showing hours". They were changed on
 purpose. The decision they recorded was a reasonable one; it is being

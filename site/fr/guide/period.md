@@ -87,28 +87,23 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Journées entières' }" />
 
 `true` donne une heure à chaque jour choisi, minuit sauf indication de l'écran,
-**et le champ écrit ces heures** — minuit compris. Une période de neuf jours
-affiche `16/10/2026 00:00 – 25/10/2026 00:00`, c'est-à-dire exactement la
-valeur qu'elle porte.
+**et le jour cliqué est le jour obtenu**. Cliquez le 8, puis le 14 : le champ
+affiche `08/10/2026 00:00 – 14/10/2026 00:00` — les deux boîtes le disent, le
+calendrier marque ces deux jours, et c'est la valeur que votre code reçoit.
 
-Jusqu'à la 2.1.1, une fin à minuit était écrite comme le jour qu'elle fermait :
-la même période affichait `16/10/2026 – 24/10/2026` pendant que la boîte de fin
-du panneau disait `24/10/2026` à côté de `00:00` — une date venue d'une lecture
-à côté d'une heure venue de l'autre, nommant un moment huit jours après le
-début alors que le calendrier en peignait neuf. Et cela basculait sur une
-minute : une fin à `00:00` se réduisait à une date nue, `00:01` non.
+Jusqu'à la 2.1.1, la fin allait chercher la fin de la journée donnée : cliquer
+le 14 enregistrait le 15 à minuit, la boîte l'affichait comme `14/10` à côté de
+`00:00` — nommant un moment que le champ ne contenait pas — et le calendrier
+allumait le 13. Trois lectures d'un seul clic.
 
-Le calendrier et le résumé ne changent pas : ils comptent toujours en jours
-couverts, donc neuf jours peints et la ligne qui dit `9d`. La date de fin dans
-la boîte est le minuit qui ferme le neuvième, parce que cette boîte est
-éditable et doit nommer le moment qu'elle contient.
-
-Voici cette période. Ouvrez-la : les deux boîtes, les jours peints et la ligne
-en dessous décrivent les mêmes neuf jours, chacun dans ses propres termes.
+`false` garde l'ancienne règle, et c'est normal : sans aucune heure à l'écran,
+cliquer un jour comme fin est la seule façon de dire que ce jour est inclus,
+donc cela vaut la journée entière — du 8 au 14, sept journées, finissant au
+minuit qui ouvre le 15.
 
 <Live
   widget="RangeField"
-  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, today: Temporal.PlainDate.from('2026-10-16'), value: { start: Temporal.Instant.from('2026-10-15T22:00Z'), end: Temporal.Instant.from('2026-10-24T22:00Z') }, title: 'Neuf jours, les deux bornes à minuit' }"
+  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-08'), title: 'Cliquez le 8, puis le 14' }"
 />
 **Ce champ n'a pas d'interrupteur *Toute la journée*** : deux minuits le
 disent déjà, il ne reste rien à déclarer au lecteur.

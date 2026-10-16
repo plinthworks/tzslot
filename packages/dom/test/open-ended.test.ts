@@ -241,8 +241,9 @@ describe('the hours live in the two fields now', () => {
     expect(input(0).value).toBe('14/09/2026'); // the day, in the text
     const hours = [...panel().querySelectorAll<HTMLElement>('.tz-dateinput__time')];
     expect(hours.map((h) => h.hidden)).toEqual([false, false]); // the hour, beside it
-    // The day clicked as the end means all of it: the midnight opening the 21st.
-    expect(field.value.end!.toZonedDateTimeISO('Europe/Paris').toPlainDate().toString()).toBe('2026-09-21');
+    // 2.1.1: with the hours on screen, the day clicked as the end is that day
+    // at the hour shown beside it -- the 20th at midnight, not the 21st.
+    expect(field.value.end!.toZonedDateTimeISO('Europe/Paris').toPlainDate().toString()).toBe('2026-09-20');
   });
 });
 

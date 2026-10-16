@@ -131,6 +131,7 @@ describe('a press before the start, with no end yet', () => {
     // The end is still what needs filling, so this one lands there.
     press('7');
 
-    expect(seen).toEqual(['2026-09-10..-', '2026-09-03..-', '2026-09-03..2026-09-08']);
+    // 2.1.1: the end is the day pressed, the hours being on screen.
+    expect(seen).toEqual(['2026-09-10..-', '2026-09-03..-', '2026-09-03..2026-09-07']);
   });
 });

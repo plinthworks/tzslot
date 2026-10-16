@@ -84,28 +84,24 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Whole days' }" />
 
 `true` gives every chosen day an hour, midnight unless the screen says
-otherwise, **and the field writes those hours out** — midnight included. A
-period of nine days reads `16/10/2026 00:00 – 25/10/2026 00:00`, which is
-exactly the value it holds.
+otherwise, **and the day you click is the day you get**. Click the 8th, then
+the 14th, and the field reads `08/10/2026 00:00 – 14/10/2026 00:00` — the two
+boxes say it, the calendar marks those two days, and that is the value your
+code receives.
 
-Until 2.1.1 a midnight end was written as the day it closed, so the same
-period read `16/10/2026 – 24/10/2026` while the panel's own end box said
-`24/10/2026` beside `00:00` — a date from one reading next to an hour from
-the other, naming a moment eight days after the start while the calendar
-painted nine. It also turned on a minute: an end at `00:00` collapsed to a
-bare date and `00:01` did not.
+Until 2.1.1 the end reached for the end of the day it was given, so clicking
+the 14th stored the 15th at midnight; the box then displayed it as `14/10`
+beside `00:00`, naming a moment the field did not hold, and the calendar lit
+the 13th. Three readings of one click.
 
-The calendar and the summary are unchanged, and still speak in days covered:
-nine days are painted and the line reads `9d`. The end date in the box is the
-midnight that closes the ninth, because the box is editable and has to name
-the moment it holds.
-
-Here is that period. Open it: the two boxes, the painted days and the line
-underneath all describe the same nine days, each in its own terms.
+`false` keeps the older rule, and should: with no hour anywhere on screen,
+clicking a day as the end is the only way to say that day is included, so it
+means all of it — the 8th to the 14th is seven whole days, ending at the
+midnight that opens the 15th.
 
 <Live
   widget="RangeField"
-  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 2, today: Temporal.PlainDate.from('2026-10-16'), value: { start: Temporal.Instant.from('2026-10-15T22:00Z'), end: Temporal.Instant.from('2026-10-24T22:00Z') }, title: 'Nine days, both ends at midnight' }"
+  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-08'), title: 'Click the 8th, then the 14th' }"
 /> **This field has no *All day* switch**: whole days are what two
 midnights already say, so there is nothing left for the reader to declare.
 [`createDateTimeRange`](../examples#a-whole-day-or-an-interval) is the one

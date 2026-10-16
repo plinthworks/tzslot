@@ -726,7 +726,9 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (!value.end) return { start, end: null };
     const end = zoned(value.end);
     // An end that opens a day closes the one before it: the period holds no
-    // part of that day. True whether or not the hours are on screen.
+    // part of that day. True whether or not the hours are on screen — this is
+    // the arithmetic the arrows round-trip through, and a day added or lost
+    // here is a day added or lost on every press.
     const last = opensADay(value.end)
       ? end.toPlainDate().subtract({ days: 1 })
       : end.toPlainDate();
@@ -1358,7 +1360,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      * end — by the reader or by `defaultTimes` — takes over from then on.
      */
     const midnightHour = !wall.time || wall.time.equals(Temporal.PlainTime.from('00:00'));
-    const allOfTheDay = edge === 'end' && midnightHour && !hasDefaultTime('end');
+    /*
+     * And only where no hour is on screen.
+     *
+     * The rule above reads "nobody has put an hour on that end", which is true
+     * of a field that shows none. With the hours up, the reader is looking at
+     * `00:00` in the box beside the date — so clicking the 14th and reading
+     * `14/10/2026 00:00` has to mean the 14th at midnight, and did not: the
+     * click reached for the end of the day and wrote the 15th, which the box
+     * then showed as the 14th. The day the reader pointed at was not the day
+     * they got.
+     */
+    const allOfTheDay = edge === 'end' && midnightHour && !hasDefaultTime('end') && wholeDays();
     const at_ =
       timed && !allOfTheDay
         ? resolveEdge(edge, wall.date, onGrid, wall.offset)
@@ -1814,7 +1827,24 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     a.start.equals(b.start) && a.end.equals(b.end);
 
   function paintPanel(): void {
-    const shown = days(draft);
+    /*
+     * The grid marks the day the reader pointed at.
+     *
+     * `days()` pulls an end at midnight back to the day before, and that is
+     * the arithmetic the arrows round-trip through: changing it there adds a
+     * day on every press, measured as 168h becoming 192, 216, 240. But with
+     * the hours on screen the reader clicked the 14th and read `14/10/2026`
+     * and `00:00` in the box beside the calendar, while the grid lit the
+     * 13th — the day they pointed at was not the day that answered.
+     *
+     * So the pull-back is undone here and only here, for the grid, where an
+     * instant is already shown as an instant two inches above.
+     */
+    const counted = days(draft);
+    const shown =
+      wholeDays() || !draft.end
+        ? counted
+        : { start: counted.start, end: zoned(draft.end).toPlainDate() };
     // With one end open there is a single day to mark; the grid draws it as a
     // range of one, which is exactly how it looks.
     /*

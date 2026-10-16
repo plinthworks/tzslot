@@ -68,9 +68,16 @@ describe('the reader’s case, as reported', () => {
     expect(trigger()).toBe('16/10/2026 00:00 – 25/10/2026 00:00');
   });
 
-  it('while the calendar and the summary count days covered, as they should', () => {
+  it('and the calendar marks the day the end falls on, which is the one clicked', () => {
+    /*
+     * It marked the 24th while the box beside it read 25: `days()` pulls an
+     * end at midnight back to the day before, and that pull-back is the
+     * arithmetic the shift arrows round-trip through -- undoing it there made
+     * a week grow by a day on every press, 168h to 192 to 216. So it is undone
+     * for the grid alone, where the instant is already on screen as an instant.
+     */
     const panel = open(NINE);
-    expect(panel.querySelector('[data-date="2026-10-24"].tz-range__day--end')).not.toBeNull();
+    expect(panel.querySelector('[data-date="2026-10-25"].tz-range__day--end')).not.toBeNull();
     expect(panel.querySelector('.tz-rangefield__summary')!.textContent).toContain('9d');
   });
 

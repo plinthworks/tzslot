@@ -2,47 +2,46 @@
 
 ## 2.1.1
 
-Three things a reader saw that 820 tests did not.
+### The day you click is the day you get
 
-### A period's two dates were written in two different readings at once
+Click the 8th, then the 14th, on a field showing hours. It now reads
+`08/10/2026 00:00 – 14/10/2026 00:00`, the two boxes say so, the calendar
+marks those two days, and that is the value your code receives.
 
-An end at midnight was read as closing the day before — right for a field
-with no hours on it, and applied to fields that had them. Mixed with the raw
-reading in the same breath, it produced a panel that contradicted itself.
-
-A period of nine days, 16 to 24 October, is held as `16/10 00:00` to
-`25/10 00:00`. The end box showed the date from one reading and the hour from
-the other:
+It did not. The end reached for the end of the day it was given, so clicking
+the 14th stored **the 15th at midnight**. The box then displayed that as
+`14/10` beside `00:00` — naming a moment the field did not hold — while the
+calendar lit the 13th. One click, three readings, none of them agreeing:
 
 ```
-end box     24/10/2026   00:00      ← eight days from the start
-calendar    paints up to the 24th   ← nine
-summary     9d                      ← nine
-value       25/10 00:00             ← nine
+you clicked          the 14th
+the value held       15/10 00:00
+the box showed       14/10/2026   00:00     ← a date from one reading,
+                                              an hour from the other
+the calendar lit     the 13th
 ```
 
-Three of the four said nine. The box said eight, because it was using both
-readings at once. Reported as: *« on voit bien de 16 minuit au 24 minuit
-alors que le calendrier inclut le 24 »*.
+The rule behind it was "a day clicked as the end means all of it", and it is
+right for a field with no hours on screen: there is no other way to say the
+last day is included. With the hours up there is — the reader is looking at
+`00:00` in a box beside the date. So the rule is now `showTime: false` only,
+where it belongs. A day-only field is untouched: the 8th to the 14th is seven
+whole days, ending at the midnight that opens the 15th, exactly as before.
 
-The same mixing reached the trigger, which wrote `20/09/2026 09:00 –
-23/09/2026` for a period with an hour at one end and a day at the other, with
-nothing to say the second was a day at all. And it turned on a minute: an end
-at `00:00` collapsed to a bare date while `00:01` did not.
+**What changes for you.** A screen with `showTime: true` will get an end one
+day earlier than it used to for the same click, and the period it reports is
+one day shorter. A screen with `showTime: false` sees nothing change.
 
-**So a field asked to show hours now shows them, midnight included.** Midnight
-is a time, and a reader who turned the hours on chose it. The closed field
-reads `16/10/2026 00:00 – 25/10/2026 00:00`, the panel's boxes say the same,
-and the calendar and the summary go on counting days covered — which is their
-job, and which is why a nine-day period still paints nine days and says `9d`.
+Six other tests asserted the old reading by name — "a named range of days
+keeps its last day, even on a screen showing hours". They were changed on
+purpose. The decision they recorded was a reasonable one; it is being
+reversed, not drifted away from.
 
-A screen showing periods with `showTime` will see its wording change. A screen
-with `showTime: false` sees nothing change; there are no hours there to write.
-
-Six tests asserted the old reading by name — "a named range of days keeps its
-last day, even on a screen showing hours". They were changed on purpose. The
-decision they recorded was reasonable and it is being reversed deliberately,
-not drifted away from.
+The arrows keep the arithmetic they had. Undoing the pull-back everywhere made
+a week grow by a day on every press — 168h, 192, 216, 240, measured — because
+the arrows round-trip a period through that same reading. It is undone for the
+grid and the boxes, which show instants, and left alone where days are being
+counted.
 
 ### The hour menus wrapped into a slab in a narrow panel
 

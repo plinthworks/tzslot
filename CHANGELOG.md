@@ -1,5 +1,72 @@
 # Changelog
 
+## 2.1.1
+
+Three things a reader saw that 820 tests did not.
+
+### A period's two dates were written in two different readings at once
+
+An end at midnight was read as closing the day before — right for a field
+with no hours on it, and applied to fields that had them. Mixed with the raw
+reading in the same breath, it produced a panel that contradicted itself.
+
+A period of nine days, 16 to 24 October, is held as `16/10 00:00` to
+`25/10 00:00`. The end box showed the date from one reading and the hour from
+the other:
+
+```
+end box     24/10/2026   00:00      ← eight days from the start
+calendar    paints up to the 24th   ← nine
+summary     9d                      ← nine
+value       25/10 00:00             ← nine
+```
+
+Three of the four said nine. The box said eight, because it was using both
+readings at once. Reported as: *« on voit bien de 16 minuit au 24 minuit
+alors que le calendrier inclut le 24 »*.
+
+The same mixing reached the trigger, which wrote `20/09/2026 09:00 –
+23/09/2026` for a period with an hour at one end and a day at the other, with
+nothing to say the second was a day at all. And it turned on a minute: an end
+at `00:00` collapsed to a bare date while `00:01` did not.
+
+**So a field asked to show hours now shows them, midnight included.** Midnight
+is a time, and a reader who turned the hours on chose it. The closed field
+reads `16/10/2026 00:00 – 25/10/2026 00:00`, the panel's boxes say the same,
+and the calendar and the summary go on counting days covered — which is their
+job, and which is why a nine-day period still paints nine days and says `9d`.
+
+A screen showing periods with `showTime` will see its wording change. A screen
+with `showTime: false` sees nothing change; there are no hours there to write.
+
+Six tests asserted the old reading by name — "a named range of days keeps its
+last day, even on a screen showing hours". They were changed on purpose. The
+decision they recorded was reasonable and it is being reversed deliberately,
+not drifted away from.
+
+### The hour menus wrapped into a slab in a narrow panel
+
+2.1.0 put `flex-wrap: wrap` on `.tz-timeselect` so a legend could take a row of
+its own, with a comment reasoning that the menus would never wrap by
+themselves because an inline-flex box is sized by its content. That holds only
+where the box has the room it asks for: inside a narrow panel column the two
+menus went onto separate lines and the time area became a slab.
+
+Scoped to the case it was written for, so a panel with no legend lays out
+exactly as it did in 2.0.0 — the rule is byte-identical to that release. The
+legend also gets the `[hidden]` rule that every other hideable element in the
+stylesheet already had.
+
+### How these got out
+
+The first was not visible to the suite because every test asserts one reading
+or the other and none puts them side by side: a test of the box checks the
+box, a test of the calendar checks the calendar. Reading them together is what
+a person does and what no assertion did.
+
+The second could not be caught at all: jsdom computes no layout, so no test
+here can see a wrapped row. It was found by a reader within the hour.
+
 ## 2.1.0
 
 An hour menu in a dark page opened a list of white text on white.

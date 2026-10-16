@@ -153,7 +153,8 @@ describe('going back from a short range to a long one', () => {
     // quarter ends at the instant October opens, which is what it holds.
     // The days covered, not the exclusive boundary: the value still ends at
     // 1 October, and the field says the quarter the reader asked for.
-    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+    // 2.1.1: a field showing hours shows them, midnight included.
+    expect(shown()).toBe('01/07/2026 00:00 – 01/10/2026 00:00');
   });
 });
 

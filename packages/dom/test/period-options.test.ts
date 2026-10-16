@@ -163,7 +163,8 @@ describe('no switch to classify the answer', () => {
     // day of the quarter. The field writes the days that end covers, because
     // that is what was chosen: a reader who picks a quarter has not picked
     // 1 October, and a field saying so would be saying something they did not.
-    expect(shown()).toBe('01/07/2026 – 30/09/2026');
+    // 2.1.1: a field showing hours shows them, midnight included.
+    expect(shown()).toBe('01/07/2026 00:00 – 01/10/2026 00:00');
     expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
   });
 
@@ -187,7 +188,8 @@ describe('no switch to classify the answer', () => {
     // Each end answers for itself: the start carries an hour because it has
     // one, the end is a day because it opens one. Deciding for the pair meant
     // one default hour brought the other end's exclusive midnight back.
-    expect(shown()).toBe('01/07/2026 09:00 – 30/09/2026');
+    // 2.1.1: a field showing hours shows them, midnight included.
+    expect(shown()).toBe('01/07/2026 09:00 – 01/10/2026 00:00');
     expect(field.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-10-01');
   });
 

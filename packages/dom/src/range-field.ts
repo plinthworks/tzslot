@@ -882,8 +882,20 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      */
     const empty =
       value.start !== null && value.end !== null && Temporal.Instant.compare(value.start, value.end) === 0;
-    const startIsDay = !empty && (!value.start || opensADay(value.start));
-    const endIsDay = !empty && (!value.end || opensADay(value.end));
+    /*
+     * A field asked to show hours shows them, midnight included.
+     *
+     * Reading a midnight end as a whole day is right for a field with no
+     * hours on it, and it was applied to fields that had them: the trigger
+     * then wrote two bare dates for a period whose panel had just named two
+     * moments, and `20/09/2026 09:00 – 23/09/2026` for a period with an hour
+     * at one end and a day at the other, with nothing to say which was which.
+     *
+     * Midnight is a time, and a reader who turned the hours on chose it.
+     */
+    const asDays = wholeDays();
+    const startIsDay = !empty && asDays && (!value.start || opensADay(value.start));
+    const endIsDay = !empty && asDays && (!value.end || opensADay(value.end));
     const covered = days(value);
     const start = startIsDay
       ? covered.start
@@ -1523,8 +1535,23 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function wallOf(edge: Edge): WallValue {
     const shown = days(draft);
     const at_ = draft[edge];
+    /*
+     * One box, one moment.
+     *
+     * The date came from `days()`, which reads an end at midnight as closing
+     * the day before, while the time came from the instant itself. A period
+     * ending 25 October at midnight filled the end box with `24/10/2026` and
+     * `00:00` side by side: a date from the inclusive reading next to an hour
+     * from the exclusive one, naming a moment eight days after the start
+     * while the calendar painted nine and the summary said 9d.
+     *
+     * The box is editable, which settles it: a reader can type into it and
+     * press Enter, so it has to name the moment it holds.
+     */
+    const date =
+      s.showTime && at_ ? zoned(at_).toPlainDate() : edge === 'start' ? shown.start : shown.end;
     return {
-      date: edge === 'start' ? shown.start : shown.end,
+      date,
       time: timeOf(edge),
       // Only where there are two identical clock faces to tell apart. On an
       // ordinary day the hour is offered without an offset, and naming one

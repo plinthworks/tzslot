@@ -144,6 +144,23 @@ function pieces(pattern: string): { token?: string; literal?: string }[] {
 export function maskWith(pattern: string, text: string): string {
   const parts = pieces(pattern);
   if (parts.some((part) => part.token !== undefined && WIDTHS[part.token] === undefined)) return text;
+  /*
+   * A figure inside a literal is indistinguishable from one a reader typed.
+   *
+   * The mask is handed the field's whole text and lays it out again, keeping
+   * what looks like a figure. A pattern whose literal holds one -- `'الربع ١'
+   * dd/MM/yyyy`, or any era or quarter written with numbers -- feeds its own
+   * literal back in as input: measured, `الربع ١ 20/09/2026` came out as
+   * `الربع ١ 12/00/9202`, with the day and month built from the wrong
+   * figures. That was true of a Latin figure before this file knew about any
+   * other, so it is older than the Arabic work; accepting more figure ranges
+   * is what made it reachable in practice.
+   *
+   * Handing the text back is what the line above already does for a pattern
+   * the mask cannot handle. One more thing it cannot handle.
+   */
+  if (parts.some((part) => part.literal !== undefined && /[0-9\u0660-\u0669\u06F0-\u06F9]/u.test(part.literal)))
+    return text;
 
   // Normalised on the way in only. The literals written back out below are
   // the pattern's own, marks included, so the field still reads correctly
@@ -194,9 +211,20 @@ export function parseWith(
 ): { date: PlainDate | null; time: PlainTime | null } | null {
   const order: string[] = [];
   let source = '^\\s*';
-  // The marks come out of the pattern as well as the text: a regex that does
-  // not ask for them cannot be failed by their absence.
-  let rest = pattern.replace(BIDI_MARKS, '');
+  /*
+   * Both sides read in the same alphabet, which they did not at first.
+   *
+   * Only the text was normalised, so a pattern whose literal carries an
+   * Arabic-Indic figure -- `dd/MM/yyyy '(١٤٤٨ هـ)'`, a screen annotating the
+   * Hijri year -- built a regex demanding ١٤٤٨ against text where the figures
+   * had just been turned into 1448. It read before this change and returned
+   * null after it: a regression, and the mirror image of the bug being fixed.
+   *
+   * Normalising the pattern is safe here because `parseWith` only ever
+   * extracts numbers from it. What the field *writes* comes from the pattern
+   * untouched, so a literal still shows the figures its author chose.
+   */
+  let rest = asTyped(pattern);
 
   while (rest.length > 0) {
     const match = TOKENS.exec(rest);

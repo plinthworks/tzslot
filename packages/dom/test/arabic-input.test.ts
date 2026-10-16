@@ -63,6 +63,39 @@ describe('typing a date in Arabic', () => {
     expect(maskWith(shape, typed)).toBe('20‏/09‏/2026');
   });
 
+  it('reads a pattern whose own literal carries Arabic figures', () => {
+    /*
+     * The mirror of the bug being fixed, and introduced by fixing it.
+     *
+     * Only the text was normalised, never the pattern, so a screen annotating
+     * the Hijri year -- `dd/MM/yyyy '(١٤٤٨ هـ)'` -- built a regex demanding
+     * ١٤٤٨ against text whose figures had just been turned into 1448. It read
+     * before the change and returned null after. Found by review, not here.
+     */
+    expect(parseWith("dd/MM/yyyy '(١٤٤٨ هـ)'", '20/09/2026 (١٤٤٨ هـ)')?.date?.toString()).toBe(
+      '2026-09-20',
+    );
+    // And the Latin spelling of the same pattern, which never broke.
+    expect(parseWith("dd/MM/yyyy '(1448 هـ)'", '20/09/2026 (1448 هـ)')?.date?.toString()).toBe(
+      '2026-09-20',
+    );
+  });
+
+  it('hands back the text when a literal holds a figure, rather than mangling it', () => {
+    /*
+     * A figure inside a literal cannot be told from one a reader typed: the
+     * mask is given the whole text and keeps what looks like a figure. It
+     * rebuilt `الربع ١ 20/09/2026` as `الربع ١ 12/00/9202`, the day and month
+     * made from the literal's own digit. True of a Latin figure before this
+     * file knew of any other, so older than the Arabic work.
+     */
+    const pattern = "'الربع ١' dd/MM/yyyy";
+    const text = 'الربع ١ 20/09/2026';
+    expect(maskWith(pattern, text)).toBe(text); // untouched, not rearranged
+    // An ordinary pattern still gets the help it is there for.
+    expect(maskWith('dd/MM/yyyy', '20092026')).toBe('20/09/2026');
+  });
+
   it('leaves a Latin locale exactly as it was', () => {
     expect(patternFor('fr-FR', { time: false })).toBe('dd/MM/yyyy');
     expect(day('20/09/2026', 'fr-FR')).toBe('2026-09-20');

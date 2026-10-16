@@ -408,15 +408,34 @@ export const FR: TzslotMessages = {
  * for this and this is the first language to use it.
  */
 const DAYS_AR = new Intl.PluralRules('ar');
-const arabicDays = (days: number): string =>
-  ({
-    zero: 'أيام',
-    one: 'يوم',
-    two: 'يومان',
-    few: 'أيام',
-    many: 'يوماً',
-    other: 'يوم',
-  })[DAYS_AR.select(days)] ?? 'يوم';
+/**
+ * A count of days, where the count is sometimes inside the word.
+ *
+ * `يومان` is the dual: it already means "two days", so `${n} ${form}` reads
+ * "2 two-days". CLDR prints no figure for that category, nor for the
+ * singular, and the first version of this did both -- checked against
+ * `Intl.NumberFormat('ar', { style: 'unit', unit: 'day' })`, which is that
+ * data. The zero category takes the singular in Arabic, not the plural:
+ * "0 يوم", not "0 أيام".
+ *
+ * Which is the argument for these being functions rather than templates, made
+ * better than I made it: a template with a hole for the number cannot decide
+ * not to print one.
+ */
+const arabicDays = (days: number): string => {
+  switch (DAYS_AR.select(days)) {
+    case 'one':
+      return 'يوم';
+    case 'two':
+      return 'يومان';
+    case 'few':
+      return `${days} أيام`;
+    case 'many':
+      return `${days} يومًا`;
+    default:
+      return `${days} يوم`;
+  }
+};
 
 export const AR: TzslotMessages = {
   chooseDate: 'اختر تاريخاً',
@@ -500,7 +519,7 @@ export const AR: TzslotMessages = {
   meridiemLabel: 'قبل الظهر أو بعده',
   am: 'ص',
   pm: 'م',
-  dailySummary: ({ days, total }) => `${days} ${arabicDays(days)} · ${total}`,
+  dailySummary: ({ days, total }) => `${arabicDays(days)} · ${total}`,
   unusualDay: ({ date, real, change }) =>
     ({
       back: `${date} يدوم ${real}: الساعات تتأخر.`,
@@ -511,5 +530,9 @@ export const AR: TzslotMessages = {
   nonExistentTime: (time) => `${time} لا يوجد في هذا التاريخ — الساعات تتقدم.`,
   repeatedTime: (time, offset) => `${time} يتكرر مرتين في هذا التاريخ. هذه القراءة عند UTC${offset}.`,
   clockChange: ({ direction, by, apparent, real }) =>
-    `الساعات ${direction} بمقدار ${by} خلال هذه الفترة، فتبدو ${apparent} لكنها تدوم ${real}.`,
+    // `direction` is 'back' or 'forward' -- a token, not a word to print. The
+    // first version interpolated it raw, so an Arabic sentence read
+    // "الساعات back بمقدار 1h" and had no verb left. FR translates it; this
+    // did not, and the two verbs were already in `unusualDay` just above.
+    `الساعات ${direction === 'back' ? 'تتأخر' : 'تتقدم'} بمقدار ${by} خلال هذه الفترة، فتبدو ${apparent} لكنها تدوم ${real}.`,
 };

@@ -1,7 +1,7 @@
 import DefaultTheme from 'vitepress/theme';
 import type { Theme } from 'vitepress';
 import { Temporal } from '@tzslot/core';
-import { icon, EN, FR } from '@tzslot/dom';
+import { icon, EN, FR, AR } from '@tzslot/dom';
 import Live from './Live.vue';
 import '@tzslot/theme';
 import './docs.css';
@@ -25,5 +25,6 @@ export default {
       typeof document === 'undefined' ? null : icon(name);
     app.config.globalProperties.EN = EN;
     app.config.globalProperties.FR = FR;
+    app.config.globalProperties.AR = AR;
   },
 } satisfies Theme;

@@ -31,8 +31,23 @@ const props = withDefaults(
     theme?: Record<string, string>;
     /** `dark` or `light` on that box, as data-theme would be in a page. */
     scheme?: 'dark' | 'light';
+    /**
+     * `rtl` on that box, as an application would write on a container.
+     *
+     * Deliberately on the box and not on the page: a widget must read the
+     * direction in force where it stands, not the document's, and a panel
+     * lives on the body where it inherits neither.
+     */
+    dir?: 'rtl' | 'ltr';
   }>(),
-  { options: () => ({}), show: undefined, controls: () => [], theme: undefined, scheme: undefined },
+  {
+    options: () => ({}),
+    show: undefined,
+    controls: () => [],
+    theme: undefined,
+    scheme: undefined,
+    dir: undefined,
+  },
 );
 
 const stage = ref<HTMLElement>();
@@ -93,7 +108,7 @@ function describe(value: unknown): string {
          so it gets one of its own rather than the panel's own box. The theme
          goes on the box around it: a field's panel is drawn on the body, and
          it carries the palette of the element it was opened from. -->
-    <div class="live__stage" :style="theme" :data-theme="scheme"><div ref="stage" /></div>
+    <div class="live__stage" :style="theme" :data-theme="scheme" :dir="dir"><div ref="stage" /></div>
     <div v-if="controls.length" class="live__controls">
       <button v-for="control of controls" :key="control.label" type="button"
               @click="instance && control.run(instance)">

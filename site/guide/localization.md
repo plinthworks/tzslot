@@ -163,3 +163,100 @@ Here is where all of it meets: a French locale, the French bundle, and the
 morning the clocks go back in Paris.
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', locale: 'fr-FR', messages: FR, showTime: true, timeLayout: 'select', minuteStep: 30, months: 1, today: Temporal.PlainDate.from('2026-10-25'), value: { start: Temporal.Instant.from('2026-10-24T22:00Z'), end: Temporal.Instant.from('2026-10-25T00:30Z') } }" />
+
+## Arabic, and reading right to left
+
+`AR` ships alongside `EN` and `FR`.
+
+```ts
+import { AR } from '@tzslot/dom';
+
+createRangeField(element, { locale: 'ar-EG', messages: AR, timeZone: 'Africa/Cairo' });
+```
+
+Two settings, not one. `messages` chooses the words; `locale` chooses
+everything `Intl` decides — and for Arabic those come apart in a way they
+never do for French:
+
+| locale | figures | week starts |
+|---|---|---|
+| `ar` | `20` | Saturday |
+| `ar-EG` | `٢٠` | Saturday |
+| `ar-SA` | `٢٠` | Sunday |
+| `ar-MA` | `20` | Monday |
+
+So the catalogue holds no figures at all. A screen in Rabat and one in Cairo
+want the same words and different numerals, and picking one for them would be
+the library deciding something that is not its business.
+
+### Counting, which Arabic does in six ways
+
+English has a singular and a plural. Arabic has six categories, and the
+library's countable sentences are functions precisely so a catalogue can use
+them:
+
+```ts
+const days = new Intl.PluralRules('ar');
+dailySummary: ({ days: n, total }) =>
+  `${n} ${{ zero: 'أيام', one: 'يوم', two: 'يومان', few: 'أيام', many: 'يوماً', other: 'يوم' }[days.select(n)]} · ${total}`,
+```
+
+`يومان` is the dual — a form for exactly two, which English has no use for and
+a format string with a hole in it cannot reach.
+
+### Typing a date
+
+Arabic-Indic and Persian figures are read as the numbers they are, so `٢٠` and
+`۲۰` and `20` all mean twenty. That works in every locale, not only Arabic:
+nothing is lost by accepting them in a French field.
+
+<Live
+  widget="DateField"
+  :options="{ locale: 'ar-EG', messages: AR, today: Temporal.PlainDate.from('2026-09-20') }"
+  dir="rtl"
+/>
+
+### The direction
+
+The widgets follow the direction in force where they stand — `dir="rtl"` on
+any ancestor, or on the page. Nothing to configure.
+
+The panel is the part worth knowing about. It is drawn on `document.body`, so
+it inherits nothing from your container: it reads the direction off the field
+it belongs to and carries it over, the same way it carries the palette. An
+application that reverses one container rather than the whole page still gets
+a panel that matches.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Africa/Cairo', locale: 'ar-EG', messages: AR, showTime: true, timeLayout: 'select', minuteStep: 30, months: 1, today: Temporal.PlainDate.from('2026-09-20') }"
+  dir="rtl"
+/>
+
+Inside the grid, an arrow key means a day rather than a side: the key pointing
+at tomorrow moves to tomorrow, which in Arabic is the one on the left. Up and
+down are untouched, because a week sits below the one before it in every
+writing direction.
+
+### A calendar that is not Gregorian
+
+`getMonthGrid` builds a month in whatever calendar it is given, and `inMonth`
+reads a day in that calendar:
+
+```ts
+import { getMonthGrid, inMonth } from '@tzslot/core';
+
+// Rabi al-Thani 1448 — thirty days, 12 September to 11 October 2026.
+const grid = getMonthGrid(1448, 4, 7, 'islamic-umalqura');
+const own = grid.flat().filter((day) => inMonth(day, 1448, 4, 'islamic-umalqura'));
+```
+
+What comes back is ISO, whatever was asked for. A calendar is a way of reading
+dates, not of storing them — the same rule this library applies to time zones,
+where a moment is kept in UTC and read on somebody's clocks. For the Hijri day
+number of a cell, ask the date: `day.withCalendar('islamic-umalqura').day`.
+
+**The widgets do not use this yet.** Each keeps its own year and month and
+steps it by one, which is not stepping a month in a calendar whose years hold
+a varying number of them. The grid is ready; the five widgets that would drive
+it are not.

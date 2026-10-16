@@ -905,6 +905,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
      */
     const empty =
       value.start !== null && value.end !== null && Temporal.Instant.compare(value.start, value.end) === 0;
+    /*
+     * The trigger reads a midnight-to-midnight period as whole days even with
+     * the hours on screen, and that is deliberate: a shortcut named in days
+     * should read as days wherever it is shown. Six tests say so by name.
+     *
+     * What must not differ is the panel, which used to pull the date back for
+     * the same reason while leaving the hour beside it alone — see `wallOf`.
+     */
     const startIsDay = !empty && (!value.start || opensADay(value.start));
     const endIsDay = !empty && (!value.end || opensADay(value.end));
     const covered = days(value);
@@ -1550,8 +1558,25 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   function wallOf(edge: Edge): WallValue {
     const shown = days(draft);
     const at_ = draft[edge];
+    /*
+     * One box, one moment.
+     *
+     * The date came from `days()`, which reads an end at midnight as closing
+     * the day before, while the time came from the instant itself. So a period
+     * ending on 25 October at midnight filled the end box with `24/10/2026`
+     * and `00:00` side by side — a date from the inclusive reading next to an
+     * hour from the exclusive one, naming a moment eight days after the start
+     * while the calendar painted nine and the summary said 9d. Reported by a
+     * reader who could see all three at once and could not reconcile them.
+     *
+     * With the hours off screen there is no contradiction to have: the time is
+     * not shown, the date is the day the period covers, and that is the whole
+     * of what the box claims.
+     */
+    const date =
+      s.showTime && at_ ? zoned(at_).toPlainDate() : edge === 'start' ? shown.start : shown.end;
     return {
-      date: edge === 'start' ? shown.start : shown.end,
+      date,
       time: timeOf(edge),
       // Only where there are two identical clock faces to tell apart. On an
       // ordinary day the hour is offered without an offset, and naming one

@@ -1,5 +1,186 @@
 # Changelog
 
+## 2.2.0
+
+Arabic, right-to-left, and a month grid that can be built in a calendar that
+is not Gregorian.
+
+### Arabic
+
+`AR` ships beside `EN` and `FR`: 75 strings and 9 functions, exported from the
+dom package and from the Angular one, so `provideTzslotMessages(AR)` needs
+nothing new.
+
+Two things in it are not translation. The figures are absent on purpose —
+`locale` decides them, not the words: `ar-EG` writes ٢٠ and `ar-MA` writes 20,
+and a screen in Rabat using these words wants its own. And `dailySummary`
+counts with `Intl.PluralRules`: Arabic has six plural categories where English
+has two, which is why the countable sentences were written as functions rather
+than templates with a hole in them. `يومان` is the dual — a form for exactly
+two that English has no use for and a template cannot reach.
+
+**A date could not be typed in any Arabic locale**, which is a defect rather
+than a missing feature. `patternFor` derives its shape from `formatToParts`,
+and an Arabic locale hands back literals carrying U+200F — the mark that keeps
+a date from being reordered beside Arabic text. The pattern became
+`dd<RLM>/MM<RLM>/yyyy`, the parser demanded those marks literally, and no
+keyboard produces one: `20/09/2026` was refused, Latin figures and all.
+
+Typing the figures a reader's own keyboard writes failed worse: `\d` matches
+neither the Arabic-Indic range nor any other, so the mask filtered every
+keystroke away and wrote the empty string back. The field emptied itself as
+someone typed into it.
+
+Figures are now read by a rule rather than a list. Unicode lays decimal digits
+out as ten contiguous points from each script's own zero, so a digit's value
+is its distance from the first point below it that is not a digit —
+Arabic-Indic, Persian, Devanagari, Bengali, Thai, Burmese and the full-width
+figures a Japanese IME produces by default, all of them. Measured across every
+decimal digit below U+20000: 710 of 760 resolve, and the 50 that do not are
+left alone rather than converted wrongly.
+
+`messages.winterMark` is the mark on the second reading of a repeated hour,
+`*` by default and whatever a screen puts there. `messages.readingLegend`
+draws a line under the menus explaining it, undefined by default so nothing
+appears unless asked for. `AM` and `PM` are no longer written into the
+formatter: a field shows and reads back the words its catalogue carries, ص and
+م included, while still accepting the Latin pair so a Latin keyboard can fill
+an Arabic field.
+
+### Right to left
+
+The stylesheet had 31 physical directional declarations against 4 logical
+ones. It has none.
+
+The panel is told which way it reads. It lives on the body and inherits
+nothing, so an application setting `dir="rtl"` on a container rather than on
+`<html>` had a right-to-left field opening a left-to-right panel — and
+everything inside that follows the direction went wrong at once. It is also
+anchored on the edge the reader starts from, rather than always the field's
+left.
+
+An arrow key means a day, not a side: in a right-to-left grid the day after is
+drawn to the left, so a reader pressing towards tomorrow went to yesterday.
+Normalised once rather than in each of the six tables that navigate by arrow.
+Up and down are untouched — a week sits below the one before it in every
+writing direction.
+
+The published `chevronLeft` and `chevronRight` icons mirror, which the default
+characters already did by themselves.
+
+### A calendar that is not Gregorian
+
+`getMonthGrid` takes a calendar and `inMonth` reads a day in one. Naming the
+month was the easy half: a Hijri month is 29 or 30 days and begins in the
+middle of a Gregorian one, so a grid of Gregorian lengths titled in Hijri
+shows the right words above the wrong days.
+
+What comes back is ISO whatever was asked for. A calendar is a way of reading
+dates, not of storing them — the same rule this library applies to time zones.
+
+`islamic` and `islamic-rgsa` are refused with a message naming
+`islamic-umalqura`, because neither engine implements them while
+`Intl.DateTimeFormat('ar-SA-u-ca-islamic')` resolves to exactly `'islamic'`.
+A month outside the year is rejected rather than quietly constrained.
+
+**No widget uses this yet.** Each keeps its own year and month and steps it by
+one, which is not stepping a month in a calendar whose years hold a varying
+number of them.
+
+### Breaking
+
+Temporal comes from `temporal-polyfill/full`, which costs 3.8 kB gzipped and
+is what makes a non-ISO calendar possible at all. If your application imports
+the polyfill itself, import the same entry: two entries are two module graphs
+with two sets of classes, and this library now tells an instant by its shape
+rather than by its class so that a mismatch degrades rather than throws.
+
+`endBeforeStartMessage`, `emptyPeriodMessage` and `readingStyle` are settings
+on the fields; `mask` reaches `datetime-range`, which its two siblings already
+had. `inMonth` is exported, which 2.1.0 promised in its guide and did not do.
+
+## 2.1.1
+
+### The day you click is the day you get
+
+Click the 8th, then the 14th, on a field showing hours. It now reads
+`08/10/2026 00:00 – 14/10/2026 00:00`, the two boxes say so, the calendar
+marks those two days, and that is the value your code receives.
+
+It did not. The end reached for the end of the day it was given, so clicking
+the 14th stored **the 15th at midnight**. The box then displayed that as
+`14/10` beside `00:00` — naming a moment the field did not hold — while the
+calendar lit the 13th. One click, three readings, none of them agreeing:
+
+```
+you clicked          the 14th
+the value held       15/10 00:00
+the box showed       14/10/2026   00:00     ← a date from one reading,
+                                              an hour from the other
+the calendar lit     the 13th
+```
+
+The rule behind it was "a day clicked as the end means all of it", and it is
+right for a field with no hours on screen: there is no other way to say the
+last day is included. With the hours up there is — the reader is looking at
+`00:00` in a box beside the date. So the rule is now `showTime: false` only,
+where it belongs. A day-only field is untouched: the 8th to the 14th is seven
+whole days, ending at the midnight that opens the 15th, exactly as before.
+
+**What changes for you.** A screen with `showTime: true` will get an end one
+day earlier than it used to for the same click, and the period it reports is
+one day shorter. A screen with `showTime: false` sees nothing change.
+
+One gesture follows from this and is worth naming. On a period field **with
+hours**, clicking the same day twice now gives a period of no length rather
+than a whole day: the second click means "the 8th at 00:00", which is where
+the first one already was. The panel says so on its summary line instead of
+going quiet. A whole day is still a whole day everywhere it is asked for as
+one — `singleDay` gives 24 hours with the hours on screen or off, and so does
+clicking a day twice on a field showing no hours.
+
+### A shortcut no longer lights up for a period of no length
+
+The shortcut column compares days, and the day an empty period sits on is the
+same day *Today* gives. So two clicks on the 16th — holding `16/10 00:00` to
+`16/10 00:00`, with nothing in between — lit *Today* as though it had been
+pressed, while the summary line underneath said the period was empty. One
+panel answering two different questions.
+
+Six other tests asserted the old reading by name — "a named range of days
+keeps its last day, even on a screen showing hours". They were changed on
+purpose. The decision they recorded was a reasonable one; it is being
+reversed, not drifted away from.
+
+The arrows keep the arithmetic they had. Undoing the pull-back everywhere made
+a week grow by a day on every press — 168h, 192, 216, 240, measured — because
+the arrows round-trip a period through that same reading. It is undone for the
+grid and the boxes, which show instants, and left alone where days are being
+counted.
+
+### The hour menus wrapped into a slab in a narrow panel
+
+2.1.0 put `flex-wrap: wrap` on `.tz-timeselect` so a legend could take a row of
+its own, with a comment reasoning that the menus would never wrap by
+themselves because an inline-flex box is sized by its content. That holds only
+where the box has the room it asks for: inside a narrow panel column the two
+menus went onto separate lines and the time area became a slab.
+
+Scoped to the case it was written for, so a panel with no legend lays out
+exactly as it did in 2.0.0 — the rule is byte-identical to that release. The
+legend also gets the `[hidden]` rule that every other hideable element in the
+stylesheet already had.
+
+### How these got out
+
+The first was not visible to the suite because every test asserts one reading
+or the other and none puts them side by side: a test of the box checks the
+box, a test of the calendar checks the calendar. Reading them together is what
+a person does and what no assertion did.
+
+The second could not be caught at all: jsdom computes no layout, so no test
+here can see a wrapped row. It was found by a reader within the hour.
+
 ## 2.1.0
 
 An hour menu in a dark page opened a list of white text on white.

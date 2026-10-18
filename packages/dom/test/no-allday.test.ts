@@ -43,12 +43,30 @@ describe('a period is two moments, with no flag', () => {
     expect(shown()).toBe('21/09/2026 – 25/09/2026');
   });
 
-  it('a day clicked as the end means all of it, hours on screen or not', () => {
+  it('a day clicked as the end is that day, once the hours are on screen', () => {
+    /*
+     * 2.1.1 reversed this, deliberately. The rule was "a day clicked as the
+     * end means all of it", which holds for a field with no hours: there is
+     * no other way to say the last day is included.
+     *
+     * With the hours up there is. The reader clicks the 20th, reads
+     * `20/09/2026` and `00:00` in the box, and gets the 20th at midnight --
+     * what it says. Reaching for the end of the day wrote the 21st, which the
+     * box then displayed as the 20th: the day pointed at was not the day got.
+     */
     const f = mount({ showTime: true, today: Temporal.PlainDate.from('2026-09-14') });
     f.open();
     day('2026-09-14').click();
     day('2026-09-20').click();
-    // Read as "the 20th at 00:00" this would have dropped the day just clicked.
+    expect(f.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-20');
+  });
+
+  it('and still means all of it when no hour is shown', () => {
+    const f = mount({ showTime: false, today: Temporal.PlainDate.from('2026-09-14') });
+    f.open();
+    day('2026-09-14').click();
+    day('2026-09-20').click();
+    // No hour anywhere to say otherwise, so the midnight opening the 21st.
     expect(f.value.end!.toZonedDateTimeISO(paris).toPlainDate().toString()).toBe('2026-09-21');
   });
 

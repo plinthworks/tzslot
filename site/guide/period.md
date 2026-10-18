@@ -84,7 +84,25 @@ createRangeField(element, { timeZone: 'Europe/Paris', showTime: false });
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', showTime: false, title: 'Whole days' }" />
 
 `true` gives every chosen day an hour, midnight unless the screen says
-otherwise. **This field has no *All day* switch**: whole days are what two
+otherwise, **and the day you click is the day you get**. Click the 8th, then
+the 14th, and the field reads `08/10/2026 00:00 – 14/10/2026 00:00` — the two
+boxes say it, the calendar marks those two days, and that is the value your
+code receives.
+
+Until 2.1.1 the end reached for the end of the day it was given, so clicking
+the 14th stored the 15th at midnight; the box then displayed it as `14/10`
+beside `00:00`, naming a moment the field did not hold, and the calendar lit
+the 13th. Three readings of one click.
+
+`false` keeps the older rule, and should: with no hour anywhere on screen,
+clicking a day as the end is the only way to say that day is included, so it
+means all of it — the 8th to the 14th is seven whole days, ending at the
+midnight that opens the 15th.
+
+<Live
+  widget="RangeField"
+  :options="{ timeZone: 'Europe/Paris', showTime: true, months: 1, today: Temporal.PlainDate.from('2026-10-08'), title: 'Click the 8th, then the 14th' }"
+/> **This field has no *All day* switch**: whole days are what two
 midnights already say, so there is nothing left for the reader to declare.
 [`createDateTimeRange`](../examples#a-whole-day-or-an-interval) is the one
 widget that still offers that switch, and it carries the answer as `allDay`

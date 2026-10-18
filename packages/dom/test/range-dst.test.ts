@@ -135,7 +135,7 @@ describe('once the panel is closed', () => {
     const shown = () => host.querySelector('.tz-field__text')!.textContent;
     // The start opens a day and is written as one; the end is 02:30 and says
     // so, with the reading that tells the two 02:30s apart.
-    expect(shown()).toBe('25/10/2026 – 25/10/2026 02:30 (été)');
+    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (été)');
 
     // The other reading is an hour later and reads differently, which is the
     // whole point: two identical clock faces, two different fields.
@@ -147,7 +147,7 @@ describe('once the panel is closed', () => {
     });
     // The start opens a day and is written as one; the end is 02:30 and says
     // so, with the reading that tells the two 02:30s apart.
-    expect(shown()).toBe('25/10/2026 – 25/10/2026 02:30 (hiver)');
+    expect(shown()).toBe('25/10/2026 00:00 – 25/10/2026 02:30 (hiver)');
   });
 
   it('and says it for a period open at one end', () => {
@@ -181,7 +181,8 @@ describe('once the panel is closed', () => {
     // long: 24/10 22:00Z to 25/10 23:00Z is that one day, whole. The field
     // writes the day — and, the point of this test, names no reading, because
     // there is no hour on screen to be ambiguous about.
-    expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026');
+    // 2.1.1: a field showing hours shows them, midnight included.
+    expect(host.querySelector('.tz-field__text')!.textContent).toBe('25/10/2026 00:00 – 26/10/2026 00:00');
   });
 });
 

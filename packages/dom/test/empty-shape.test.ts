@@ -98,7 +98,8 @@ describe('what a review found in 1.4.0', () => {
         end: Temporal.Instant.from('2026-09-26T22:00:00Z'),
       },
     });
-    expect(lu()).toBe('24/09/2026 09:00 – 26/09/2026');
+    // 2.1.1: a field showing hours shows them, midnight included.
+    expect(lu()).toBe('24/09/2026 09:00 – 27/09/2026 00:00');
   });
 
   it('does not write a period of no length backwards', () => {

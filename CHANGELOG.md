@@ -1,5 +1,34 @@
 # Changelog
 
+## Unreleased
+
+### `@tzslot/react`
+
+Twelve components over the dom package, for React 18 and 19, built from one
+factory: the hard parts of putting an imperative widget inside React are the
+same every time, and twelve copies would be twelve places for them to drift.
+
+Every prop is the setting the dom package documents, under the same name, so
+the guides read straight across. Pass `value` and the component is controlled;
+leave it out and the widget keeps its own, which needs no API because a prop
+that was not given is not passed down. The ref is the widget itself, with
+`open()`, `close()` and `clear()` on it.
+
+What it handles so a caller does not have to: a callback that is a new
+function on every render, which is every React codebase, and which must not
+reach the widget as a changed setting; StrictMode's mount-unmount-remount,
+which leaves two of any widget built in an effect without cleanup; and the
+value coming back round from its own report, where a loop is not a slow render
+but a locked browser.
+
+Two things found while writing it rather than after. A prop left out of a tag
+arrives as `undefined`, and spreading that over the library's defaults
+replaces them with nothing — a field whose default is an empty period was
+handed `undefined` and threw on first paint. And the build's manifest writer
+carried `dependencies` and nothing else, so the first `@tzslot/react` it
+produced did not mention React at all: it would have installed beside any
+version, with nothing for npm to warn about.
+
 ## 2.2.0
 
 Arabic, right-to-left, and a month grid that can be built in a calendar that

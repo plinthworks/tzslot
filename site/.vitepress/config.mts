@@ -37,6 +37,7 @@ export default defineConfig({
             items: [
               { text: 'Getting started', link: '/guide/getting-started' },
               { text: 'Angular', link: '/guide/angular' },
+              { text: 'React', link: '/guide/react' },
               { text: 'Without a framework', link: '/guide/vanilla' },
               { text: 'Choosing a period', link: '/guide/period' },
               { text: 'What you get back', link: '/guide/values' },
@@ -101,6 +102,7 @@ export default defineConfig({
             items: [
               { text: 'Démarrer', link: '/fr/guide/getting-started' },
               { text: 'Angular', link: '/fr/guide/angular' },
+              { text: 'React', link: '/fr/guide/react' },
               { text: 'Sans framework', link: '/fr/guide/vanilla' },
               { text: 'Choisir une période', link: '/fr/guide/period' },
               { text: 'Ce qu’on récupère', link: '/fr/guide/values' },

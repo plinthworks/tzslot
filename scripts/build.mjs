@@ -67,6 +67,18 @@ function typescript(name) {
       './package.json': './package.json',
     },
     dependencies: internal(source.dependencies),
+    /*
+     * And the peers, where there are any.
+     *
+     * This builder copied `dependencies` and nothing else, which was true of
+     * every package it had ever been given. The React wrapper has React as a
+     * peer, and the first build of it produced a manifest that did not mention
+     * React at all: it would have installed beside any version, or none, and
+     * npm would have had nothing to warn about. Caught by reading the built
+     * manifest rather than by any test — nothing here checks what a manifest
+     * does not say.
+     */
+    ...(source.peerDependencies ? { peerDependencies: source.peerDependencies } : {}),
   };
   writeFileSync(join(dir, 'dist', 'package.json'), JSON.stringify(manifest, null, 2) + '\n');
   extras(name);
@@ -105,19 +117,21 @@ function theme() {
   extras('theme');
 }
 
-// Order matters: dom compiles against core's declarations, Angular against both.
+// Order matters: dom compiles against core's declarations, the wrappers
+// against both.
 typescript('core');
 typescript('dom');
+typescript('react');
 angular();
 theme();
 
 // A published manifest that points at src/ points at a file npm never
 // received: the install succeeds and the import fails. Refuse to finish.
-for (const name of ['core', 'dom', 'angular', 'theme']) {
+for (const name of ['core', 'dom', 'react', 'angular', 'theme']) {
   const text = readFileSync(join(pkg(name), 'dist', 'package.json'), 'utf8');
   if (text.includes('src/')) {
     console.error(`packages/${name}/dist/package.json still points at src/`);
     process.exit(1);
   }
 }
-console.log('\nBuilt: packages/{core,dom,angular,theme}/dist');
+console.log('\nBuilt: packages/{core,dom,react,angular,theme}/dist');

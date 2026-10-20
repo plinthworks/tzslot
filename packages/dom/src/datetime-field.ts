@@ -653,9 +653,25 @@ export function createDateTimeField(
   }
 
   function render(): void {
-    if (stylesPending && host.isConnected) {
+    if (stylesPending) {
       ensureStyles(host, 'field', FIELD_CSS);
-      stylesPending = false;
+      /*
+       * Written now, and again once the host is in a document.
+       *
+       * It used to wait for `isConnected`, because a host that will live
+       * in a shadow root cannot say so while it is detached and the sheet
+       * would go to the page's head where it does nothing. The cost was
+       * worse than the stray tag it avoided: a framework that builds a
+       * widget before inserting it got an unstyled one, and it stayed
+       * unstyled until something else made it render — reported by a
+       * consumer as styles arriving late, measured here as never.
+       *
+       * So it is written immediately, and the flag is only cleared once
+       * the host is somewhere real. `ensureStyles` refuses a second copy
+       * in the same root, so the run after connection costs a lookup and
+       * puts the sheet in a shadow root when that is where it landed.
+       */
+      stylesPending = !host.isConnected;
     }
     mountTrigger();
     const written = display();
@@ -673,6 +689,22 @@ export function createDateTimeField(
     }
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));
+    /*
+     * What the trigger opens, named — and a role that may carry the claim.
+     *
+     * The editable trigger is an `<input>`, and `aria-haspopup` with
+     * `aria-expanded` on a plain textbox is not something ARIA allows: a text
+     * field that controls a popup is a combobox, and without the role a
+     * screen reader is told an edit box has a popup it cannot describe or
+     * reach. `aria-controls` is the other half — it names the element, which
+     * is how a reader moves to it. Both were missing; reported by a consumer
+     * reading the markup rather than by any test here.
+     */
+    if (trigger instanceof HTMLInputElement) trigger.setAttribute('role', 'combobox');
+    const openPanelId = panel.isOpen ? panel.element?.id : null;
+    if (openPanelId) trigger.setAttribute('aria-controls', openPanelId);
+    else trigger.removeAttribute('aria-controls');
+
     trigger.setAttribute('aria-label', label());
     // The panel is labelled when it opens and lives on the body, so a change
     // of words while it is open left a dialog announcing itself in the

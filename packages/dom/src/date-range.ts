@@ -297,9 +297,25 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
   }
 
   function render(): void {
-    if (stylesPending && host.isConnected) {
+    if (stylesPending) {
       ensureStyles(host, 'range', RANGE_CSS);
-      stylesPending = false;
+      /*
+       * Written now, and again once the host is in a document.
+       *
+       * It used to wait for `isConnected`, because a host that will live
+       * in a shadow root cannot say so while it is detached and the sheet
+       * would go to the page's head where it does nothing. The cost was
+       * worse than the stray tag it avoided: a framework that builds a
+       * widget before inserting it got an unstyled one, and it stayed
+       * unstyled until something else made it render — reported by a
+       * consumer as styles arriving late, measured here as never.
+       *
+       * So it is written immediately, and the flag is only cleared once
+       * the host is somewhere real. `ensureStyles` refuses a second copy
+       * in the same root, so the run after connection costs a lookup and
+       * puts the sheet in a shadow root when that is where it landed.
+       */
+      stylesPending = !host.isConnected;
     }
     const at = shown();
     const off = s.disabled;

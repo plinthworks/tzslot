@@ -54,6 +54,9 @@ export interface PanelController {
 }
 
 /** What a panel must take with it from where its field sits. */
+/** Enough to tell two open panels apart on one page. */
+let panels = 0;
+
 const CARRIED = [
   '--tz-color-scheme',
   '--tz-bg',
@@ -240,6 +243,15 @@ export function createPanel(options: PanelOptions): PanelController {
 
     const panel = doc.createElement('div');
     panel.className = dialog ? 'tz-field__panel tz-field__panel--dialog' : 'tz-field__panel';
+    /*
+     * An id, so the trigger can name what it opens.
+     *
+     * `aria-haspopup` says a popup exists; `aria-controls` says which element
+     * it is, and a screen reader needs the second to let its reader move to
+     * it. There was nothing to point at before — reported by a consumer
+     * reading the markup, and true of all four fields.
+     */
+    panel.id = `tz-panel-${++panels}`;
     panel.setAttribute('role', 'dialog');
     panel.setAttribute('aria-label', options.label());
     if (dialog) panel.setAttribute('aria-modal', 'true');

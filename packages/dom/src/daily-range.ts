@@ -368,12 +368,15 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
   }
 
   function render(): void {
-    if (stylesPending && host.isConnected) {
+    if (stylesPending) {
       ensureStyles(host, 'slots', SLOTS_CSS);
       ensureStyles(host, 'time', TIME_CSS);
       ensureStyles(host, 'timeselect', TIMESELECT_CSS);
       ensureStyles(host, 'daily', DAILY_CSS);
-      stylesPending = false;
+      // Written now, and again once the host is in a document — see the same
+      // block in `range-field` for why waiting for `isConnected` meant a
+      // widget built before being inserted was never styled at all.
+      stylesPending = !host.isConnected;
     }
     datesLegend.textContent = s.messages.days;
     datesBox.setAttribute('aria-label', s.messages.days);

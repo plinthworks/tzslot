@@ -42,20 +42,48 @@ const verifyOnly = process.argv.includes('--verify-only');
 /**
  * What the registry says, bypassing every cache.
  *
- * `npm view` reads a local cache that can be hours stale — it reported 2.2.0
- * for minutes after a 2.3.0 that had in fact never been published, which is
- * two different lies pointing the same way. The registry's own JSON is the
- * only answer worth acting on.
+ * `npm view` reads a local cache that can be stale, and it lied twice in one
+ * afternoon in the same direction: it answered 2.2.0 for packages already at
+ * 2.3.0, and then served an installed 2.3.0 whose manifest had neither the
+ * lazy entry nor the corrected `sideEffects` — while the published tarball had
+ * both. Either answer alone would have sent someone chasing a defect that did
+ * not exist. The registry's own JSON is the only answer worth acting on.
  */
 async function published(name) {
   const response = await fetch(`https://registry.npmjs.org/${encodeURIComponent(`@tzslot/${name}`)}`, {
     headers: { accept: 'application/json' },
     cache: 'no-store',
   });
-  if (response.status === 404) return { versions: [], latest: null };
+  if (response.status === 404) return { versions: [], latest: null, tarball: null };
   if (!response.ok) throw new Error(`the registry answered ${response.status} for @tzslot/${name}`);
   const body = await response.json();
-  return { versions: Object.keys(body.versions ?? {}), latest: body['dist-tags']?.latest ?? null };
+  const version = manifest(name).version;
+  return {
+    versions: Object.keys(body.versions ?? {}),
+    latest: body['dist-tags']?.latest ?? null,
+    tarball: body.versions?.[version]?.dist?.tarball ?? null,
+  };
+}
+
+/**
+ * Whether the tarball the metadata promises can actually be fetched.
+ *
+ * Metadata and files propagate separately. @tzslot/angular@2.3.0 was listed as
+ * `latest` while its tarball answered 404 for 101 seconds, and `npm install`
+ * failed the whole time with "is not in this registry" — so a check that reads
+ * only the metadata declares a release finished that nobody can install. It
+ * settles on its own, hence the wait rather than a verdict on the first try.
+ */
+async function fetchable(url, waitMs = 180_000) {
+  const deadline = Date.now() + waitMs;
+  let waited = false;
+  for (;;) {
+    const head = await fetch(url, { method: 'HEAD', cache: 'no-store' }).catch(() => null);
+    if (head?.ok) return { ok: true, waited };
+    if (Date.now() > deadline) return { ok: false, waited, status: head?.status ?? 'no answer' };
+    waited = true;
+    await new Promise((resume) => setTimeout(resume, 5_000));
+  }
 }
 
 if (!verifyOnly) {
@@ -105,9 +133,22 @@ for (const name of ORDER) {
   }
   const there = state.versions.includes(version);
   const current = state.latest === version;
-  if (there && current) console.log(`  ✔ @tzslot/${name}@${version} is there, and is latest`);
-  else if (there) console.log(`  ! @tzslot/${name}@${version} is there, but latest is ${state.latest}`);
-  else {
+  if (there) {
+    const tarball = await fetchable(state.tarball ?? '');
+    if (!tarball.ok) {
+      console.error(
+        `  ✖ @tzslot/${name}@${version} is listed, but its tarball is not there ` +
+          `(${tarball.status}) — nobody can install it`,
+      );
+      missing++;
+      continue;
+    }
+    const note = tarball.waited ? ', after waiting for it to propagate' : '';
+    if (current) console.log(`  ✔ @tzslot/${name}@${version} is there and installable${note}`);
+    else console.log(`  ! @tzslot/${name}@${version} is installable, but latest is ${state.latest}`);
+    continue;
+  }
+  {
     console.error(
       `  ✖ @tzslot/${name}@${version} is NOT on npm (latest there: ${state.latest ?? 'nothing'})`,
     );

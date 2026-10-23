@@ -6,7 +6,7 @@
  * specificity.
  */
 export { TimeSlotPicker } from './time-slot-picker.js';
-export { TZSLOT_MESSAGES, provideTzslotMessages, EN, FR } from './messages.js';
+export { TZSLOT_MESSAGES, provideTzslotMessages, EN, FR, AR } from './messages.js';
 export { TZSLOT_DEFAULTS, provideTzslot } from './defaults.js';
 export { pairIn, pairOut } from './shapes.js';
 export type { MomentPair } from './shapes.js';

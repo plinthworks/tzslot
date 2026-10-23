@@ -2,6 +2,21 @@
 
 ## Unreleased
 
+### `AR` was unreachable from Angular
+
+`@tzslot/angular` re-exported `EN` and `FR` and not `AR`. The catalogue was
+there — `messages.ts` took all three from the dom package — and the public
+entry forwarded two, naming them one by one. So an Angular screen could not
+compose an Arabic catalogue without importing from `@tzslot/dom`, which is not
+its declared dependency; the consumer who reported it had gone and declared
+it, which is a borrowing one export line avoids.
+
+The release whose headline was Arabic shipped Arabic unreachable from Angular,
+and it shipped twice. Nothing read the export list, so a test now does:
+mechanically, by name, every catalogue the dom package ships against the
+Angular one — the same spirit as the audit of every settings key against every
+wrapper input, which was written after the same class of defect.
+
 ### `loadTemporal()` could not be retried after a failed load
 
 `loading ??= import(...)` kept a rejected promise as happily as a fulfilled

@@ -135,6 +135,14 @@ entry has no such state, which is why it stays the default.
 chunk after the first paint instead of blocking it — better, as long as
 `loadTemporal()` is called at startup and not at the first date.
 
+## Upgrading
+
+One thing catches people, and it is not ours: **Angular's dev server does not
+pick up a changed dependency while it is running.** Restart it after
+installing a new version, or you will measure the old library while believing
+you are measuring the new one — reported by a consumer who lost time to it,
+and the likeliest reason for "I installed it and nothing changed".
+
 ## Where to go next
 
 - [Angular](./angular) — the components, forms included.

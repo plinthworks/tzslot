@@ -140,6 +140,15 @@ dans son propre chunk après le premier affichage au lieu de le bloquer — ce
 qui est mieux, à condition d’appeler `loadTemporal()` au démarrage et pas à la
 première date.
 
+## Monter de version
+
+Une chose piège les gens, et elle n’est pas de nous : **le serveur de
+développement d’Angular ne reprend pas un changement de dépendance à chaud.**
+Redémarrez-le après avoir installé une nouvelle version, sinon vous mesurez
+l’ancienne bibliothèque en croyant mesurer la nouvelle — remonté par un
+consommateur qui y a perdu du temps, et la raison la plus probable d’un
+« je l’ai installée et rien n’a changé ».
+
 ## Où aller ensuite
 
 - [Angular](./angular) — les composants, formulaires compris.

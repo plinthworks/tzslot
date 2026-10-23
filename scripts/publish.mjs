@@ -119,20 +119,52 @@ if (!verifyOnly) {
   }
 }
 
-console.log('\nAsking the registry what actually arrived.\n');
+/**
+ * Waits for a version to appear in the registry's own listing.
+ *
+ * `npm publish` prints "+ @tzslot/core@2.4.0" and, under it, "your package is
+ * being processed and may take a few minutes to become available". The publish
+ * is asynchronous: all five were accepted and the check that ran a second
+ * later reported all five missing, latest still 2.3.0. `react` was there
+ * already, the other four were not — so the result was not even consistent
+ * between packages.
+ *
+ * That is the third shape of one mistake in a day: metadata that lags its
+ * tarball, a tarball that lags its metadata, and now a publish that lags the
+ * command that made it. In each case the gate asked too early and said the
+ * release had failed.
+ */
+async function listed(name, version, waitMs = 600_000) {
+  const deadline = Date.now() + waitMs;
+  let waited = false;
+  for (;;) {
+    const state = await published(name).catch(() => null);
+    if (state?.versions.includes(version)) return { state, waited };
+    if (Date.now() > deadline) return { state, waited, late: true };
+    waited = true;
+    await new Promise((resume) => setTimeout(resume, 10_000));
+  }
+}
+
+console.log('\nAsking the registry what actually arrived.');
+console.log('npm publishes asynchronously, so this waits rather than ruling at once.\n');
 let missing = 0;
 for (const name of ORDER) {
   const { version } = manifest(name);
-  let state;
-  try {
-    state = await published(name);
-  } catch (error) {
-    console.error(`  ? @tzslot/${name} — could not ask: ${error.message}`);
+  const { state, waited, late } = await listed(name, version);
+  if (state === null) {
+    console.error(`  ? @tzslot/${name} — could not ask the registry`);
     missing++;
     continue;
   }
   const there = state.versions.includes(version);
   const current = state.latest === version;
+  if (late && !there) {
+    console.error(`  ✖ @tzslot/${name}@${version} never appeared, after ten minutes of asking`);
+    missing++;
+    continue;
+  }
+  if (waited) console.log(`     (@tzslot/${name} took a moment to appear)`);
   if (there) {
     const tarball = await fetchable(state.tarball ?? '');
     if (!tarball.ok) {

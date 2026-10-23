@@ -1,5 +1,5 @@
-import { Temporal, resolveWallTime } from '@tzslot/core';
-import type { PlainDate, PlainTime } from '@tzslot/core';
+import { Temporal, resolveWallTime } from '@tzslot/core/lazy';
+import type { PlainDate, PlainTime } from '@tzslot/core/lazy';
 import { toLatinFigures } from './format.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { TIME_CSS, ensureStyles } from './styles.js';

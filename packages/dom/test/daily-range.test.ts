@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { createDailyRange, FR, type DailyRangeInstance } from '../src/index.js';
 import { Temporal } from '@tzslot/core';
+import { plain } from '../../core/test/plain.js';
 
 let host: HTMLElement;
 let widget: DailyRangeInstance;
@@ -50,7 +51,7 @@ describe('choosing, with the compact fields', () => {
     time('to', '17:00').click();
     day('2026-06-19').click();
 
-    expect(text('.tz-daily__summary')).toBe('5 days · 40h');
+    expect(text('.tz-daily__summary')).toBe('5 days · 40 hrs');
     expect(host.querySelector('.tz-daily__unusual')).toBeNull();
     const last = onChange.mock.calls.at(-1)![0];
     expect(`${last.start} ${last.end} ${last.from} ${last.to}`).toBe('2026-06-15 2026-06-19 09:00:00 17:00:00');
@@ -81,16 +82,16 @@ describe('night shifts across the end of summer time', () => {
   });
 
   it('counts the real total and names the night that differs', () => {
-    expect(text('.tz-daily__summary')).toBe('4 days · 33h');
+    expect(text('.tz-daily__summary')).toBe('4 days · 33 hrs');
     expect(text('.tz-daily__overnight')).toBe('22:00 → 06:00 next day');
     const days = Array.from(host.querySelectorAll('.tz-daily__day')).map((li) => li.textContent);
-    expect(days).toEqual(['Sat 24 Oct lasts 9h: the clocks go back.']);
+    expect(days).toEqual(['Sat 24 Oct lasts 9 hrs: the clocks go back.']);
   });
 
   it('says it in French', () => {
     widget.update({ messages: FR, locale: 'fr-FR' });
-    expect(text('.tz-daily__summary')).toBe('4 jours · 33h');
-    expect(text('.tz-daily__day')).toBe('sam. 24 oct. dure 9h : les pendules reculent.');
+    expect(plain(text('.tz-daily__summary'))).toBe('4 jours · 33 h');
+    expect(plain(text('.tz-daily__day'))).toBe('sam. 24 oct. dure 9 h : les pendules reculent.');
     expect(text('.tz-daily__column-label')).toBe('De');
   });
 });
@@ -157,7 +158,7 @@ describe('the two ways of choosing the hours', () => {
     expect(field('from', 'hour').value).toBe('22');
     expect(field('to', 'hour').value).toBe('06');
     expect(host.querySelector('.tz-daily__note')!.textContent).toBe('next day');
-    expect(text('.tz-daily__summary')).toBe('1 day · 9h');
+    expect(text('.tz-daily__summary')).toBe('1 day · 9 hrs');
   });
 
   it('switches between the two without losing the value', () => {

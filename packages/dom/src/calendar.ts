@@ -5,8 +5,8 @@ import {
   getDecadeYears,
   isOutsideDecade,
   firstDayFor,
-} from '@tzslot/core';
-import type { PlainDate, Weekday } from '@tzslot/core';
+} from '@tzslot/core/lazy';
+import type { PlainDate, Weekday } from '@tzslot/core/lazy';
 import { EN, type TzslotMessages } from './messages.js';
 import { CALENDAR_CSS, ensureStyles } from './styles.js';
 import { paintCell, readingKey, type RenderCell } from './cells.js';

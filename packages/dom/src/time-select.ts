@@ -1,5 +1,5 @@
-import { Temporal, getDaySlots } from '@tzslot/core';
-import type { PlainDate, PlainTime, Slot } from '@tzslot/core';
+import { Temporal, getDaySlots } from '@tzslot/core/lazy';
+import type { PlainDate, PlainTime, Slot } from '@tzslot/core/lazy';
 import { EN, type TzslotMessages } from './messages.js';
 import { summerFirst } from './zone-names.js';
 import { TIMESELECT_CSS, ensureStyles } from './styles.js';

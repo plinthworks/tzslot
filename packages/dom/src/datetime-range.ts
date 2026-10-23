@@ -1,5 +1,5 @@
-import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '@tzslot/core';
-import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core';
+import { Temporal, getRangeInfo, isRangeProblem, formatDuration } from '@tzslot/core/lazy';
+import type { Instant, PlainDate, PlainTime, Slot } from '@tzslot/core/lazy';
 import { createDateTimeField, type DateTimeFieldInstance } from './datetime-field.js';
 import type { TimeLayout } from './daily-range.js';
 import type { CalendarButton } from './calendar.js';
@@ -321,9 +321,10 @@ export function createDateTimeRange(
         problem: s.endBeforeStartMessage ?? s.messages.endBeforeStart,
       };
     }
-    const real = formatDuration(info.duration);
+    const real = formatDuration(info.duration, { locale: s.locale });
     if (!info.crossesTransition) return { summary: real, warning: null, problem: null };
-    const minutes = (m: number) => formatDuration(Temporal.Duration.from({ minutes: Math.abs(m) }));
+    const minutes = (m: number) =>
+      formatDuration(Temporal.Duration.from({ minutes: Math.abs(m) }), { locale: s.locale });
     return {
       summary: real,
       problem: null,

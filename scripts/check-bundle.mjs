@@ -13,7 +13,7 @@
  * and runs them. It is the only gate here that executes shipped bytes.
  */
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, readdirSync } from 'node:fs';
+import { mkdirSync, readFileSync, rmSync, writeFileSync, existsSync, readdirSync, symlinkSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -51,6 +51,37 @@ mkdirSync(work, { recursive: true });
 // node_modules two levels up so `temporal-polyfill` resolves from here.
 writeFileSync(join(work, 'package.json'), JSON.stringify({ type: 'module' }));
 
+/*
+ * The packages installed, not the dist folders read in place.
+ *
+ * `@tzslot/dom`'s modules import `@tzslot/core/lazy` by name. Bundled out of
+ * `packages/dom/dist` they resolved that through the workspace to
+ * `packages/core/src/lazy.ts` — the TypeScript source — while a probe beside
+ * them resolved it to `dist/lazy.js`. The bundle then held three copies of
+ * `temporal.js`, and `install()` in one did nothing for the others: the check
+ * reported a defect the shipped packages do not have, which is the worse kind
+ * of false alarm because it reads exactly like the real one.
+ *
+ * So the tarballs are installed here and everything is bundled from
+ * `node_modules`, the way a consumer's build does it. It costs about twenty
+ * seconds. It is also the only arrangement in which the inter-package
+ * specifiers mean what they will mean on npm — the same lesson as a package
+ * listed in the registry whose tarball is not there yet: a gate that checks
+ * something adjacent to what it claims is a gate that passes while the thing
+ * is broken.
+ */
+const packed = join(root, 'packed');
+const tarballs = existsSync(packed) ? readdirSync(packed).filter((f) => f.endsWith('.tgz')) : [];
+if (tarballs.length === 0) {
+  console.error('✖ no tarballs in packed/ — run `npm run pack:local` first.');
+  process.exit(1);
+}
+console.log(`\nInstalling ${tarballs.length} tarballs, so the specifiers mean what they will on npm.`);
+execFileSync('npm', ['install', '--no-audit', '--no-fund', '--silent', ...tarballs.map((f) => join(packed, f))], {
+  cwd: work,
+  stdio: 'pipe',
+});
+
 const esbuild = (args) =>
   execFileSync('npx', ['esbuild', ...args, '--bundle', '--format=esm', '--minify', '--log-level=error'], {
     cwd: work,
@@ -68,7 +99,7 @@ console.log('\nThe default entry — no await, exactly as before\n');
   writeFileSync(
     join(work, 'app.js'),
     [
-      `import { getMonthGrid, Temporal } from ${JSON.stringify(join(core, 'index.js'))};`,
+      `import { getMonthGrid, Temporal } from '@tzslot/core';`,
       `console.log(getMonthGrid(2026, 10, 1).length, Temporal.PlainDate.from('2026-10-25').toString());`,
     ].join('\n'),
   );
@@ -101,7 +132,7 @@ console.log('\nThe lazy entry — the polyfill only where it is needed\n');
   writeFileSync(
     join(work, 'app.js'),
     [
-      `import { getMonthGrid, Temporal, loadTemporal } from ${JSON.stringify(join(core, 'lazy.js'))};`,
+      `import { getMonthGrid, Temporal, loadTemporal } from '@tzslot/core/lazy';`,
       `await loadTemporal();`,
       `console.log(getMonthGrid(2026, 10, 1).length, Temporal.PlainDate.from('2026-10-25').toString());`,
     ].join('\n'),
@@ -150,14 +181,12 @@ console.log('\nThrough the widgets, which is how most people arrive\n');
    * core directly. What must not happen is the install being dropped on this
    * path too, which is the same defect one package further away.
    */
-  const dom = join(root, 'packages', 'dom', 'dist', 'index.js');
-  if (!existsSync(dom)) fail('packages/dom/dist is missing — run `npm run build` first.');
-  else {
+  {
     writeFileSync(
       join(work, 'widget.js'),
       [
-        `import { createRangeField } from ${JSON.stringify(dom)};`,
-        `import { Temporal } from ${JSON.stringify(join(core, 'index.js'))};`,
+        `import { createRangeField } from '@tzslot/dom';`,
+        `import { Temporal } from '@tzslot/core';`,
         `console.log(typeof createRangeField, Temporal.PlainDate.from('2026-10-25').toString());`,
       ].join('\n'),
     );
@@ -170,6 +199,41 @@ console.log('\nThrough the widgets, which is how most people arrive\n');
     }
     if (said === 'function 2026-10-25') console.log(`  ✔ a bundled widget still has Temporal: ${said}`);
     else fail(`a bundled widget did not work — ${said}`);
+  }
+
+  /*
+   * And the widgets without it, which is the entry an on-demand editor takes.
+   * The polyfill was 38% of such a bundle, measured on a consumer's own, and
+   * was fetched by every visitor including the three in four whose browser
+   * ships Temporal already.
+   */
+  {
+    writeFileSync(
+      join(work, 'widget-lazy.js'),
+      [
+        `import { createRangeField, loadTemporal } from '@tzslot/dom/lazy';`,
+        `import { Temporal } from '@tzslot/core/lazy';`,
+        `await loadTemporal();`,
+        `console.log(typeof createRangeField, Temporal.PlainDate.from('2026-10-25').toString());`,
+      ].join('\n'),
+    );
+    esbuild(['widget-lazy.js', '--splitting', '--outdir=out-widget-lazy']);
+    const entry = join(work, 'out-widget-lazy', 'widget-lazy.js');
+    const carried = staticChunks(entry);
+    const polyfilled = carried.filter((name) => gzipped(join(work, 'out-widget-lazy', name)) > 10_000);
+    if (polyfilled.length === 0) console.log('  ✔ the widgets\' lazy entry pulls in no polyfill');
+    else fail(`@tzslot/dom/lazy statically imports ${polyfilled.join(', ')} — the saving is gone`);
+
+    // And it still works, which a chunk count cannot tell you.
+    esbuild(['widget-lazy.js', '--outfile=flat-widget-lazy.js']);
+    let said = '';
+    try {
+      said = execFileSync('node', ['flat-widget-lazy.js'], { cwd: work, encoding: 'utf8', stdio: 'pipe' }).trim();
+    } catch (error) {
+      said = complaint(error);
+    }
+    if (said === 'function 2026-10-25') console.log(`  ✔ and works after one await: ${said}`);
+    else fail(`@tzslot/dom/lazy did not work — ${said}`);
   }
 }
 

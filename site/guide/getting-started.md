@@ -102,10 +102,30 @@ startup, fetches one copy: the same promise comes back.
 
 Three things worth knowing before you choose it.
 
-**It is for code that uses the core directly.** `@tzslot/dom`, `@tzslot/react`
-and `@tzslot/angular` import the core's default entry, so a widget user gets
-the polyfill whatever they do. The lazy entry helps code that reaches for
-`Temporal`, `getDaySlots` or `getMonthGrid` itself.
+**The widgets have their own.** `@tzslot/dom/lazy` is the same twelve widgets
+with the polyfill left out, for an editor or a panel that only loads on
+demand:
+
+```ts
+import { loadTemporal, createRangeField } from '@tzslot/dom/lazy';
+
+await loadTemporal();
+createRangeField(host, { timeZone: 'Europe/Paris' });
+```
+
+Measured on the installed packages, an editor importing two widgets:
+
+| | first load |
+|---|---|
+| `@tzslot/dom` | 64.4 kB gzipped |
+| `@tzslot/dom/lazy` | 39.9 kB gzipped |
+
+24.6 kB, 38% of that bundle, not fetched where Temporal is native. Asked for by
+a consumer whose on-demand Pro editor was paying it for every visitor.
+
+`@tzslot/react` and `@tzslot/angular` have no lazy entry: Angular's would have
+to hold the first render rather than let an application await once at startup,
+which is a different problem and not one solved by another entry point.
 
 **Reading Temporal before the await throws**, with a message saying so rather
 than `Cannot read properties of undefined`. That is the trade: the default

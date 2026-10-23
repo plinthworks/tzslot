@@ -124,7 +124,7 @@ describe('a value given at creation', () => {
     });
     const ends = host.querySelectorAll<HTMLInputElement>('input.tz-field__trigger');
     expect(ends[0]!.value).toBe('23/09/2026 14:30');
-    expect(text('.tz-dtr__summary')).toBe('3h 30m');
+    expect(text('.tz-dtr__summary')).toBe('3 hrs 30 mins');
   });
 
   it('a daily range fills its days and its hours', () => {
@@ -138,7 +138,7 @@ describe('a value given at creation', () => {
         to: Temporal.PlainTime.from('17:00'),
       },
     });
-    expect(text('.tz-daily__summary')).toBe('3 days · 24h');
+    expect(text('.tz-daily__summary')).toBe('3 days · 24 hrs');
     expect(host.querySelector<HTMLInputElement>('.tz-daily__input[data-edge="from"] [data-part="hour"]')!.value).toBe('09');
   });
 });

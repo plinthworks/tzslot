@@ -1,5 +1,5 @@
-import { resolveWallTime } from '@tzslot/core';
-import type { Instant } from '@tzslot/core';
+import { resolveWallTime } from '@tzslot/core/lazy';
+import type { Instant } from '@tzslot/core/lazy';
 import type { TzslotMessages } from './messages.js';
 
 /**

@@ -1,6 +1,92 @@
 # Changelog
 
-## Unreleased
+## 2.4.0
+
+Four things a consumer put on screen in front of a real user and we had not.
+Three were there before 2.0.0 or since 1.1.0; all four were found in one
+afternoon by two people using the library rather than by 1 028 tests.
+
+### Durations are written in the reader's language
+
+`formatDuration` takes a `locale`, and every widget passes the one it already
+has. A French field said `7d 2h 30m` and now says `7 j 2 h 30 min`; an Arabic
+one said `يومان · 2h 30m` — the dual this library computes with
+`Intl.PluralRules`, beside two Latin abbreviations, one line in two scripts
+and two directions — and now says `يومان · ٢ س ٣٠ د`.
+
+Broken since v0.1.0-beta.0, in every release, and reported by a consumer who
+had `1d · Africa/Algiers` on a screen that is entirely French. Their own user
+had just reported three other things about that very screen without mentioning
+it, which is how invisible it was.
+
+The reason it was broken is worth keeping: `formatDuration` lives in
+`@tzslot/core`, which has no words by design, and its comment told a caller
+with a locale to use `Intl.DurationFormat` — an API no engine ships yet. So
+every caller used the ASCII form, the widgets included.
+
+A language rather than a table of suffixes, which is the reporting consumer's
+suggestion and better than either option we had: `d → j` is correct in French
+and reinstates in Arabic the exact defect `arabicDays` exists to avoid, since
+`يومان` already carries its own count. `Intl` holds all six Arabic categories,
+and the core still has no words of its own.
+
+Without a `locale` the output is unchanged, so `formatDuration` in a log line
+or a test reads as it always did — and a widget given no locale still shows
+the ASCII form, beside month names Intl also left alone.
+
+### No shortcut shorter than a day in a field with no hours
+
+A field with `showTime: false` offered "This quarter hour", "Previous hour",
+"This hour" and "Next hour" — at the top of the column, since 1.1.0, to
+someone booking leave in whole days. The argument that settles it is the
+reporting consumer's: such a field shows no hours, so the value cannot be seen
+or changed. The shortcut is not out of place, it is inoperable.
+
+`isSubDayPreset` was already imported by the period field and asked twice, so
+nothing was missing and nothing was unused. It was simply never asked the
+question the column needed, which is the harder gap to see.
+
+Left out of the column rather than removed from `presets`, so turning
+`showTime` on brings them back. A screen that composes its own list is
+unaffected unless it listed one of those four.
+
+### `singleDay` applies when a field is built, not only when it is switched on
+
+A field built with `singleDay: true` and a value spanning several days showed
+`21/09/2026 – 24/09/2026`: four days, in a field documented as one field where
+a click means that whole day. Only `update({ singleDay })` ran the reshape.
+Broken since 1.1.0.
+
+It reshapes without reporting, which is the one way it differs from the
+switched-on path: `onChange` during construction would fire before the caller
+holds the instance it is about. A caller who asks for `singleDay: true` and a
+four-day value in one breath asked for a contradiction and gets the documented
+resolution; `field.value` is the day, from the first read.
+
+### `@tzslot/dom/lazy`
+
+The same twelve widgets with the polyfill left out, for an editor or a panel
+that loads on demand. One `await loadTemporal()` and nothing else changes.
+
+Measured on the installed packages, an editor importing two widgets: 64.4 kB
+gzipped on the first load against 39.9 kB. 24.6 kB — 38% of that bundle — not
+fetched where Temporal is native.
+
+The default entry is untouched: it imports `@tzslot/core` for its one side
+effect, so every existing consumer behaves exactly as before. `@tzslot/react`
+and `@tzslot/angular` get no such entry — Angular's would have to hold the
+first render rather than let an application await once at startup, which is a
+different problem and not one another entry point solves.
+
+`npm run check:bundle` now installs the packed tarballs and bundles from
+`node_modules` rather than reading the dist folders in place. It had to:
+bundled out of `packages/dom/dist`, the specifier `@tzslot/core/lazy` resolved
+through the workspace to the TypeScript source while a probe beside it
+resolved to `dist`, and the bundle held three copies of `temporal.js`. The
+gate reported a defect the shipped packages do not have — the same shape as a
+package listed in the registry whose tarball is not there yet, and the same
+lesson: a gate that checks something adjacent to what it claims passes while
+the thing is broken.
 
 ### `AR` was unreachable from Angular
 

@@ -5,8 +5,8 @@ import {
   firstDayFor,
   getDecadeYears,
   isOutsideDecade,
-} from '@tzslot/core';
-import type { PlainDate, Weekday } from '@tzslot/core';
+} from '@tzslot/core/lazy';
+import type { PlainDate, Weekday } from '@tzslot/core/lazy';
 import type { YearMonth } from './calendar.js';
 import { EN, type TzslotMessages } from './messages.js';
 import { RANGE_CSS, ensureStyles } from './styles.js';

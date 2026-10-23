@@ -104,11 +104,32 @@ même promesse qui revient.
 
 Trois choses à savoir avant de choisir.
 
-**C’est pour le code qui utilise le core directement.** `@tzslot/dom`,
-`@tzslot/react` et `@tzslot/angular` importent l’entrée par défaut du core :
-un utilisateur de composant reçoit le polyfill quoi qu’il fasse. L’entrée
-paresseuse sert au code qui manipule lui-même `Temporal`, `getDaySlots` ou
-`getMonthGrid`.
+**Les composants ont la leur.** `@tzslot/dom/lazy`, ce sont les mêmes douze
+composants sans le polyfill, pour un éditeur ou un panneau qui ne se charge
+qu’à la demande :
+
+```ts
+import { loadTemporal, createRangeField } from '@tzslot/dom/lazy';
+
+await loadTemporal();
+createRangeField(host, { timeZone: 'Europe/Paris' });
+```
+
+Mesuré sur les paquets installés, pour un éditeur qui importe deux composants :
+
+| | premier chargement |
+|---|---|
+| `@tzslot/dom` | 64,4 ko compressés |
+| `@tzslot/dom/lazy` | 39,9 ko compressés |
+
+24,6 ko, soit 38 % de ce bundle, non téléchargés là où Temporal est natif.
+Demandé par un consommateur dont l’éditeur Pro, chargé à la demande, les payait
+pour chaque visiteur.
+
+`@tzslot/react` et `@tzslot/angular` n’ont pas d’entrée paresseuse : celle
+d’Angular devrait retenir le premier rendu au lieu de laisser une application
+attendre une fois au démarrage, ce qui est un autre problème et qu’un point
+d’entrée de plus ne résout pas.
 
 **Lire Temporal avant l’await lève une erreur**, avec un message qui le dit,
 plutôt qu’un `Cannot read properties of undefined`. C’est le marché : l’entrée

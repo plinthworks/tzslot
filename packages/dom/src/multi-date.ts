@@ -1,5 +1,5 @@
-import { Temporal } from '@tzslot/core';
-import type { PlainDate } from '@tzslot/core';
+import { Temporal } from '@tzslot/core/lazy';
+import type { PlainDate } from '@tzslot/core/lazy';
 import {
   mountGrid,
   type CalendarOptions,

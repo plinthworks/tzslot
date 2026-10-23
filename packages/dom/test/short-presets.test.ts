@@ -52,7 +52,7 @@ afterEach(() => {
 
 describe('the quarter hour that is running', () => {
   it('is two moments on one day, not a day', () => {
-    make();
+    make({ showTime: true });
     field.open();
     preset('This quarter hour').click();
 
@@ -63,7 +63,7 @@ describe('the quarter hour that is running', () => {
   });
 
   it('and the arrows then move by a quarter of an hour', () => {
-    make();
+    make({ showTime: true });
     field.open();
     preset('This quarter hour').click();
     field.open();
@@ -78,7 +78,7 @@ describe('the quarter hour that is running', () => {
   });
 
   it('the hour is an hour long, whatever the arrows are set to', () => {
-    make();
+    make({ showTime: true });
     field.open();
     preset('This hour').click();
     expect([clock(field.value.start), clock(field.value.end)]).toEqual(['11:00', '12:00']);
@@ -104,7 +104,7 @@ describe('the quarter hour that is running', () => {
   });
 
   it('is ticked while it is what is chosen', () => {
-    make({ messages: FR, locale: 'fr-FR' });
+    make({ showTime: true, messages: FR, locale: 'fr-FR' });
     field.open();
     preset("Le quart d'heure courant").click();
     field.open();

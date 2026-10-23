@@ -1,5 +1,5 @@
-import { Temporal, asShiftStep, resolveWallTime, shiftInstant, snapTime, firstDayFor } from '@tzslot/core';
-import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, ShiftStep, Slot, Weekday } from '@tzslot/core';
+import { Temporal, asShiftStep, resolveWallTime, shiftInstant, snapTime, firstDayFor } from '@tzslot/core/lazy';
+import type { DurationLike, Instant, PlainDate, PlainTime, ShiftOption, ShiftStep, Slot, Weekday } from '@tzslot/core/lazy';
 import { createCalendar, type CalendarButton, type CalendarInstance } from './calendar.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';

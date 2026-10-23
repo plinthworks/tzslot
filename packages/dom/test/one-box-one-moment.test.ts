@@ -3,6 +3,7 @@ import { createRangeField, type RangeFieldInstance } from '../src/index.js';
 import type { Instant } from '@tzslot/core';
 import { FR } from '../src/messages.js';
 import { Temporal } from '@tzslot/core';
+import { plain } from '../../core/test/plain.js';
 
 /**
  * A field that shows hours shows them, and a box names one moment.
@@ -78,7 +79,7 @@ describe('the reader’s case, as reported', () => {
      */
     const panel = open(NINE);
     expect(panel.querySelector('[data-date="2026-10-25"].tz-range__day--end')).not.toBeNull();
-    expect(panel.querySelector('.tz-rangefield__summary')!.textContent).toContain('9d');
+    expect(plain(panel.querySelector('.tz-rangefield__summary')!.textContent)).toContain('9 j');
   });
 
   it('no longer writes one period in two conventions', () => {

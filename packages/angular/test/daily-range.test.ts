@@ -42,7 +42,7 @@ describe('<tz-daily-range> in a form', () => {
 
     const v = fixture.componentInstance.form.controls.rota.value!;
     expect(`${v.start} ${v.end} ${v.from} ${v.to}`).toBe('2026-06-15 2026-06-19 09:00:00 17:00:00');
-    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('5 days · 40h');
+    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('5 days · 40 hrs');
   });
 
   it('setting the control draws it, and disabling it stops it', () => {
@@ -53,7 +53,7 @@ describe('<tz-daily-range> in a form', () => {
       to: Temporal.PlainTime.from('06:00'),
     });
     fixture.detectChanges();
-    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('1 day · 9h');
+    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('1 day · 9 hrs');
 
     fixture.componentInstance.form.controls.rota.disable();
     fixture.detectChanges();

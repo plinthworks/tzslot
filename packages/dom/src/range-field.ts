@@ -14,7 +14,7 @@ import {
   formatDuration,
   getRangeInfo,
   isRangeProblem,
-} from '@tzslot/core';
+} from '@tzslot/core/lazy';
 import type {
   Weekday,
   DayRange,
@@ -26,7 +26,7 @@ import type {
   PresetName,
   ShiftOption,
   ShiftStep,
-} from '@tzslot/core';
+} from '@tzslot/core/lazy';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createDateInput, type DateInputInstance, type WallValue } from './date-input.js';
 import { createPanel, type FieldMode } from './panel.js';
@@ -1542,7 +1542,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const longest = Temporal.Duration.from(asDuration(s.maxSpan));
       const room = zoned(start).until(zoned(end));
       if (Temporal.Duration.compare(room, longest, { relativeTo: zoned(start) }) > 0) {
-        clamped = s.messages.spanClamped(formatDuration(longest));
+        clamped = s.messages.spanClamped(formatDuration(longest, { locale: s.locale }));
         return move(longest, 1);
       }
     }
@@ -1550,7 +1550,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       const shortest = Temporal.Duration.from(asDuration(s.minSpan));
       const room = zoned(start).until(zoned(end));
       if (Temporal.Duration.compare(room, shortest, { relativeTo: zoned(start) }) < 0) {
-        clamped = s.messages.spanClamped(formatDuration(shortest));
+        clamped = s.messages.spanClamped(formatDuration(shortest, { locale: s.locale }));
         return move(shortest, 1);
       }
     }
@@ -1770,7 +1770,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (betweenMark) betweenMark.hidden = s.singleDay;
     if (!presetList) return;
     const chosen = days(draft);
-    const offered = s.singleDay ? presets().filter(fitsOneDay) : presets();
+    const offered = presets().filter(offerable);
     // Repainted, not rebuilt. Pressing Enter on a shortcut repaints the panel,
     // and replaceChildren then destroyed the very button under the focus —
     // which landed on the body. The same care is taken for the readings and
@@ -1807,6 +1807,34 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
    * a single day. They are left out of the column rather than taken out of
    * `presets`, so turning singleDay off brings them back.
    */
+  /**
+   * Whether a shortcut can do anything in this field, as it is set right now.
+   *
+   * Two reasons it cannot. `singleDay` is a field holding one day, where "Last
+   * 7 days" has nowhere to go. And a field with `showTime: false` shows no
+   * hours, so "This hour" cannot land a value a reader can see or change — it
+   * is not merely out of place, it is **inoperable**, which is the argument a
+   * consumer made and it is better than the one about clutter.
+   *
+   * That field offered four of them, at the top of the column, since 1.1.0:
+   * "This quarter hour", "Previous hour", "This hour", "Next hour", to someone
+   * booking leave in whole days. `isSubDayPreset` was already imported here
+   * and asked twice — once to decide that a shortcut returns moments rather
+   * than dates, once to decide whether one is ticked — so the predicate was
+   * neither missing nor unused. It was simply never asked the question this
+   * column needed, which is the harder gap to see: nothing is absent, and
+   * every existing use of it is correct. (An earlier draft of this comment
+   * claimed it was never called from this file. It was wrong, and only the
+   * compiler caught it, by refusing the duplicate import.)
+   *
+   * Left out of the column rather than taken out of `presets`, so turning
+   * either setting off brings them back.
+   */
+  function offerable(preset: RangePreset): boolean {
+    if (!s.showTime && isSubDayPreset(preset.name)) return false;
+    return s.singleDay ? fitsOneDay(preset) : true;
+  }
+
   function fitsOneDay(preset: RangePreset): boolean {
     const picked = preset.range(s.today, { now: clock(), timeZone: s.timeZone });
     if (isMoments(picked)) return false;
@@ -2017,7 +2045,8 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     if (summaryLine) {
       const { start, end } = draft;
       const info = start && end ? getRangeInfo(start, end, s.timeZone) : null;
-      const length = info && !isRangeProblem(info) ? formatDuration(info.duration) : null;
+      const length =
+        info && !isRangeProblem(info) ? formatDuration(info.duration, { locale: s.locale }) : null;
       /*
        * And it says so when there is no length to give.
        *
@@ -2493,6 +2522,37 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
 
   
   trigger.addEventListener('click', () => (panel.isOpen ? panel.close() : openPanel()), on);
+
+  /*
+   * `singleDay` applies at construction too, not only when it is switched on.
+   *
+   * Only `update({ singleDay })` ran the reshape, so a field built with
+   * `singleDay: true` and a value spanning several days showed
+   * "21/09/2026 – 24/09/2026" — four days, in a field documented as one field
+   * and one click meaning that whole day. Reported by a consumer weighing the
+   * setting for a panel with a whole-days switch; broken since 1.1.0, when the
+   * reshape was written for the one case it was written for.
+   *
+   * Reshaped without reporting, which is the one way this differs from the
+   * switched-on path. `choose()` would fire `onChange` while this factory is
+   * still running, before the caller holds the instance it is about — the
+   * `NG0953` hazard `destroy()` below has its own comment about. A caller who
+   * asked for `singleDay: true` and a four-day value in the same breath asked
+   * for a contradiction, and gets the documented resolution; there is no
+   * stale value to warn them of, because they never had a chance to act on
+   * one. `field.value` is the day, from the first read.
+   */
+  if (s.singleDay) {
+    const { start, end } = days(s.value);
+    const day = start ?? end;
+    if (day) {
+      const asOneDay = fromDays({ start: day, end: day });
+      if (!samePeriod(asOneDay, s.value)) {
+        s.value = asOneDay;
+        draft = asOneDay;
+      }
+    }
+  }
 
   render();
 

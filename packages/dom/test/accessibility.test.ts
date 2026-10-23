@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { createRangeField, type RangeFieldInstance } from '../src/index.js';
 import { FR } from '../src/messages.js';
 import { Temporal } from '@tzslot/core';
+import { plain } from '../../core/test/plain.js';
 
 /**
  * What a screen reader is told.
@@ -136,7 +137,7 @@ describe('the panel says how long, and where', () => {
     make({ value: week });
     field.open();
     const line = document.querySelector('.tz-field__panel .tz-rangefield__summary')!;
-    expect(line.textContent).toBe('5d · Europe/Paris');
+    expect(plain(line.textContent)).toBe('5 j · Europe/Paris');
   });
 
   it('counts the twenty-fifth hour the October change adds', () => {
@@ -150,7 +151,7 @@ describe('the panel says how long, and where', () => {
     });
     field.open();
     const line = document.querySelector('.tz-field__panel .tz-rangefield__summary')!;
-    expect(line.textContent).toBe('7d 1h · Europe/Paris');
+    expect(plain(line.textContent)).toBe('7 j 1 h · Europe/Paris');
   });
 
   it('says nothing while there is nothing to say', () => {

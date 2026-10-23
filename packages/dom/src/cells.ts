@@ -1,4 +1,4 @@
-import type { PlainDate } from '@tzslot/core';
+import type { PlainDate } from '@tzslot/core/lazy';
 
 /** What a grid knows about a day, handed to renderCell. */
 export interface DayCellInfo {

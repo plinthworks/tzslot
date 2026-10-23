@@ -1,14 +1,14 @@
 {
   "name": "@tzslot/react",
-  "version": "2.3.0",
+  "version": "2.4.0",
   "description": "React components for tzslot: date and time pickers that are right across time zones.",
   "license": "MIT",
   "type": "module",
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "dependencies": {
-    "@tzslot/core": "2.3.0",
-    "@tzslot/dom": "2.3.0"
+    "@tzslot/core": "2.4.0",
+    "@tzslot/dom": "2.4.0"
   },
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"

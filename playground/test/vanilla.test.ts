@@ -14,7 +14,7 @@ describe('the page without Angular', () => {
   it('draws a calendar, a field and an interval', () => {
     expect(document.querySelectorAll('#calendar .tz-cal__day')).toHaveLength(42);
     expect(document.querySelector('#field .tz-field__trigger')).not.toBeNull();
-    expect(document.querySelector('#interval .tz-dtr__summary')!.textContent).toBe('7h');
+    expect(document.querySelector('#interval .tz-dtr__summary')!.textContent).toBe('7 hrs');
   });
 
   it('reports a choice without any framework in between', () => {

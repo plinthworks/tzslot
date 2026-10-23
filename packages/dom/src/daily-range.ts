@@ -1,5 +1,5 @@
-import { Temporal, getDailyWindows, formatDuration, firstDayFor } from '@tzslot/core';
-import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core';
+import { Temporal, getDailyWindows, formatDuration, firstDayFor } from '@tzslot/core/lazy';
+import type { DailyWindowsSummary, PlainDate, PlainTime, Weekday } from '@tzslot/core/lazy';
 import { createDateRange, type DateRangeInstance } from './date-range.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';
@@ -339,7 +339,8 @@ export function createDailyRange(host: HTMLElement, options: DailyRangeOptions =
     new Intl.DateTimeFormat(s.locale, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }).format(
       new Date(Date.UTC(date.year, date.month - 1, date.day)),
     );
-  const hours = (minutes: number) => formatDuration(Temporal.Duration.from({ minutes }), { days: false });
+  const hours = (minutes: number) =>
+    formatDuration(Temporal.Duration.from({ minutes }), { days: false, locale: s.locale });
 
   function paintResult(): void {
     const { start, end, from, to } = s.value;

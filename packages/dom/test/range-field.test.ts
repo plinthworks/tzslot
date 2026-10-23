@@ -171,8 +171,35 @@ describe('words', () => {
     // Shortest first, longest last: the column grows steadily, so a reader can
     // stop as soon as it overshoots what they wanted.
     const offered = presets().map((b) => b.textContent);
-    expect(offered[0]).toBe("Le quart d'heure courant");
+    expect(offered[0]).toBe('Hier');
     expect(offered.at(-1)).toBe('Ce trimestre');
+  });
+
+  it('offers no shortcut shorter than a day unless hours are on screen', () => {
+    /*
+     * This asserted that the first shortcut in a default field was "Le quart
+     * d'heure courant", which is what the field did and what a consumer
+     * reported: four shortcuts offering a quarter of an hour, at the top of
+     * the column, to someone booking leave in whole days. The field shows no
+     * hours, so such a value cannot be seen or changed — inoperable, not
+     * merely out of place. The ordering this was really about is unchanged.
+     */
+    mount({ messages: FR, locale: 'fr-FR' });
+    field.open();
+    const inDays = presets().map((b) => b.textContent);
+    expect(inDays).not.toContain("Le quart d'heure courant");
+    expect(inDays).not.toContain('Cette heure');
+    field.close();
+
+    mount({ messages: FR, locale: 'fr-FR', showTime: true });
+    field.open();
+    const withHours = presets().map((b) => b.textContent);
+    expect(withHours[0]).toBe("Le quart d'heure courant");
+    expect(withHours.at(-1)).toBe('Ce trimestre');
+    // And the day-long ones are in both: nothing was removed from `presets`,
+    // only left out of the column, so switching the setting brings them back.
+    expect(withHours).toContain('Hier');
+    expect(inDays).toContain('Hier');
   });
 });
 

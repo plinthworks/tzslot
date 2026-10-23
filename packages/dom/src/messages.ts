@@ -1,4 +1,4 @@
-import type { PresetName } from '@tzslot/core';
+import type { PresetName } from '@tzslot/core/lazy';
 
 /**
  * Every word the components say.

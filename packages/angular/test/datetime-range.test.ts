@@ -54,7 +54,7 @@ beforeEach(async () => {
 describe('an ordinary interval', () => {
   it('shows its duration and says nothing else', () => {
     set('2026-06-14T23:00', '2026-06-15T05:00');
-    expect(text('.tz-dtr__summary')).toBe('6h');
+    expect(text('.tz-dtr__summary')).toBe('6 hrs');
     expect(text('.tz-dtr__warning')).toBeNull();
     expect(text('.tz-dtr__error')).toBeNull();
   });
@@ -68,7 +68,7 @@ describe('an ordinary interval', () => {
 describe('a night shift across the end of summer time', () => {
   it('reports seven hours, not the six the clocks suggest', () => {
     set('2026-10-24T23:00', '2026-10-25T05:00');
-    expect(text('.tz-dtr__summary')).toBe('7h');
+    expect(text('.tz-dtr__summary')).toBe('7 hrs');
   });
 
   it('explains itself, because 7h for 23:00 to 05:00 looks like a bug', () => {
@@ -76,18 +76,18 @@ describe('a night shift across the end of summer time', () => {
     const warning = text('.tz-dtr__warning')!;
 
     expect(warning).toContain('back');
-    expect(warning).toContain('reads as 6h');
-    expect(warning).toContain('lasts 7h');
+    expect(warning).toContain('reads as 6 hrs');
+    expect(warning).toContain('lasts 7 hrs');
   });
 });
 
 describe('a morning across the start of summer time', () => {
   it('reports five hours and says why', () => {
     set('2026-03-29T01:00', '2026-03-29T07:00');
-    expect(text('.tz-dtr__summary')).toBe('5h');
+    expect(text('.tz-dtr__summary')).toBe('5 hrs');
     const warning = text('.tz-dtr__warning')!;
     expect(warning).toContain('forward');
-    expect(warning).toContain('lasts 5h');
+    expect(warning).toContain('lasts 5 hrs');
   });
 });
 

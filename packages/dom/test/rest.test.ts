@@ -108,8 +108,8 @@ describe('createDateTimeRange', () => {
       locale: 'en-GB',
       value: { start: paris_('2026-10-24T23:00'), end: paris_('2026-10-25T05:00') },
     });
-    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('7h');
-    expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7h');
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('7 hrs');
+    expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7 hrs');
     // Each end is a whole date-and-time field, showing what it holds.
     expect(host.querySelectorAll('.tz-dtr__field')).toHaveLength(2);
     expect(box(0).value).toBe('24/10/2026 23:00');
@@ -139,7 +139,7 @@ describe('createDateTimeRange', () => {
     end.dispatchEvent(new Event('input', { bubbles: true }));
 
     expect(onChange.mock.calls.at(-1)![0].end.toString()).toBe('2026-06-15T15:00:00Z');
-    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('8h');
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('8 hrs');
   });
 
   it('offers the day\u2019s times on each end when asked to', () => {
@@ -232,7 +232,7 @@ describe('whole days rather than moments', () => {
       value: { start: paris_('2026-10-24T00:00'), end: paris_('2026-10-27T00:00'), allDay: true },
     });
     // Three days that week are 73 hours, because one of them is 25 hours long.
-    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('3d 1h');
+    expect(host.querySelector('.tz-dtr__summary')!.textContent).toBe('3 days 1 hr');
     expect(host.querySelector('.tz-dtr__warning')!.textContent).toContain('back');
   });
 });

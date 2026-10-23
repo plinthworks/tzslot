@@ -213,11 +213,11 @@ describe('what the second review found', () => {
     field.open();
     press('5');
     press('25');
-    expect(live()).toContain('5d');
+    expect(live()).toContain('5 days');
     escape();
     field.open();
     // Reopening an empty field and being told it was shortened to fit.
-    expect(live()).not.toContain('5d');
+    expect(live()).not.toContain('5 days');
   });
 
   it('reports what Apply applied, not merely that something closed', () => {

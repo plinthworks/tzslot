@@ -92,15 +92,52 @@ export function isRangeProblem(result: RangeInfo | RangeProblem): result is Rang
 }
 
 /**
+ * One number and its unit, written for a reader of that language.
+ *
+ * Built per call rather than cached: a formatter is cheap beside the three
+ * `Intl` objects a panel already builds on every paint, and caching them by
+ * locale is a map that never empties on a page that switches language.
+ */
+const inWords = (value: number, unit: 'day' | 'hour' | 'minute', locale: string): string =>
+  new Intl.NumberFormat(locale, { style: 'unit', unit, unitDisplay: 'short' }).format(value);
+
+/**
  * Formats a duration the way a person writes one: `7h 30m`, `45m`, `2d 3h`.
  *
- * Not localised on purpose — a caller with a locale should use Intl's
- * DurationFormat and the `duration` field. This is the version that has to work
- * in a log line and a unit test.
+ * Given a `locale`, the way a person writes one *in that language*: `7 j`,
+ * `30 min`, `يومان`. Without one, the compact ASCII form, which is what a log
+ * line and a test want and what every existing caller already gets.
+ *
+ * This had no `locale` at all, and said so: "a caller with a locale should use
+ * Intl's DurationFormat". That advice pointed at an API no engine ships yet —
+ * `Intl.DurationFormat` is undefined in Node 22 and absent from the polyfill —
+ * so every caller used the ASCII form, the widgets included. A field in
+ * `ar-SA` read `يومان · 2h 30m`: the Arabic dual, which this library computes
+ * with `Intl.PluralRules`, sitting beside two Latin abbreviations. One line,
+ * two scripts, two directions. Reported by a consumer who had it on screen in
+ * French as `1d · Africa/Algiers`, and whose own user had looked past it while
+ * reporting three other things about that very screen.
+ *
+ * What a language buys, measured rather than assumed:
+ *
+ *     fr-FR   1 j | 2 j | 3 j | 11 j
+ *     ar-SA   يوم | يومان | ٣ أيام | ١١ يومًا
+ *
+ * Six plural categories, the dual among them, out of `unitDisplay: 'short'`.
+ * That is why this takes a language and not a table of suffixes: a table maps
+ * `d → j` correctly and reinstates in Arabic the exact defect `arabicDays`
+ * exists to avoid, since `يومان` already carries its own count and "2" in
+ * front of it says "two two-days". The suggestion is the reporting consumer's,
+ * and it is better than either option this file had — it also leaves
+ * `@tzslot/core` with no words of its own, which was the constraint that made
+ * the defect possible in the first place.
+ *
+ * `unitDisplay: 'narrow'` is not used: in Arabic it gives `٧ ي`, abbreviations
+ * with no plural morphology, and the morphology is the whole point.
  */
 export function formatDuration(
   duration: Duration,
-  { days: inDays = true }: { days?: boolean } = {},
+  { days: inDays = true, locale }: { days?: boolean; locale?: string | undefined } = {},
 ): string {
   const signed = Math.round(duration.total({ unit: 'minute' }));
   // Signed once, at the front. Carrying the sign into every part gave
@@ -113,8 +150,9 @@ export function formatDuration(
   const minutes = total % 60;
 
   const parts: string[] = [];
-  if (days) parts.push(`${days}d`);
-  if (hours) parts.push(`${hours}h`);
-  if (minutes || parts.length === 0) parts.push(`${minutes}m`);
+  if (days) parts.push(locale ? inWords(days, 'day', locale) : `${days}d`);
+  if (hours) parts.push(locale ? inWords(hours, 'hour', locale) : `${hours}h`);
+  if (minutes || parts.length === 0)
+    parts.push(locale ? inWords(minutes, 'minute', locale) : `${minutes}m`);
   return (signed < 0 ? '-' : '') + parts.join(' ');
 }

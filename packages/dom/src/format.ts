@@ -1,5 +1,5 @@
-import { Temporal } from '@tzslot/core';
-import type { PlainDate, PlainTime } from '@tzslot/core';
+import { Temporal } from '@tzslot/core/lazy';
+import type { PlainDate, PlainTime } from '@tzslot/core/lazy';
 
 /**
  * Writing and reading the text in a field.

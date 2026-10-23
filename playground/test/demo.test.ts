@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { Demo } from '../demo.js';
+import { plain } from '../../packages/core/test/plain.js';
 
 /**
  * The page itself, mounted.
@@ -52,14 +53,14 @@ describe('the page', () => {
 describe('the interval', () => {
   it('opens on the night that proves the point', () => {
     // 23:00 to 05:00 across the end of summer time: seven hours, not six.
-    expect(el().querySelector('.tz-dtr__summary')!.textContent).toContain('7h');
-    expect(el().querySelector('.tz-dtr__warning')!.textContent).toContain('lasts 7h');
+    expect(plain(el().querySelector('.tz-dtr__summary')!.textContent)).toContain('7 h');
+    expect(plain(el().querySelector('.tz-dtr__warning')!.textContent)).toContain('lasts 7 h');
   });
 
   it('an ordinary night drops the warning', () => {
     chip('An ordinary night').click();
     fixture.detectChanges();
-    expect(el().querySelector('.tz-dtr__summary')!.textContent).toContain('6h');
+    expect(plain(el().querySelector('.tz-dtr__summary')!.textContent)).toContain('6 h');
     expect(el().querySelector('.tz-dtr__warning')).toBeNull();
   });
 });
@@ -118,14 +119,14 @@ describe('the date pickers', () => {
 
 describe('the same hours every day', () => {
   it('opens on night shifts across the end of summer time, one of them nine hours', () => {
-    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('4 days · 33h');
-    expect(el().querySelector('.tz-daily__day')!.textContent).toContain('9h');
+    expect(plain(el().querySelector('.tz-daily__summary')!.textContent)).toBe('4 days · 33 h');
+    expect(plain(el().querySelector('.tz-daily__day')!.textContent)).toContain('9 h');
   });
 
   it('an office week has nothing unusual to say', () => {
     chip('An office week').click();
     fixture.detectChanges();
-    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('5 days · 40h');
+    expect(plain(el().querySelector('.tz-daily__summary')!.textContent)).toBe('5 days · 40 h');
     expect(el().querySelector('.tz-daily__unusual')).toBeNull();
   });
 });
@@ -166,7 +167,7 @@ describe('the hours, compact or listed', () => {
       .click();
     fixture.detectChanges();
     expect(el().querySelectorAll('.tz-daily__list')).toHaveLength(2);
-    expect(el().querySelector('.tz-daily__summary')!.textContent).toBe('4 days · 33h');
+    expect(plain(el().querySelector('.tz-daily__summary')!.textContent)).toBe('4 days · 33 h');
   });
 });
 

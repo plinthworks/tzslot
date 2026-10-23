@@ -1,5 +1,5 @@
-import { Temporal } from '@tzslot/core';
-import type { PlainDate, PlainTime } from '@tzslot/core';
+import { Temporal } from '@tzslot/core/lazy';
+import type { PlainDate, PlainTime } from '@tzslot/core/lazy';
 import { icon as drawIcon } from './icons.js';
 import { createTimeInput, type TimeInputInstance } from './time-input.js';
 import { createTimeSelect, type TimeSelectInstance } from './time-select.js';

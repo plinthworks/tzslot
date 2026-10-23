@@ -88,6 +88,33 @@ describe('the lazy entry', () => {
     expect({ ...fresh.Temporal }).toHaveProperty('Instant');
   });
 
+  it('can be retried after a failed load', async () => {
+    /*
+     * A blocked chunk is not a verdict. `??=` kept a rejected promise as
+     * happily as a fulfilled one, so one proxy, one moment offline, or one
+     * deploy that replaced the hashed filenames under an open page meant every
+     * later call returned that same rejection — the page could not recover
+     * without a reload. Reported by a consumer reading the code; this counts
+     * the attempts, and before the fix it saw one.
+     */
+    vi.resetModules();
+    let attempts = 0;
+    vi.doMock('temporal-polyfill/full', async () => {
+      attempts++;
+      if (attempts === 1) throw new Error('chunk blocked');
+      return await vi.importActual<object>('temporal-polyfill/full');
+    });
+    const fresh = await import('../src/lazy.js');
+
+    await expect(fresh.loadTemporal()).rejects.toThrow();
+    expect(attempts).toBe(1);
+    // The caller learned it failed. The next one gets a second attempt.
+    await expect(fresh.loadTemporal()).resolves.toBeUndefined();
+    expect(attempts).toBe(2);
+    expect(fresh.getMonthGrid(2026, 10, 1).length).toBe(6);
+    vi.doUnmock('temporal-polyfill/full');
+  });
+
   it('resolves immediately once Temporal is there', async () => {
     vi.resetModules();
     const fresh = await import('../src/lazy.js');

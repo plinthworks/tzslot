@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+### `loadTemporal()` could not be retried after a failed load
+
+`loading ??= import(...)` kept a rejected promise as happily as a fulfilled
+one, so one blocked chunk — a proxy, a moment offline, a deploy that replaced
+the hashed filenames under an open page — meant every later call returned that
+same rejection. The page could not recover without a reload.
+
+The rejection now clears the memo before rethrowing: the caller still learns
+the load failed, and the next one gets a fresh attempt. Reported by a consumer
+reading the code in 2.3.0, and confirmed by a test that counts the attempts —
+before the fix it saw one, however many times it was called.
+
 ## 2.3.0
 
 A React package, and a way to stop shipping the Temporal polyfill to the three

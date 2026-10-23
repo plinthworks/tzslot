@@ -152,8 +152,27 @@ let loading: Promise<void> | null = null;
  */
 export function loadTemporal(): Promise<void> {
   if (current !== null) return Promise.resolve();
-  loading ??= import('temporal-polyfill/full').then((module) => {
-    install(module.Temporal as unknown as TemporalNamespace);
-  });
+  loading ??= import('temporal-polyfill/full').then(
+    (module) => {
+      install(module.Temporal as unknown as TemporalNamespace);
+    },
+    (reason) => {
+      /*
+       * A failed fetch is the absence of an answer, not an answer.
+       *
+       * `??=` kept a rejected promise as happily as a fulfilled one, so one
+       * blocked chunk — a proxy, a moment offline, a deploy that replaced the
+       * hashed filenames under an open page — meant every later call returned
+       * that same rejection and the page could never recover without a
+       * reload. Reported by a consumer reading this; confirmed by a test that
+       * counts the attempts, which saw exactly one.
+       *
+       * Clearing it first and rethrowing means this caller still learns the
+       * load failed, and the next one tries again.
+       */
+      loading = null;
+      throw reason;
+    },
+  );
   return loading;
 }

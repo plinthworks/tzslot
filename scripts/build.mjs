@@ -58,12 +58,38 @@ function typescript(name) {
     description: source.description,
     ...shared(name),
     type: 'module',
-    sideEffects: false,
+    /*
+     * Which modules here do something merely by being imported.
+     *
+     * `sideEffects: false` is a promise to every bundler: nothing in this
+     * package matters unless a binding is read out of it. That was true until
+     * the default entry started installing the polyfill — and esbuild, taking
+     * the promise at its word, deleted the `install()` call and the polyfill
+     * import with it. The bundle then read Temporal and got the "not available
+     * yet" proxy, so a bundled application crashed on its first date while
+     * every one of the 1023 tests stayed green: the suite imports source,
+     * where nothing is tree-shaken. Found by running a bundle, which is now
+     * `npm run check:bundle`.
+     *
+     * A package with a lazy entry is exactly a package whose default entry
+     * installs, so the exception is derived rather than written down twice.
+     */
+    sideEffects: existsSync(join(dir, 'dist', 'lazy.js')) ? ['./index.js'] : false,
     main: './index.js',
     module: './index.js',
     types: './index.d.ts',
     exports: {
       '.': { types: './index.d.ts', default: './index.js' },
+      /*
+       * A second entry where the source has one.
+       *
+       * `@tzslot/core/lazy` is the same library without the polyfill bundled:
+       * the manifest has to say so, or the subpath resolves to nothing and the
+       * import fails at install time rather than here.
+       */
+      ...(existsSync(join(dir, 'dist', 'lazy.js'))
+        ? { './lazy': { types: './lazy.d.ts', default: './lazy.js' } }
+        : {}),
       './package.json': './package.json',
     },
     dependencies: internal(source.dependencies),

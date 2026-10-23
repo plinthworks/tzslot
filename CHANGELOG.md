@@ -1,6 +1,60 @@
 # Changelog
 
-## Unreleased
+## 2.3.0
+
+A React package, and a way to stop shipping the Temporal polyfill to the three
+visitors in four whose browser already has one.
+
+### `@tzslot/core/lazy`
+
+A second entry point exporting exactly the same things as `@tzslot/core`, with
+the polyfill left out of the bundle. One `await loadTemporal()` at startup and
+no other line changes. Measured on the built package: 25.1 kB gzipped on the
+first load against 0.8 kB, and the 24.5 kB the polyfill costs is never fetched
+at all where Temporal is native.
+
+Asked for by a consumer shipping the polyfill to browsers that do not need it.
+Temporal is native in Chrome 144 and Edge 144 since January 2026 and Firefox
+139 since May 2025; no stable Safari has it yet, so Safari and iOS fetch it in
+a chunk of their own after the first paint rather than in front of it.
+
+It is for code that uses the core directly. `@tzslot/dom`, `@tzslot/react` and
+`@tzslot/angular` import the default entry, so a widget user gets the polyfill
+whatever they do.
+
+**Two defects found while building it, both by running rather than by
+reading.**
+
+The package still declared `sideEffects: false` after the default entry began
+installing the polyfill as it loaded. That is a promise to every bundler that
+nothing here does anything at import time, and esbuild believed it: the
+install and the polyfill import were deleted, and a bundled application threw
+`Temporal is not available yet` on its first date. Every one of the 1,025
+tests passed throughout — the suite imports source, where nothing is
+tree-shaken. The manifest now names the one module that does something.
+
+The first design reassigned an `export let`. ES module bindings are live, so
+that worked in every interop shape tried — ESM, CJS, `require()` of the ESM
+build — except one: a destructured copy is a copy of the value, so code that
+read `const { Temporal } = await import('@tzslot/core/lazy')` before awaiting
+the load held the old value forever. `Temporal` is now a single object that
+forwards each property read to whatever implementation is in force, so a copy
+of it is as good as the original and there is no trap left to document. It
+costs one proxy hop per `Temporal.X`, not per date operation, and 131 bytes
+gzipped. In exchange `Temporal` is no longer the polyfill's own namespace
+object, so an identity comparison against another copy of it is false —
+nothing here depended on that, because the library already tests Temporal
+values by shape rather than by class.
+
+`npm run check:bundle` is the gate that caught the first of these and would
+have caught the second. It bundles three real consumers, runs them, and checks
+that the default entry works minified, that the lazy entry's own chunk carries
+no polyfill, and that a bundled widget still has Temporal. It is the only
+check in the repository that executes shipped bytes.
+
+Also corrected: comments and documentation claiming Temporal shipped in Safari
+27.2, and that the polyfill cost 19 kB gzipped. Neither was true. Safari has
+it in no stable release, and the figure is 24.5 kB.
 
 ### `@tzslot/react`
 

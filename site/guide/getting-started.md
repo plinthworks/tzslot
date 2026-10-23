@@ -67,8 +67,53 @@ two readings are not the same moment.
 - **Chrome 123, Safari 17.5, Firefox 120** or later for the theme, which uses
   `light-dark()` and `color-mix()`.
 - **Temporal** is used natively where it exists and polyfilled where it does
-  not. The polyfill is a static import: a bundle carries it for every visitor,
-  about 19 kB gzipped.
+  not. By default the polyfill is a static import: a bundle carries it for
+  every visitor, 24.5 kB gzipped of `@tzslot/core`'s 25.1. The section below
+  is how to stop paying that where it is not needed.
+
+## Paying for the polyfill only where it is needed
+
+Temporal is native in Chrome 144 and Edge 144 since January 2026, and in
+Firefox 139 since May 2025. No stable Safari has it — Technology Preview 249,
+in August 2026, is the first — so Safari and every iOS browser still need the
+polyfill. Roughly three visitors in four do not.
+
+`@tzslot/core/lazy` is the same library with the polyfill left out of the
+bundle. One await at startup, and nothing else in your code changes:
+
+```ts
+import { loadTemporal } from '@tzslot/core/lazy';
+
+// Before the first date is read. Resolves in a microtask where Temporal is
+// native, and fetches the polyfill as a separate chunk where it is not.
+await loadTemporal();
+```
+
+Measured on the built package, not estimated:
+
+| | first load |
+|---|---|
+| `@tzslot/core` | 25.1 kB gzipped, polyfill included |
+| `@tzslot/core/lazy` | 0.8 kB gzipped |
+
+The two entries export exactly the same things, so an import is the only line
+that differs. Calling `loadTemporal()` twice, or from two widgets racing at
+startup, fetches one copy: the same promise comes back.
+
+Three things worth knowing before you choose it.
+
+**It is for code that uses the core directly.** `@tzslot/dom`, `@tzslot/react`
+and `@tzslot/angular` import the core's default entry, so a widget user gets
+the polyfill whatever they do. The lazy entry helps code that reaches for
+`Temporal`, `getDaySlots` or `getMonthGrid` itself.
+
+**Reading Temporal before the await throws**, with a message saying so rather
+than `Cannot read properties of undefined`. That is the trade: the default
+entry has no such state, which is why it stays the default.
+
+**Safari pays a round trip**, not more bytes. The polyfill arrives in its own
+chunk after the first paint instead of blocking it — better, as long as
+`loadTemporal()` is called at startup and not at the first date.
 
 ## Where to go next
 

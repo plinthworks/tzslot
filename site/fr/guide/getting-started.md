@@ -67,8 +67,57 @@ et les deux lectures ne sont pas le même moment.
 - **Chrome 123, Safari 17.5, Firefox 120** ou plus récent pour le thème, qui
   utilise `light-dark()` et `color-mix()`.
 - **Temporal** est utilisé nativement là où il existe, et remplacé par un
-  polyfill là où il n’existe pas. Ce polyfill est un import statique : un
-  bundle l’emporte pour tous les visiteurs, environ 19 ko compressés.
+  polyfill là où il n’existe pas. Par défaut ce polyfill est un import
+  statique : un bundle l’emporte pour tous les visiteurs, 24,5 ko compressés
+  sur les 25,1 de `@tzslot/core`. La section ci-dessous explique comment ne
+  plus les payer là où ils ne servent à rien.
+
+## Ne payer le polyfill que là où il sert
+
+Temporal est natif dans Chrome 144 et Edge 144 depuis janvier 2026, et dans
+Firefox 139 depuis mai 2025. Aucun Safari stable ne l’a — Technology Preview
+249, en août 2026, est le premier — donc Safari et tous les navigateurs iOS
+en ont encore besoin. Environ trois visiteurs sur quatre, non.
+
+`@tzslot/core/lazy` est la même bibliothèque, sans le polyfill dans le bundle.
+Un await au démarrage, et rien d’autre ne change dans votre code :
+
+```ts
+import { loadTemporal } from '@tzslot/core/lazy';
+
+// Avant la première lecture de date. Résolu en une micro-tâche là où Temporal
+// est natif, et va chercher le polyfill dans un chunk à part là où il manque.
+await loadTemporal();
+```
+
+Mesuré sur le paquet construit, pas estimé :
+
+| | premier chargement |
+|---|---|
+| `@tzslot/core` | 25,1 ko compressés, polyfill compris |
+| `@tzslot/core/lazy` | 0,8 ko compressés |
+
+Les deux entrées exportent exactement les mêmes choses : l’import est la seule
+ligne qui diffère. Appeler `loadTemporal()` deux fois, ou depuis deux
+composants qui démarrent en même temps, ne télécharge qu’une copie — c’est la
+même promesse qui revient.
+
+Trois choses à savoir avant de choisir.
+
+**C’est pour le code qui utilise le core directement.** `@tzslot/dom`,
+`@tzslot/react` et `@tzslot/angular` importent l’entrée par défaut du core :
+un utilisateur de composant reçoit le polyfill quoi qu’il fasse. L’entrée
+paresseuse sert au code qui manipule lui-même `Temporal`, `getDaySlots` ou
+`getMonthGrid`.
+
+**Lire Temporal avant l’await lève une erreur**, avec un message qui le dit,
+plutôt qu’un `Cannot read properties of undefined`. C’est le marché : l’entrée
+par défaut n’a pas cet état, et c’est pourquoi elle reste celle par défaut.
+
+**Safari paie un aller-retour**, pas des octets de plus. Le polyfill arrive
+dans son propre chunk après le premier affichage au lieu de le bloquer — ce
+qui est mieux, à condition d’appeler `loadTemporal()` au démarrage et pas à la
+première date.
 
 ## Où aller ensuite
 

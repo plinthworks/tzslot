@@ -1,6 +1,6 @@
 {
   "name": "@tzslot/core",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "description": "DST-safe date and time primitives, built on the Temporal API. No DOM, no framework.",
   "type": "module",
   "license": "MIT",
@@ -11,6 +11,11 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
-    }
+    },
+    "./lazy": {
+      "types": "./src/lazy.ts",
+      "default": "./src/lazy.ts"
+    },
+    "./package.json": "./package.json"
   }
 }

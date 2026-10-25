@@ -411,6 +411,7 @@ Le champ n'a pas de chevron : un bouton se presse, et celui qui le dit
 est une chose de plus à lire sur une ligne qui porte déjà la réponse.
 `icon` en met une si l'écran en veut une — une chaîne, ou un nœud à vous.
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```js
 createRangeField(element, { icon: '▾' });
 createRangeField(element, { icon: monChevronSvg });

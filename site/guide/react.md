@@ -70,6 +70,7 @@ const [period, setPeriod] = useState<RangeFieldValue>({ start: null, end: null }
 Leave it out and the field keeps its own, reporting through `onChange` as it
 goes:
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```tsx
 <RangeField timeZone="Europe/Paris" onChange={(period) => search(period)} />
 ```
@@ -122,6 +123,7 @@ build the widget after mount, so nothing touches `document` during the render.
 There is no adapter, and none is needed: a component that takes `value` and
 `onChange` is what every form library expects.
 
+<!-- not-compiled: react-hook-form, which this library does not depend on -->
 ```tsx
 <Controller
   name="period"

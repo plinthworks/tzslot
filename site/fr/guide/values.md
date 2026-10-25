@@ -54,6 +54,7 @@ fausse sans en avoir l’air :
 **Rien ne dit lequel.** Une période, ce sont deux moments, et c’est toute la
 valeur :
 
+<!-- not-compiled: une valeur telle qu'elle se lit, pas un programme -->
 ```ts
 { start: 2026-09-13T22:00:00Z,   // 14 sept., 00:00 à Paris
   end:   2026-09-20T22:00:00Z }  // 21 sept., 00:00 à Paris
@@ -156,6 +157,7 @@ ne rend rien, ce qui est une réponse lisible — à condition que l’écran
 n’attende pas une erreur. Le panneau le dit déjà tant qu’il est ouvert, dans la
 ligne de résumé sous le calendrier.
 
+<!-- not-compiled: un corps de fonction, montré sans sa signature -->
 ```ts
 const { start, end } = value;
 if (!start && !end) return tout;
@@ -196,6 +198,7 @@ qui regarde.
 <tz-date-field     formControlName="day" valueAs="utc" valueTimeZone="Europe/Paris" />
 ```
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```ts
 at  === '2026-10-25T00:30:00Z'
 day === '2026-09-13T22:00:00Z'   // le minuit qui ouvre le 14 septembre à Paris
@@ -211,6 +214,7 @@ Répéter `valueAs` et un fuseau sur chaque balise, c’est la garantie qu’un
 écran finira par ne plus dire la même chose que les autres. Réglez-les pour
 l’application :
 
+<!-- not-compiled: ce qu'on ajoute au bootstrap de sa propre application -->
 ```ts
 import { provideTzslot, FR } from '@tzslot/angular';
 

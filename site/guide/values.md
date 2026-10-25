@@ -51,6 +51,7 @@ without looking wrong:
 
 **Nothing says which.** A period is two moments, and that is the whole value:
 
+<!-- not-compiled: a value as it reads, not a program -->
 ```ts
 { start: 2026-09-13T22:00:00Z,   // 14 Sept, 00:00 in Paris
   end:   2026-09-20T22:00:00Z }  // 21 Sept, 00:00 in Paris
@@ -150,6 +151,7 @@ no record, so the query below returns nothing, which is a legible answer — but
 only if the screen is not expecting an error. The panel already says so while
 it is open, in the summary line under the calendar.
 
+<!-- not-compiled: a function body, shown without its signature -->
 ```ts
 const { start, end } = value;
 if (!start && !end) return everything;
@@ -188,6 +190,7 @@ stores, never depends on who is looking.
 <tz-date-field     formControlName="day" valueAs="utc" valueTimeZone="Europe/Paris" />
 ```
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```ts
 at  === '2026-10-25T00:30:00Z'
 day === '2026-09-13T22:00:00Z'   // the midnight that opens 14 September in Paris
@@ -202,6 +205,7 @@ for itself what a day means.
 Repeating `valueAs` and a zone on every tag is how one screen ends up
 disagreeing with the rest. Set them for the application instead:
 
+<!-- not-compiled: what to add to an application's own bootstrap -->
 ```ts
 import { provideTzslot, FR } from '@tzslot/angular';
 

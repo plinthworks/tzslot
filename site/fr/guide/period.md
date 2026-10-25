@@ -428,6 +428,7 @@ shift: 1440      // une journée
 Ce qu'un nombre ne sait pas dire se dit en entier, dans la forme que le métier
 demande :
 
+<!-- not-compiled: la forme d'un réglage, pas un programme -->
 ```js
 shift: { days: 1, minutes: 30 }
 shift: { months: 1, hours: 1, minutes: 45 }
@@ -539,6 +540,7 @@ largeur qui le dit. Un mois laisse 412 px là où deux champs en demandent 512,
 donc ils passent à la ligne et s'empilent ; deux mois en laissent 723 et ils
 tiennent côte à côte, ce qui divise la hauteur de l'en-tête par deux.
 
+<!-- not-compiled: élidé par des points de suspension, donc incompilable -->
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });
 ```
@@ -632,6 +634,7 @@ savait pas faire.
 Le nom voyage maintenant à côté de la période, et le rendre le résout de
 nouveau :
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```js
 createRangeField(element, {
   presets: ['last7Days', 'thisMonth'],
@@ -639,7 +642,7 @@ createRangeField(element, {
 });
 
 // Plus tard, depuis ce qui a été enregistré :
-field.update({ preset: enregistré.preset, value: { start: …, end: … } });
+field.update({ preset: enregistré.preset, value: { start: enregistré.start, end: enregistré.end } });
 ```
 
 `from.preset` est le nom du raccourci, ou `null` dès qu'un lecteur a choisi les
@@ -969,6 +972,7 @@ createRangeField(element, {
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', labels: { start: null, end: null, between: '»' }, title: 'Une flèche au lieu des mots' }" />
 
+<!-- not-compiled: la forme d'un réglage, pas un programme -->
 ```js
 labels: { start: 'Arrivée', end: 'Départ', between: '→' }
 ```

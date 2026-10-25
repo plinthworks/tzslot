@@ -143,6 +143,7 @@ est là pour ce que vous voulez dire à la place.
 
 Tout ce qui précède, ce sont ces quatre fonctions, exportées par `@tzslot/dom`.
 
+<!-- not-compiled: la forme d'un réglage, pas un programme -->
 ```ts
 import { formatWith, parseWith, patternFor, maskWith } from '@tzslot/dom';
 

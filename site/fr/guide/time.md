@@ -260,6 +260,7 @@ Un créneau porte `time` (le cadran), `exists`, `ambiguous`, `offsets` et
 `instants` — les moments auxquels ce cadran correspond, et c'est cela qu'un
 système de réservation stocke.
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```js
 createTimeSlots(element, {
   date: '2026-09-22', timeZone: 'Europe/Paris',

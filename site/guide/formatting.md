@@ -139,6 +139,7 @@ you want to say instead.
 
 Everything above is these four functions, exported from `@tzslot/dom`.
 
+<!-- not-compiled: one option's shape, not a program -->
 ```ts
 import { formatWith, parseWith, patternFor, maskWith } from '@tzslot/dom';
 

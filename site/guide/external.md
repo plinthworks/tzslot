@@ -12,10 +12,10 @@ const field = createDateTimeField(document.querySelector('#at'), {
   locale: 'en-GB',
 });
 
-document.querySelector('#open').onclick = () => field.open();
-document.querySelector('#clear').onclick = () => field.clear();
-document.querySelector('#tomorrow').onclick = () =>
-  field.update({ value: Temporal.Now.instant().add({ hours: 24 }) });
+document.querySelector('#open').addEventListener('click', () => field.open());
+document.querySelector('#clear').addEventListener('click', () => field.clear());
+document.querySelector('#tomorrow').addEventListener('click', () =>
+  field.update({ value: Temporal.Now.instant().add({ hours: 24 }) }));
 ```
 
 The buttons under this field are wired exactly like that:
@@ -92,6 +92,7 @@ pressed — that is a choice, and a choice is reported.
 Moving what is shown, without touching what is chosen. A wizard step that says
 "pick a day in December" opens December.
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```js
 calendar.goTo({ year: 2026, month: 12 });
 ```
@@ -110,6 +111,7 @@ calendar.goTo({ year: 2026, month: 12 });
 
 The field's own mark, and the calendar's two arrows, replaced while it runs.
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```js
 field.setIcon(icon('clock'));
 calendar.setIcons({ prev: icon('chevronLeft'), next: icon('chevronRight') });
@@ -153,6 +155,7 @@ single-page application that forgets it leaks a listener per screen.
 
 The same methods, reached with `viewChild`:
 
+<!-- not-compiled: an Angular component the reader already has -->
 ```ts
 @Component({
   imports: [DateTimeField],

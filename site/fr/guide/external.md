@@ -13,10 +13,10 @@ const field = createDateTimeField(document.querySelector('#at'), {
   locale: 'fr-FR',
 });
 
-document.querySelector('#open').onclick = () => field.open();
-document.querySelector('#clear').onclick = () => field.clear();
-document.querySelector('#tomorrow').onclick = () =>
-  field.update({ value: Temporal.Now.instant().add({ hours: 24 }) });
+document.querySelector('#open').addEventListener('click', () => field.open());
+document.querySelector('#clear').addEventListener('click', () => field.clear());
+document.querySelector('#tomorrow').addEventListener('click', () =>
+  field.update({ value: Temporal.Now.instant().add({ hours: 24 }) }));
 ```
 
 Les boutons sous ce champ sont câblés exactement ainsi :
@@ -94,6 +94,7 @@ déclenche pas `onChange` : la ligne sous celui-ci ne bouge donc que si on press
 Déplacer ce qui est montré, sans toucher à ce qui est choisi. Une étape
 d’assistant qui dit « choisissez un jour en décembre » ouvre décembre.
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```js
 calendar.goTo({ year: 2026, month: 12 });
 ```
@@ -113,6 +114,7 @@ calendar.goTo({ year: 2026, month: 12 });
 La marque du champ, et les deux flèches du calendrier, remplacées pendant que
 ça tourne.
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```js
 field.setIcon(icon('clock'));
 calendar.setIcons({ prev: icon('chevronLeft'), next: icon('chevronRight') });
@@ -156,6 +158,7 @@ Une application monopage qui l’oublie fuit un écouteur par écran.
 
 Les mêmes méthodes, atteintes par `viewChild` :
 
+<!-- not-compiled: un composant Angular que le lecteur a déjà -->
 ```ts
 @Component({
   imports: [DateTimeField],

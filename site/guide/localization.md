@@ -63,6 +63,7 @@ Everything else — *Today*, *Clear*, *From*, *Until*, the sentence explaining a
 change of offset — is one bundle. English and French are included.
 
 ::: code-group
+<!-- not-compiled: what to add to an application's own bootstrap -->
 ```ts [Angular]
 import { provideTzslotMessages, FR } from '@tzslot/angular';
 
@@ -195,6 +196,7 @@ English has a singular and a plural. Arabic has six categories, and the
 library's countable sentences are functions precisely so a catalogue can use
 them:
 
+<!-- not-compiled: a property fragment, written inside a catalogue -->
 ```ts
 const days = new Intl.PluralRules('ar');
 dailySummary: ({ days: n, total }) =>

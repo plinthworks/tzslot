@@ -66,6 +66,7 @@ explique un changement de décalage — tient dans un seul jeu. L’anglais et l
 français sont fournis.
 
 ::: code-group
+<!-- not-compiled: ce qu'on ajoute au bootstrap de sa propre application -->
 ```ts [Angular]
 import { provideTzslotMessages, FR } from '@tzslot/angular';
 
@@ -199,6 +200,7 @@ Le français a un singulier et un pluriel. L'arabe a six catégories, et les
 phrases à compter de la bibliothèque sont des fonctions précisément pour qu'un
 catalogue puisse s'en servir :
 
+<!-- not-compiled: un fragment de propriété, écrit dans un catalogue -->
 ```ts
 const jours = new Intl.PluralRules('ar');
 dailySummary: ({ days: n, total }) =>

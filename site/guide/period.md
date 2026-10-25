@@ -420,6 +420,7 @@ shift: 1440      // a day
 Anything a number cannot say is said in full, in whatever shape the business
 needs:
 
+<!-- not-compiled: one option's shape, not a program -->
 ```js
 shift: { days: 1, minutes: 30 }
 shift: { months: 1, hours: 1, minutes: 45 }
@@ -526,6 +527,7 @@ Whether the two fields share a line is not declared anywhere — the width says
 it. One month leaves 412px where two fields need 512, so they wrap and stack;
 two months leave 723 and they sit side by side, which halves the head.
 
+<!-- not-compiled: elided with an ellipsis, so it cannot compile -->
 ```js
 createRangeField(element, { timeZone: 'Europe/Paris', shift: [ … ], showStep: false });
 ```
@@ -614,6 +616,7 @@ filter has to get right, and it was the one thing the widget could not do.
 
 The name now travels beside the period, and handing it back resolves it again:
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```js
 createRangeField(element, {
   presets: ['last7Days', 'thisMonth'],
@@ -945,6 +948,7 @@ createRangeField(element, {
 
 <Live widget="RangeField" :options="{ timeZone: 'Europe/Paris', labels: { start: null, end: null, between: '»' }, title: 'An arrow instead of words' }" />
 
+<!-- not-compiled: one option's shape, not a program -->
 ```js
 labels: { start: 'Arrival', end: 'Departure', between: '→' }
 ```

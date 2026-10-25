@@ -79,6 +79,7 @@ formulaires et les idiomes d’Angular par-dessus exactement ceux-là :
 Un écran qui modifie quelque chose a sa valeur avant que le composant
 n’existe. Liez-la : elle est à l’écran au premier rendu, sans clic ni tick.
 
+<!-- not-compiled: des membres de classe, montrés sans la classe autour -->
 ```ts
 readonly day = signal(Temporal.PlainDate.from('2026-09-23'));
 readonly at  = signal(Temporal.Instant.from('2026-09-23T12:30:00Z'));
@@ -93,6 +94,7 @@ Idem pour un `FormControl` construit avec une valeur — y compris un `Date`,
 sous `valueAs="date"`. Le composant l’affiche et laisse le contrôle
 `pristine` : afficher une valeur n’est pas l’utilisateur qui en saisit une.
 
+<!-- not-compiled: un formulaire Angular que le lecteur a déjà -->
 ```ts
 form = new FormGroup({
   day: new FormControl<Date | null>(new Date('2026-09-23T10:00:00Z')),
@@ -142,6 +144,7 @@ des décisions qui concernent l’application, pas le champ. `provideTzslot` les
 pose pour tous les composants, et ce qui est écrit sur une balise l’emporte
 toujours.
 
+<!-- not-compiled: ce qu'on ajoute au bootstrap de sa propre application -->
 ```ts
 import { provideTzslot, FR } from '@tzslot/angular';
 

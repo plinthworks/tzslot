@@ -79,6 +79,7 @@ over exactly these:
 A screen that edits something already has its value before the component
 exists. Bind it and it is on screen at the first render — no click, no tick:
 
+<!-- not-compiled: class members, shown without the class around them -->
 ```ts
 readonly day = signal(Temporal.PlainDate.from('2026-09-23'));
 readonly at = signal(Temporal.Instant.from('2026-09-23T12:30:00Z'));
@@ -93,6 +94,7 @@ The same holds for a form control built with a value — including a `Date`,
 under `valueAs="date"`. The component shows it and leaves the control
 pristine: displaying a value is not the user editing one.
 
+<!-- not-compiled: an Angular form the reader already has -->
 ```ts
 form = new FormGroup({
   day: new FormControl<Date | null>(new Date('2026-09-23T10:00:00Z')),
@@ -141,6 +143,7 @@ A zone, a locale, the shape values leave in: decisions about the application,
 not about the field. `provideTzslot` sets them for every component, and
 anything written on a tag still wins.
 
+<!-- not-compiled: what to add to an application's own bootstrap -->
 ```ts
 import { provideTzslot, FR } from '@tzslot/angular';
 
@@ -159,6 +162,7 @@ why whole days end at the midnight *after* the last one.
 
 One bundle, provided once for the whole application:
 
+<!-- not-compiled: what to add to an application's own bootstrap -->
 ```ts
 import { provideTzslotMessages, FR } from '@tzslot/angular';
 

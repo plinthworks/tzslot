@@ -393,6 +393,7 @@ The field carries no caret: a button is pressed, and one that says so is
 one more thing to read on a line that already holds the answer. `icon`
 puts one there for a screen that wants it — a string, or a node of yours.
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```js
 createRangeField(element, { icon: '▾' });
 createRangeField(element, { icon: myChevronSvg });

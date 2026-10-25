@@ -71,6 +71,7 @@ const [periode, setPeriode] = useState<RangeFieldValue>({ start: null, end: null
 Omettez-le et le champ garde la sienne, en rapportant par `onChange` au fur et
 à mesure :
 
+<!-- not-compiled: continue la page, avec les valeurs du lecteur -->
 ```tsx
 <RangeField timeZone="Europe/Paris" onChange={(periode) => rechercher(periode)} />
 ```
@@ -124,6 +125,7 @@ le rendu.
 Il n'y a pas d'adaptateur, et il n'en faut pas : un composant qui prend `value`
 et `onChange` est ce que toute bibliothèque de formulaires attend.
 
+<!-- not-compiled: react-hook-form, dont cette bibliothèque ne dépend pas -->
 ```tsx
 <Controller
   name="periode"

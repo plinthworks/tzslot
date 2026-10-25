@@ -18,6 +18,7 @@
     "publish:latest": "node scripts/publish.mjs",
     "publish:verify": "node scripts/publish.mjs --verify-only",
     "docs:api": "node scripts/api.mjs",
+    "docs:code": "node scripts/guide-code.mjs",
     "docs": "npm run docs:api && vitepress dev site",
     "docs:build": "npm run docs:api && vitepress build site"
   },

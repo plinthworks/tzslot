@@ -258,6 +258,7 @@ A slot carries `time` (the clock face), `exists`, `ambiguous`, `offsets` and
 `instants` — the moments that wall time maps to, which is what a booking
 system stores.
 
+<!-- not-compiled: continues the page, with the reader's own values -->
 ```js
 createTimeSlots(element, {
   date: '2026-09-22', timeZone: 'Europe/Paris',

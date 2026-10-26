@@ -28,6 +28,20 @@ export interface PanelOptions {
   source: HTMLElement;
   /** Where the panel is attached. The body by default. */
   container: HTMLElement | undefined;
+  /**
+   * Whether this panel may inject its own stylesheet.
+   *
+   * It did, unconditionally, however the field it belongs to was configured —
+   * so `injectStyles: false` stopped the host's sheets and not the panel's,
+   * and a consumer under a strict Content-Security-Policy had a blocked
+   * <style> on every open. Reported by them, with the line number.
+   *
+   * A panel told `false` comes up unstyled unless the application has put the
+   * sheets somewhere itself, which is the bargain the setting has always made.
+   * `setStyleNonce` is the other answer and the better one: the sheets are
+   * injected as before, carrying a nonce the policy accepts.
+   */
+  injectStyles?: boolean | undefined;
   mode: () => FieldMode;
   label: () => string;
   /** Fills a freshly opened panel, and returns how to take it apart. */
@@ -264,7 +278,7 @@ export function createPanel(options: PanelOptions): PanelController {
       target.append(backdrop);
     }
     target.append(panel);
-    ensureStyles(panel, 'field', FIELD_CSS);
+    if (options.injectStyles !== false) ensureStyles(panel, 'field', FIELD_CSS);
 
     const dispose = options.content(panel);
 

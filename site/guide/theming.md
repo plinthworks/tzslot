@@ -307,6 +307,56 @@ Skip the theme and set the same properties yourself. The base layout comes
 with the widget, and it is plain class selectors inserted first in the head —
 a rule of yours loaded afterwards wins without `!important`.
 
+## Under a Content-Security-Policy
+
+Each widget puts its layout stylesheet in the head the first time it is
+needed, as a `<style>`. Under `style-src 'self'` with no `'unsafe-inline'`,
+that is blocked and the widget comes up undressed — a period panel alone
+brings seven sheets.
+
+Hand the library the nonce your policy issued, once, before the first widget:
+
+```ts
+import { setStyleNonce } from '@tzslot/dom';
+
+setStyleNonce(document.querySelector<HTMLMetaElement>('meta[name=csp-nonce]')?.content);
+```
+
+In Angular there is nothing to write. An application under such a policy
+already provides `CSP_NONCE`, because Angular needs it for its own styles, and
+`provideTzslot` reads it:
+
+<!-- not-compiled: what to add to an application's own bootstrap -->
+```ts
+import { CSP_NONCE } from '@angular/core';
+import { provideTzslot } from '@tzslot/angular';
+
+bootstrapApplication(App, {
+  providers: [
+    { provide: CSP_NONCE, useValue: nonceFromYourServer },
+    provideTzslot({ timeZone: 'Europe/Paris' }),
+  ],
+});
+```
+
+### Or place the sheets yourself
+
+`injectStyles: false` means exactly that: the widget injects nothing, anywhere,
+and the sheets are yours to put wherever your policy allows. All eleven are
+exported, by the `data-tzslot` id each one carries:
+
+```ts
+import { FIELD_CSS, CALENDAR_CSS, RANGE_CSS } from '@tzslot/dom';
+```
+
+This used to stop the host's sheets and not a panel's, so a panel still
+injected on every open — reported by a consumer under a strict policy who was
+pre-injecting all eleven to work around it. It now means what it says.
+
+A widget told `false` with nothing placed for it is a widget with no layout at
+all, which is the bargain the setting has always made. `setStyleNonce` is the
+easier half of the same problem.
+
 ## More contrast
 
 `@tzslot/theme/contrast.css` applies by itself when the system asks for more

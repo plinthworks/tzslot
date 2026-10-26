@@ -321,6 +321,59 @@ page de base vient avec le composant : ce sont de simples sélecteurs de classe
 insérés en tête du `head`, donc une règle à vous chargée ensuite gagne sans
 `!important`.
 
+## Sous une Content-Security-Policy
+
+Chaque composant pose sa feuille de mise en page dans le `<head>` la première
+fois qu'elle sert, sous forme de `<style>`. Sous `style-src 'self'` sans
+`'unsafe-inline'`, c'est bloqué et le composant s'affiche nu — un panneau de
+période apporte à lui seul sept feuilles.
+
+Donnez à la bibliothèque le nonce que votre politique a émis, une fois, avant
+le premier composant :
+
+```ts
+import { setStyleNonce } from '@tzslot/dom';
+
+setStyleNonce(document.querySelector<HTMLMetaElement>('meta[name=csp-nonce]')?.content);
+```
+
+En Angular il n'y a rien à écrire. Une application sous une telle politique
+fournit déjà `CSP_NONCE`, puisque Angular en a besoin pour ses propres styles,
+et `provideTzslot` le lit :
+
+<!-- not-compiled: ce qu'on ajoute au bootstrap de sa propre application -->
+```ts
+import { CSP_NONCE } from '@angular/core';
+import { provideTzslot } from '@tzslot/angular';
+
+bootstrapApplication(App, {
+  providers: [
+    { provide: CSP_NONCE, useValue: nonceDeVotreServeur },
+    provideTzslot({ timeZone: 'Europe/Paris' }),
+  ],
+});
+```
+
+### Ou poser les feuilles vous-même
+
+`injectStyles: false` veut dire exactement cela : le composant n'injecte rien,
+nulle part, et les feuilles sont à vous de placer là où votre politique
+l'autorise. Les onze sont exportées, par l'identifiant `data-tzslot` que
+chacune porte :
+
+```ts
+import { FIELD_CSS, CALENDAR_CSS, RANGE_CSS } from '@tzslot/dom';
+```
+
+Ce réglage arrêtait les feuilles de l'hôte et pas celles d'un panneau, qui
+injectait donc à chaque ouverture — remonté par un consommateur sous politique
+stricte qui pré-injectait les onze pour s'en sortir. Il veut maintenant dire ce
+qu'il annonce.
+
+Un composant à qui on dit `false` et pour qui rien n'a été posé est un
+composant sans aucune mise en page : c'est le marché que ce réglage a toujours
+proposé. `setStyleNonce` est la moitié facile du même problème.
+
 ## Plus de contraste
 
 `@tzslot/theme/contrast.css` s’applique de lui-même quand le système demande

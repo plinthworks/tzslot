@@ -839,6 +839,7 @@ export function createDateTimeField(
   }
 
   const panel = createPanel({
+    injectStyles,
     // A getter, because this field swaps its trigger between a button and an
     // input whenever `editable` changes, and the panel kept the old one.
     trigger: () => trigger,
@@ -875,9 +876,15 @@ export function createDateTimeField(
       // Everything inside is told not to inject its own, so the panel brings
       // all of it. Without this the calendar came up unstyled on any page
       // that happened to have no other calendar on it.
-      ensureStyles(node, 'datetime', DATETIME_CSS);
-      ensureStyles(node, 'calendar', CALENDAR_CSS);
-      ensureStyles(node, s.timeLayout === 'list' ? 'slots' : 'time', s.timeLayout === 'list' ? SLOTS_CSS : TIME_CSS);
+      if (injectStyles) {
+        ensureStyles(node, 'datetime', DATETIME_CSS);
+        ensureStyles(node, 'calendar', CALENDAR_CSS);
+        ensureStyles(
+          node,
+          s.timeLayout === 'list' ? 'slots' : 'time',
+          s.timeLayout === 'list' ? SLOTS_CSS : TIME_CSS,
+        );
+      }
       const calendarHost = doc.createElement('div');
       const timeRow = el('div', 'tz-datetime__time');
       timeRow.hidden = !s.showTime;
@@ -906,7 +913,7 @@ export function createDateTimeField(
         // Nothing to choose: the day carries the moment it starts at.
       } else if (s.timeLayout === 'select') {
         timeRow.classList.add('tz-datetime__time--select');
-        ensureStyles(node, 'timeselect', TIMESELECT_CSS);
+        if (injectStyles) ensureStyles(node, 'timeselect', TIMESELECT_CSS);
         timeMenus = createTimeSelect(timeHost, {
           injectStyles: false,
           /*

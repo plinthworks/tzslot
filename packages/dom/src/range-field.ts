@@ -2206,6 +2206,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
   }
 
   const panel = createPanel({
+    injectStyles,
     trigger,
     source: host,
     container,
@@ -2266,12 +2267,14 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     },
     content: (node) => {
       node.classList.add('tz-rangefield__panel');
-      ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
-      ensureStyles(node, 'range', RANGE_CSS);
-      ensureStyles(node, 'time', TIME_CSS);
-      ensureStyles(node, 'dateinput', DATEINPUT_CSS);
-      ensureStyles(node, 'timeselect', TIMESELECT_CSS);
-      ensureStyles(node, 'datetime', DATETIME_CSS);
+      if (injectStyles) {
+        ensureStyles(node, 'rangefield', RANGEFIELD_CSS);
+        ensureStyles(node, 'range', RANGE_CSS);
+        ensureStyles(node, 'time', TIME_CSS);
+        ensureStyles(node, 'dateinput', DATEINPUT_CSS);
+        ensureStyles(node, 'timeselect', TIMESELECT_CSS);
+        ensureStyles(node, 'datetime', DATETIME_CSS);
+      }
 
       /*
        * What changed, said once, politely.

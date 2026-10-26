@@ -2,6 +2,40 @@
 
 ## Unreleased
 
+### `setStyleNonce`, and `injectStyles: false` meaning it everywhere
+
+Each widget puts its layout stylesheet in the head the first time it is
+needed. Under `style-src 'self'` with no `'unsafe-inline'` that is blocked and
+the widget comes up undressed — a period panel alone brings seven sheets and
+40 725 bytes of CSS.
+
+`setStyleNonce(value)` hands the library the nonce the policy issued, once,
+before the first widget, and every sheet carries it. In Angular there is
+nothing to write at all: an application under such a policy already provides
+`CSP_NONCE` because Angular needs it for its own styles, and `provideTzslot`
+reads it through an environment initializer.
+
+One value for the page rather than an option on each widget. The option would
+have to reach twelve widgets, every panel, and every widget a panel builds
+inside itself — which is the plumbing `injectStyles` has, and exactly where it
+leaked.
+
+Because `injectStyles: false` stopped the host's sheets and not a panel's. A
+panel injected on every open whatever the field was told, and the reason is in
+the source: a panel lives on the body, outside the host, so the host's sheets
+do not reach it and a panel that injected nothing came up bare. Sound
+reasoning, and nobody looked at what it meant under a policy. Seven calls
+across three files are now gated, and the setting means what it says: nothing
+injected, anywhere, and the eleven exported sheets are yours to place.
+
+Reported by a consumer who was pre-injecting all eleven themselves, with the
+`data-tzslot` ids, to get one attribute onto them — a workaround that works and
+requires knowing our internals.
+
+Asserted by counting what lands in the head rather than by reading the source.
+An audit by grep reported ten ungated calls that were all inside a gated
+block, and would have missed one that was not.
+
 ### `showZone`, and a parity check so the next setting is not forgotten
 
 The period field's summary always named the zone it counted in: "5 j ·

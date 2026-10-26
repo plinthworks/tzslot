@@ -216,6 +216,7 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
   }
 
   const panel = createPanel({
+    injectStyles,
     trigger,
     source: host,
     container,

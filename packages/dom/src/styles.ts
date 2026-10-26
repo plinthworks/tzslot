@@ -1418,6 +1418,48 @@ export const RANGEFIELD_CSS = `
 `;
 
 /**
+ * The nonce every stylesheet this library injects should carry.
+ *
+ * One value for the page rather than an option on each widget, because the
+ * option would have to reach twelve widgets, every panel, and every widget a
+ * panel builds inside itself — which is exactly the plumbing `injectStyles`
+ * has, and exactly where it leaks: a panel injects unconditionally, so a
+ * consumer under a strict Content-Security-Policy had seven blocked
+ * <style> elements and an unstyled panel every time one opened. Threading a
+ * second thing down the same path would reproduce the same gap.
+ *
+ * It is a module-level value, which is a shared mutable and worth saying so.
+ * There is one `styles.ts`, so there is one of these; a page serving two
+ * applications with two nonces is a page with one Content-Security-Policy, so
+ * the case does not arise.
+ */
+let nonce: string | null = null;
+
+/**
+ * Hands this library the nonce your Content-Security-Policy issued.
+ *
+ * Call it once, before the first widget:
+ *
+ *     import { setStyleNonce } from '@tzslot/dom';
+ *     setStyleNonce(document.querySelector('meta[name=csp-nonce]')?.content);
+ *
+ * Under `style-src 'nonce-abc123'` an injected sheet without it is blocked and
+ * the widget comes up unstyled. `@tzslot/angular` reads Angular's own
+ * `CSP_NONCE` and calls this for you.
+ *
+ * Passing `null` or nothing clears it, which is what a test wants between
+ * cases.
+ */
+export function setStyleNonce(value: string | null | undefined): void {
+  nonce = value ?? null;
+}
+
+/** What `setStyleNonce` was last given — for a diagnostic, not for logic. */
+export function styleNonce(): string | null {
+  return nonce;
+}
+
+/**
  * Puts a stylesheet where the host will see it, once.
  *
  * "Where the host will see it" is not always the document: inside a shadow
@@ -1430,6 +1472,24 @@ export function ensureStyles(host: HTMLElement, id: string, css: string): void {
 
   const style = host.ownerDocument.createElement('style');
   style.dataset['tzslot'] = id;
+  /*
+   * Both the property and the attribute.
+   *
+   * The property is what the policy checks. The attribute is set as well
+   * because a browser hides the property from `getAttribute` once the element
+   * is nonced — deliberately, so a script cannot read a nonce back out — and
+   * an inspector showing nothing is a bad hour for whoever is wondering why
+   * their policy rejects a sheet.
+   *
+   * jsdom reflects one onto the other, so the test beside this cannot tell the
+   * two apart: removing the `setAttribute` line leaves all 21 of its cases
+   * passing. Measured, so that the next person does not take that silence for
+   * coverage.
+   */
+  if (nonce !== null) {
+    style.nonce = nonce;
+    style.setAttribute('nonce', nonce);
+  }
   style.textContent = css;
   // First, so anything the page itself declares comes after it.
   target.prepend(style);

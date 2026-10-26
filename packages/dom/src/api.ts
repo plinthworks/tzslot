@@ -108,4 +108,12 @@ export {
   // only sheet left out: under a Content-Security-Policy that forbids inline
   // styles, `injectStyles: false` left that panel bare with no way to dress it.
   DATEINPUT_CSS,
+  /*
+   * The better answer to the same problem, exported beside the sheets it is
+   * for: hand the library the nonce and it injects with it, rather than the
+   * application injecting all eleven sheets itself to get one attribute on
+   * them. A consumer was doing exactly that.
+   */
+  setStyleNonce,
+  styleNonce,
 } from './styles.js';

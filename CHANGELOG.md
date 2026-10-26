@@ -2,6 +2,52 @@
 
 ## Unreleased
 
+### Escape closes the topmost layer, and only that one
+
+The panel listened on the document in the bubble phase and neither stopped the
+event nor prevented it, which cost a consumer both ways. A field inside their
+own popup: one press closed our panel **and** their popup, so a reader
+dismissing a calendar lost the form behind it. And where their popup handled
+Escape first, it closed and we never heard it, leaving our panel open over
+nothing.
+
+Capture now, so an open panel is reached before a handler on anything inside
+the page, and the event is stopped and prevented — but only when a panel was
+actually closed. A press with nothing of ours open passes straight through,
+which is how the second press reaches the popup.
+
+Not a conflict with the other consumer, though I said it was. Theirs is that
+our panel is not inside their drawer, so a click in it never reaches their
+veil: that is about where the panel lives in the DOM, and a key is not a
+click. I had put two different events in one basket.
+
+### Days of a neighbouring month are a colour, not an opacity
+
+`opacity: 0.35` put them at **2.05:1** against white and 2.76:1 against the
+dark surface, where AA asks 4.5:1 — and they are buttons, so content rather
+than decoration. Worse on a selected one: the fade took the accent background
+down with the text on it, **1.59:1**, very nearly invisible. The theme's own
+default was 0.32, so worse again.
+
+An opacity cannot get there: 4.5:1 would need 0.59 in light and 0.47 in dark,
+which is barely faded and stops a neighbouring month reading as one. The
+palette already carries `fg-muted` for this role — 7.73:1 in light, 5.81:1 in
+dark, and still 2.29:1 away from the current month, so the two are told apart
+by hue rather than by presence.
+
+`--tz-cal-outside-opacity` still applies and now defaults to 1, so a screen
+that set it keeps what it asked for. A new `--tz-cal-outside-fg` overrides the
+colour.
+
+Reported by a consumer's axe sweep. Ours cannot see it: `color-contrast` needs
+to know what is painted where and jsdom has no layout, so axe returns the rule
+inapplicable rather than failing — the defect was invisible here through four
+releases. It does not need layout to be *computed*, though, so
+`packages/theme/test/contrast.test.ts` reads the compiled stylesheet and
+measures every pair a widget puts together, in both schemes. Twenty-two pairs,
+and the arithmetic is checked against two known answers so a bug in it cannot
+pass everything.
+
 ### `setStyleNonce`, and `injectStyles: false` meaning it everywhere
 
 Each widget puts its layout stylesheet in the head the first time it is

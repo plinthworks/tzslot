@@ -284,15 +284,41 @@ export function createPanel(options: PanelOptions): PanelController {
 
     const listening = new AbortController();
     const on = { signal: listening.signal };
+    /*
+     * Escape closes the topmost layer, and only that one.
+     *
+     * This listened on the document in the bubble phase and neither stopped
+     * the event nor prevented it, which cost a consumer both ways. A field
+     * inside their own popup: one press closed our panel *and* their popup,
+     * so a reader dismissing a calendar lost the form behind it. And where
+     * their popup handled Escape first, it closed and we never heard it, so
+     * our panel stayed open over nothing.
+     *
+     * Capture, so an open panel is reached before a handler on anything
+     * inside the page; stopped and prevented, but only when a panel was
+     * actually closed. A press with nothing of ours open passes straight
+     * through, which is how the next Escape reaches their popup.
+     *
+     * `stopPropagation` rather than `stopImmediatePropagation`: another
+     * document-level capture listener registered before this one is a peer,
+     * not something to suppress.
+     *
+     * This is about a key, not a click. A second consumer relies on our panel
+     * not being inside their drawer, so a click in it never reaches their
+     * veil — that is a property of where the panel lives in the DOM, and
+     * nothing here touches it. (I thought the two requests conflicted, said
+     * so, and was wrong: they are different events.)
+     */
     doc.addEventListener(
       'keydown',
       (event) => {
         // The topmost panel only. One press used to close every open panel.
-        if (event.key === 'Escape' && stack[stack.length - 1] === panel) {
-          close({ restoreFocus: true, reason: 'escape' });
-        }
+        if (event.key !== 'Escape' || stack[stack.length - 1] !== panel) return;
+        close({ restoreFocus: true, reason: 'escape' });
+        event.stopPropagation();
+        event.preventDefault();
       },
-      on,
+      { ...on, capture: true },
     );
     panel.addEventListener('keydown', (event) => trapTab(panel, event), on);
     // A popup closes on a click anywhere else; the focus stays where that

@@ -95,8 +95,30 @@ export const CALENDAR_CSS = `
   height: var(--tz-cal-cell-size, 2rem);
   text-align: center;
 }
+/* A muted colour, not an opacity.
+
+   Faded at 0.35 the text of a neighbouring month came out at 2.05:1 against
+   white and 2.76:1 against the dark surface, where AA asks 4.5:1 for text --
+   and these days are buttons, so they are content rather than decoration.
+   Worse on a selected one: the opacity faded the accent background with the
+   text on it, 1.59:1, nearly invisible.
+
+   An opacity cannot get there. 4.5:1 would need 0.59 in light and 0.47 in
+   dark, which is barely faded at all and stops a neighbouring month reading
+   as one. The palette already carries fg-muted for exactly this role: 7.73:1
+   in light, 5.81:1 in dark, and still 2.29:1 away from the current month's
+   days, so the two are told apart by hue instead of by presence.
+
+   Reported by a consumer's axe sweep, which found color-contrast on it; our
+   own axe run cannot, because the rule needs layout and jsdom has none.
+
+   The opacity property stays, defaulting to 1, so a screen that set
+   --tz-cal-outside-opacity still gets what it asked for. */
 .tz-cal__day--outside,
-.tz-cal__coarse-cell--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+.tz-cal__coarse-cell--outside {
+  color: var(--tz-cal-outside-fg, var(--tz-fg-muted, currentColor));
+  opacity: var(--tz-cal-outside-opacity, 1);
+}
 .tz-cal__day--today,
 .tz-cal__coarse-cell--today { outline: 1px solid var(--tz-cal-today-border, var(--tz-accent, currentColor)); }
 .tz-cal__day--selected,
@@ -430,7 +452,10 @@ export const RANGE_CSS = `
 .tz-range__coarse-cell:hover:not(:disabled) {
   background: var(--tz-hover, color-mix(in srgb, currentColor 10%, transparent));
 }
-.tz-range__coarse-cell--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+.tz-range__coarse-cell--outside {
+  color: var(--tz-cal-outside-fg, var(--tz-fg-muted, currentColor));
+  opacity: var(--tz-cal-outside-opacity, 1);
+}
 .tz-range__coarse-cell--selected {
   background: var(--tz-cal-selected-bg, var(--tz-accent, currentColor));
   color: var(--tz-cal-selected-fg, var(--tz-accent-fg, canvas));
@@ -501,7 +526,10 @@ export const RANGE_CSS = `
   opacity: 0.7;
 }
 .tz-range__day { height: var(--tz-cal-cell-size, 2rem); text-align: center; }
-.tz-range__day--outside { opacity: var(--tz-cal-outside-opacity, 0.35); }
+.tz-range__day--outside {
+  color: var(--tz-cal-outside-fg, var(--tz-fg-muted, currentColor));
+  opacity: var(--tz-cal-outside-opacity, 1);
+}
 .tz-range__day--today { outline: 1px solid var(--tz-cal-today-border, var(--tz-accent, currentColor)); }
 .tz-range__day--within {
   background: var(--tz-range-within-bg, color-mix(in srgb, var(--tz-accent, currentColor) 16%, var(--tz-bg, transparent)));

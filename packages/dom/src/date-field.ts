@@ -195,7 +195,18 @@ export function createDateField(host: HTMLElement, options: DateFieldOptions = {
     if (openPanelId) trigger.setAttribute('aria-controls', openPanelId);
     else trigger.removeAttribute('aria-controls');
 
-    trigger.setAttribute('aria-label', label());
+    /*
+     * The subject of the button, and then the day it holds.
+     *
+     * `aria-label` overrides an element's contents, so a button reading
+     * "29/03/2026" was announced as "Choose a date" — the value was invisible
+     * to a screen reader in every state. The period field has said both since
+     * 2.0.0, with this comment beside it; this field and the moment field
+     * below never did, which nothing here noticed and a consumer's axe sweep
+     * did.
+     */
+    const held = display();
+    trigger.setAttribute('aria-label', held ? `${label()}, ${held}` : label());
     // The panel is labelled when it opens and lives on the body, so a change
     // of words while it is open left a dialog announcing itself in the
     // language before. The trigger was repainted; this was not.

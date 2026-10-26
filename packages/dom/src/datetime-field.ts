@@ -686,6 +686,13 @@ export function createDateTimeField(
     } else {
       text.textContent = written || s.placeholder || s.messages.chooseDateTime;
       button.disabled = s.disabled;
+      /*
+       * The subject, and then the moment it holds — the same as the period
+       * field, and for the same reason: `aria-label` overrides the contents,
+       * so a button reading "29/03/2026 14:30" announced itself as "Choose a
+       * date and time" and the value was never spoken.
+       */
+      button.setAttribute('aria-label', written ? `${label()}, ${written}` : label());
     }
     trigger.classList.toggle('tz-field__trigger--empty', s.value === null);
     trigger.setAttribute('aria-expanded', String(panel.isOpen));

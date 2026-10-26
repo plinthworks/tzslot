@@ -385,7 +385,17 @@ export function mountGrid<V>(
     title.textContent = text;
     title.disabled = s.view === 'years' || off;
     flag(title, 'tz-cal__title--static', s.view === 'years');
-    title.setAttribute('aria-label', s.view === 'days' ? s.messages.chooseMonth : s.messages.chooseYear);
+    /*
+     * What the button does, and then what it shows.
+     *
+     * It read "Choose the month" while showing "March 2026", so its accessible
+     * name did not contain its visible text — which fails WCAG 2.5.3 and which
+     * a consumer's axe sweep reported as `label-content-name-mismatch`. It
+     * also meant someone using voice control could not say what they could
+     * see.
+     */
+    const action = s.view === 'days' ? s.messages.chooseMonth : s.messages.chooseYear;
+    title.setAttribute('aria-label', text ? `${action}, ${text}` : action);
     grid.setAttribute('aria-label', text);
 
     // Swapped only when the view changes: detaching a node takes the focus with it.

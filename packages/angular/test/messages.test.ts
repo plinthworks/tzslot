@@ -68,7 +68,16 @@ describe('with the French bundle provided', () => {
     const f = mount(FR, 'fr-FR');
     expect(text(f, '.tz-field__trigger')).toContain('Choisir une date');
     expect(attr(f, '.tz-cal__nav', 'aria-label')).toBe('Mois précédent');
-    expect(attr(f, '.tz-cal__title', 'aria-label')).toBe('Choisir un mois');
+    /*
+     * The action and then the month it shows, not the action alone.
+     *
+     * This asserted `'Choisir un mois'` exactly, which is what the button said
+     * while displaying "juin 2026" — an accessible name that does not contain
+     * its own visible text, WCAG 2.5.3, and a button nobody using voice
+     * control could name. The test held the defect in place; a consumer's axe
+     * sweep found it.
+     */
+    expect(attr(f, '.tz-cal__title', 'aria-label')).toBe('Choisir un mois, juin 2026');
   });
 
   it('translates the marks on the slots', () => {

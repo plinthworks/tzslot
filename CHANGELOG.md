@@ -2,6 +2,53 @@
 
 ## Unreleased
 
+### A trigger's value, and a button's month, in their accessible names
+
+The date field and the moment field named their trigger by its subject alone:
+a button reading "23 Sept 2026" announced itself as "Choose a date", so the
+value was invisible to a screen reader in every state. The period field has
+said both since 2.0.0, with a comment beside it explaining why — the other two
+never did, and nothing here noticed.
+
+The month title said what it does without what it shows: "Choose a month" on a
+button reading "September 2026". Its accessible name did not contain its
+visible text, which fails WCAG 2.5.3 and means someone driving by voice cannot
+name what they can see. Fixed on the calendar and on the two-month grid.
+
+Both reported by a consumer's axe sweep against 2.2.0, along with two we had
+already fixed without knowing it was theirs: `aria-expanded` on a text box
+with no role went in 2.3.0, and the static polyfill in 2.3.0 and 2.4.0. Our
+release notes named neither in terms they could match, so they carried
+workarounds for months that they did not need.
+
+### Every widget is run through axe
+
+Four of the ten things that consumer reported were accessibility defects, all
+four found by their sweep and none by the 1 413 tests here. `packages/dom/test/axe.test.ts`
+now runs every widget through axe — empty, holding a value, and with its panel
+open — on the rules that describe a control.
+
+Two things it found immediately, reported by nobody: `createDateInput` built
+bare produced an `<input type="text">` with no accessible name at all, which a
+screen reader announces as "edit text, blank". It now falls back to the
+catalogue, and only when nothing else names it — `aria-label` beats a
+`<label for>`, so a default would override an application that had done the
+right thing.
+
+What it cannot do is colour. `color-contrast` needs layout and jsdom has none,
+so the fourth report — faded days at `opacity: 0.35` falling under 4.5:1 — is
+still invisible here and still open.
+
+And `label-content-name-mismatch` cannot be decided in jsdom either: axe
+returns it as undecided rather than as a violation. Asserting on undecided
+results was tried and fired on correct code, on `‹` named "Previous month".
+So that rule is checked by hand instead, and the hand-written version promptly
+over-fired on a field showing its placeholder — which made an empty period
+field announce "Choose a range, Start date – End date" and broke two tests
+that were right. WCAG 2.5.3 is about labels that include text; a placeholder
+is not a label. The library was changed before the criterion was read, and
+changed back.
+
 ### A day a zone never had was reported as a day that happened twice
 
 Samoa went from 29 December 2011 straight to the 31st, moving across the date

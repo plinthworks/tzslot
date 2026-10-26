@@ -373,10 +373,18 @@ export function createDateRange(host: HTMLElement, options: DateRangeOptions = {
           : `${decade[1]} – ${decade[10]}`;
     title.textContent = heading;
     title.disabled = off || view === 'years';
-    title.setAttribute(
-      'aria-label',
-      view === 'days' ? s.messages.chooseMonth : view === 'months' ? s.messages.chooseYear : heading,
-    );
+    /*
+     * What the button does, and then what it shows.
+     *
+     * It read "Choose the month" while showing "2026", so its accessible name
+     * did not contain its visible text — WCAG 2.5.3, reported by a consumer's
+     * axe sweep as `label-content-name-mismatch`, and a button someone using
+     * voice control could not name. The years view already said the heading
+     * and nothing else, which was right by accident.
+     */
+    const action =
+      view === 'days' ? s.messages.chooseMonth : view === 'months' ? s.messages.chooseYear : null;
+    title.setAttribute('aria-label', action ? `${action}, ${heading}` : heading);
     // Shown and hidden by visibility rather than by display: both keep their
     // place in the cell, so neither the width nor the height moves. A hidden
     // one is out of the tab order all the same.

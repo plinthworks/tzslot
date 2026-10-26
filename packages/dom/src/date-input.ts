@@ -252,11 +252,26 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
     // screen reader that is walking the form.
     input.readOnly = s.disabled;
     input.setAttribute('aria-readonly', String(s.disabled));
-    // A picture above the field says nothing to a screen reader, and an empty
-    // aria-label says *explicitly* nothing — worse than none at all, because
-    // it stops the browser looking for a name elsewhere.
+    /*
+     * A picture above the field says nothing to a screen reader, and an empty
+     * aria-label says *explicitly* nothing — worse than none at all, because
+     * it stops the browser looking for a name elsewhere.
+     *
+     * And when nothing names it, the catalogue does. Built bare —
+     * `createDateInput(host)` with no `label` and no `ariaLabel`, which is how
+     * the guide shows it — this was an `<input type="text">` with no
+     * accessible name at all: a screen reader says "edit text, blank". Found
+     * by axe the first time it was pointed at these widgets, having been
+     * reported by nobody.
+     *
+     * Only when nothing else names it. `aria-label` beats a `<label for>`, so
+     * a default would override an application that had done the right thing —
+     * `input.labels` is how we tell, and a field inside a period panel is
+     * named by its parent through `label` anyway.
+     */
     const name = s.ariaLabel ?? (typeof s.label === 'string' ? s.label : '') ?? '';
-    if (name) input.setAttribute('aria-label', name);
+    const named = name || (input.labels?.length ? '' : s.messages.chooseDate);
+    if (named) input.setAttribute('aria-label', named);
     else input.removeAttribute('aria-label');
     // The mark is decoration: a click on it lands in the field, which is what
     // a hand aiming at a field and hitting its icon meant to do.

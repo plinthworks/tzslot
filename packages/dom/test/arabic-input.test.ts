@@ -31,7 +31,15 @@ describe('typing a date in Arabic', () => {
     // Not cosmetic: without them the parts reorder beside Arabic text.
     const written = formatWith(patternFor('ar-EG', { time: false }), { date: DAY }, 'ar-EG');
     expect(written).toContain('‏');
-    expect(written).toBe('20‏/09‏/2026');
+    /*
+     * The locale's figures, not ASCII.
+     *
+     * This asserted `20/09/2026` — which is what `formatWith` wrote, in
+     * ASCII, while the read-only field beside it formatted through `Intl`
+     * and wrote ٢٣. Same screen, same locale, two numbering systems; the
+     * test held it in place. Reported by a consumer running both.
+     */
+    expect(written).toBe('٢٠‏/٠٩‏/٢٠٢٦');
   });
 
   it.each(ARABIC)('accepts Latin figures typed into %s', (locale) => {

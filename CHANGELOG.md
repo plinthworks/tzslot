@@ -2,6 +2,31 @@
 
 ## Unreleased
 
+### A typed field and a read-only one wrote different figures
+
+On one screen in `ar-EG`, a read-only field read `٢٣‏/٠٩‏/٢٠٢٦` and the typed
+field beside it `23‏/09‏/2026`: same date, same locale, two numbering systems.
+A read-only field formats through `Intl`, which writes the locale's own
+figures; `formatWith` built its numbers with `String(n)` and `padStart`, which
+writes ASCII whatever the locale.
+
+`formatWith` now asks `Intl` for its figures, and so does `maskWith` — both,
+because moving only one would make a field in `ar-EG` show Latin while typing
+and Arabic-Indic the moment it reformatted. The mask still counts normalised
+text, since a reader may type in any script and a width is a width; it writes
+the locale's figures back out at the end.
+
+`Intl` is asked rather than a table consulted, which matters more than it
+sounds: `ar-EG` writes ٢٣ and `ar-MA` writes 23. A table mapping "Arabic" to
+one set would have been wrong for Morocco — the point 2.2.0 made about figures
+and then did not apply here.
+
+Two tests asserted the ASCII and so held the defect in place. With no locale
+the output is unchanged, so a log line and a test read as before.
+
+Reported by a consumer running both fields side by side. The new test pins the
+agreement rather than either answer, since neither is ours to choose.
+
 ### A trigger's value, and a button's month, in their accessible names
 
 The date field and the moment field named their trigger by its subject alone:

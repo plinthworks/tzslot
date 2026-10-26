@@ -331,7 +331,7 @@ export function createDateInput(host: HTMLElement, options: DateInputOptions = {
       const deleting = (event as InputEvent).inputType?.startsWith('delete') ?? false;
       const atEnd = input.selectionStart === input.value.length;
       if (s.mask && shape && !deleting && atEnd) {
-        const helped = maskWith(shape, input.value, s.messages);
+        const helped = maskWith(shape, input.value, s.messages, s.locale);
         if (helped !== input.value) {
           input.value = helped;
           input.setSelectionRange(helped.length, helped.length);

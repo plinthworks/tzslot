@@ -57,7 +57,7 @@ describe('the two halves of a twelve-hour day', () => {
   const afternoon = { date: DAY, time: Temporal.PlainTime.from('14:35') };
 
   it('are written in the language the catalogue speaks', () => {
-    expect(formatWith(shape, afternoon, 'ar-EG', AR)).toBe('20/09/2026 02:35 م');
+    expect(formatWith(shape, afternoon, 'ar-EG', AR)).toBe('٢٠/٠٩/٢٠٢٦ ٠٢:٣٥ م');
     expect(formatWith(shape, afternoon, 'en-GB', EN)).toBe('20/09/2026 02:35 PM');
   });
 

@@ -34,6 +34,44 @@ const pad = (n: number, width = 2) => String(n).padStart(width, '0');
 const names = (locale: string | undefined, option: 'month' | 'weekday', style: 'long' | 'short') =>
   new Intl.DateTimeFormat(locale, { [option]: style, timeZone: 'UTC' });
 
+/**
+ * A number in the figures the locale writes, padded to a width.
+ *
+ * This file wrote `String(n)` and `padStart`, so a pattern always came out in
+ * ASCII while the read-only fields beside it formatted through `Intl` and came
+ * out in the locale's own. On one screen in `ar-EG`: the trigger read
+ * `٢٣‏/٠٩‏/٢٠٢٦` and the typed field `23‏/09‏/2026`. Same date, same locale,
+ * two numbering systems — reported by a consumer running both.
+ *
+ * `Intl` is asked rather than a table consulted, so the answer is the locale's
+ * and not ours: `ar-EG` writes ٢٣ and `ar-MA` writes 23, which is the point
+ * 2.2.0 made about figures and then failed to apply here. `useGrouping: false`
+ * because a year is not a quantity — otherwise 2026 comes out `٢٬٠٢٦`.
+ */
+const figureWriter = (locale: string | undefined) => {
+  const widths = new Map<number, Intl.NumberFormat>();
+  return (value: number, width = 1): string => {
+    let format = widths.get(width);
+    if (!format) {
+      format = new Intl.NumberFormat(locale, { useGrouping: false, minimumIntegerDigits: width });
+      widths.set(width, format);
+    }
+    return format.format(value);
+  };
+};
+
+/**
+ * The same, for a string of Latin figures already laid out.
+ *
+ * The mask normalises what it is handed to ASCII before it can count it, so by
+ * the time there is something to show the figures are Latin whatever the
+ * reader typed. This puts them back into the locale's.
+ */
+const inLocaleFigures = (text: string, locale: string | undefined): string => {
+  const write = figureWriter(locale);
+  return text.replace(/[0-9]/g, (digit) => write(Number(digit)));
+};
+
 /** A day, a time, or both, written out by a pattern. */
 export function formatWith(
   pattern: string,
@@ -45,27 +83,28 @@ export function formatWith(
   // A UTC Date only to borrow Intl's month and weekday names.
   const asDate = date ? new Date(Date.UTC(date.year, date.month - 1, date.day)) : null;
   const hour12 = time ? (time.hour % 12) || 12 : 0;
+  const write = figureWriter(locale);
 
   const written = pattern.replace(TOKENS, (token) => {
     if (token.startsWith("'")) return token.slice(1, -1);
     if (!date && 'yMdE'.includes(token[0]!)) return '';
     if (!time && 'Hhma'.includes(token[0]!)) return '';
     switch (token) {
-      case 'yyyy': return String(date!.year);
-      case 'yy': return pad(date!.year % 100);
+      case 'yyyy': return write(date!.year, 4);
+      case 'yy': return write(date!.year % 100, 2);
       case 'MMMM': return names(locale, 'month', 'long').format(asDate!);
       case 'MMM': return names(locale, 'month', 'short').format(asDate!);
-      case 'MM': return pad(date!.month);
-      case 'M': return String(date!.month);
-      case 'dd': return pad(date!.day);
-      case 'd': return String(date!.day);
+      case 'MM': return write(date!.month, 2);
+      case 'M': return write(date!.month);
+      case 'dd': return write(date!.day, 2);
+      case 'd': return write(date!.day);
       case 'EEEE': return names(locale, 'weekday', 'long').format(asDate!);
       case 'EEE': return names(locale, 'weekday', 'short').format(asDate!);
-      case 'HH': return pad(time!.hour);
-      case 'H': return String(time!.hour);
-      case 'hh': return pad(hour12);
-      case 'h': return String(hour12);
-      case 'mm': return pad(time!.minute);
+      case 'HH': return write(time!.hour, 2);
+      case 'H': return write(time!.hour);
+      case 'hh': return write(hour12, 2);
+      case 'h': return write(hour12);
+      case 'mm': return write(time!.minute, 2);
       case 'a': return time!.hour >= 12 ? halves.pm : halves.am;
       default: return token;
     }
@@ -181,7 +220,12 @@ function pieces(pattern: string): { token?: string; literal?: string }[] {
  * does, `d/M/yyyy` does not, because two figures could be a day or a day and
  * the start of a month. Given one of those, the text is left alone.
  */
-export function maskWith(pattern: string, text: string, halves: Halves = LATIN_HALVES): string {
+export function maskWith(
+  pattern: string,
+  text: string,
+  halves: Halves = LATIN_HALVES,
+  locale?: string | undefined,
+): string {
   const parts = pieces(pattern);
   if (parts.some((part) => part.token !== undefined && WIDTHS[part.token] === undefined)) return text;
   /*
@@ -241,7 +285,16 @@ export function maskWith(pattern: string, text: string, halves: Halves = LATIN_H
     if (figures.length < width) break; // still typing this part: no separator yet
     justFilled = true;
   }
-  return out;
+  /*
+   * Laid out in ASCII, written back in the locale's figures.
+   *
+   * Everything above counts normalised text — it has to, because a reader may
+   * type in any script and a width is a width. But handing ASCII back would
+   * make a field in `ar-EG` flip: Latin while typing, Arabic-Indic the moment
+   * it reformats. One of the two had to move, and the one that moves is this
+   * one, because `formatWith` beside it now writes what `Intl` writes.
+   */
+  return locale ? inLocaleFigures(out, locale) : out;
 }
 
 /**

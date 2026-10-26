@@ -987,7 +987,7 @@ export function createDateTimeField(
       // and never while someone is deleting — putting a separator back that
       // was just removed makes a field impossible to correct.
       if (s.mask && shape && !deleting && atEnd && !named) {
-        const helped = maskWith(shape, typed.value, s.messages);
+        const helped = maskWith(shape, typed.value, s.messages, s.locale);
         if (helped !== typed.value) {
           typed.value = helped;
           typed.setSelectionRange(helped.length, helped.length);

@@ -2,6 +2,35 @@
 
 ## Unreleased
 
+### `showZone`, and a parity check so the next setting is not forgotten
+
+The period field's summary always named the zone it counted in: "5 j ·
+Europe/Paris". Right for a field choosing moments — seven days is 169 hours
+the week the clocks go back, and saying so without saying where is useless.
+Wrong for a grid filtering a column of calendar days, which has no zone and
+draws the field on UTC midnights: "5 j · UTC" claims a precision the column
+does not have. Reported by a consumer who was overriding `periodSummary` to
+drop three characters, at the cost of their catalogue.
+
+`showZone: false` prints the length alone, and not through the catalogue —
+`periodSummary` exists to join a length to a zone, and a catalogue handed
+`zone: null` would grow a branch in all three plus a fourth signature for
+anyone who wrote their own.
+
+Adding it immediately produced the defect this repository produces most: a
+setting on the dom widget and no input on the Angular one. 2.1.0 audited that
+by hand and found three real gaps, then the audit stopped existing. It is a
+test now — every settings key of every widget against the `input()`
+declarations of its wrapper, read with the compiler so a rename moves both or
+fails.
+
+It found `minView` missing from `tz-multi-date`, present on the dom widget
+since it existed and never wired. And it found two things about itself: that
+`MultiDateSettings` is a type alias rather than an interface, so a first
+version read no keys for it and compared nothing to nothing, and that
+`createDateInput` has no Angular component at all — it is the box the period
+panel builds its ends from, exported, undocumented, and unwrapped.
+
 ### A typed field and a read-only one wrote different figures
 
 On one screen in `ar-EG`, a read-only field read `٢٣‏/٠٩‏/٢٠٢٦` and the typed

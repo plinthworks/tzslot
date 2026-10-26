@@ -65,6 +65,14 @@ export class MultiDate implements ControlValueAccessor, AfterViewInit {
   readonly isDateDisabled = input<((date: PlainDate) => boolean) | undefined>(undefined);
   readonly today = input<PlainDate>(Temporal.Now.plainDateISO());
   readonly view = model<CalendarView>('days');
+  /**
+   * 'months' turns this into a month picker, 'years' into a year picker.
+   *
+   * On the dom widget since it existed, and never wired here — found by the
+   * parity check beside this package's tests, which exists because the same
+   * class of gap has now shipped three times.
+   */
+  readonly minView = input<CalendarView>('days');
   readonly renderCell = input<RenderCell | undefined>(undefined);
   /** A column of ISO week numbers down the left. */
   readonly weekNumbers = input(false);
@@ -96,6 +104,7 @@ export class MultiDate implements ControlValueAccessor, AfterViewInit {
     value: this.value(),
     maxDates: this.maxDates(),
     view: this.view(),
+    minView: this.minView(),
     firstDayOfWeek: this.firstDayOfWeek(),
     locale: this.locale(),
     min: this.min(),

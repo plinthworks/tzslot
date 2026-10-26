@@ -174,6 +174,11 @@ export class RangeField implements ControlValueAccessor {
   /** Whether the step sits between the arrows, to be read and pressed. */
   readonly showStep = input(true);
   /**
+   * Whether the summary line names the zone it counted in. `false` for a
+   * column of calendar days, which has none and should not claim one.
+   */
+  readonly showZone = input(true);
+  /**
    * Whether the panel offers a Clear. `true`: a field that cannot be emptied
    * is a filter nobody can take off.
    */
@@ -290,6 +295,7 @@ export class RangeField implements ControlValueAccessor {
     shift: this.shift(),
     showPresets: this.showPresets(),
     showStep: this.showStep(),
+    showZone: this.showZone(),
     clearable: this.clearable(),
     preset: this.preset(),
     singleDay: this.singleDay(),

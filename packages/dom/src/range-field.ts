@@ -296,6 +296,22 @@ export interface RangeFieldSettings {
    */
   showStep: boolean;
   /**
+   * Whether the summary line names the zone it counted in.
+   *
+   * On by default, and it should be: a period of seven days is 169 hours the
+   * week the clocks go back, and the line that says so is useless without
+   * saying where. The identifier rather than the name — "Europe/Paris" is
+   * shorter than "heure d'été d'Europe centrale" and cannot be mistaken for
+   * another zone that shares an offset today.
+   *
+   * `false` for a field that is not choosing moments at all. A grid filtering
+   * a column of calendar days draws it on UTC midnights because a day has no
+   * zone, and "5 j · UTC" is then a line claiming a precision the column does
+   * not have — reported by a consumer who was overriding `periodSummary` to
+   * drop it, which cost them their catalogue to delete three characters.
+   */
+  showZone: boolean;
+  /**
    * Whether the panel offers a Clear.
    *
    * `true`: a field that cannot be emptied is a filter nobody can take off.
@@ -481,6 +497,7 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
     showPresets: true,
     singleDay: false,
     showStep: true,
+    showZone: true,
     clearable: true,
     title: undefined,
     timeLayout: 'select',
@@ -2074,10 +2091,18 @@ export function createRangeField(host: HTMLElement, options: RangeFieldOptions =
       summaryLine.textContent =
         problem ??
         (length
-          ? // The identifier, not the localized name: "Europe/Paris" is shorter
-            // than "heure d'été d'Europe centrale" and cannot be mistaken for
-            // another zone that happens to share an offset today.
-            s.messages.periodSummary({ length, zone: s.timeZone })
+          ? s.showZone
+            ? s.messages.periodSummary({ length, zone: s.timeZone })
+            : /*
+               * The length alone, and not through the catalogue.
+               *
+               * `periodSummary` exists to join a length to a zone, and there
+               * is no joining to do — a catalogue given `zone: null` would
+               * have to grow a branch in all three, and a fourth signature
+               * for anyone who wrote their own. The length is already written
+               * in the reader's language by `formatDuration`.
+               */
+              length
           : '');
       summaryLine.hidden = !problem && !length;
     }

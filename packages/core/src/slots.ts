@@ -123,13 +123,29 @@ export function resolve(
     const earlier = wall.toZonedDateTime(timeZone, { disambiguation: 'earlier' });
     const later = wall.toZonedDateTime(timeZone, { disambiguation: 'later' });
 
-    // An ambiguous time keeps its face on both readings — the clock really did
-    // show 02:30 twice. A skipped time comes back as something else entirely,
-    // because there was no 02:30 to return.
+    /*
+     * An ambiguous time keeps its face *and* its day on both readings — the
+     * clock really did show 02:30 twice, on that date. A skipped time comes
+     * back as something else, because there was no 02:30 to return.
+     *
+     * The day half of that was missing, and a whole day can be skipped: Samoa
+     * went from 29 December 2011 straight to the 31st, crossing the date line.
+     * Asked for 09:00 on the 30th, both readings kept the face — 09:00 on the
+     * 29th and 09:00 on the 31st, forty-eight hours apart — so this reported a
+     * day that never happened as a day that happened twice, and a field would
+     * have handed back a moment on the 29th.
+     *
+     * Reported by a consumer whose own sweep compared our answers against
+     * Temporal's, and confirmed here before it was believed. It is the exact
+     * failure this library exists to prevent — accepting a moment that will
+     * not occur — in the function that exists to prevent it.
+     */
     const keepsItsFace =
       earlier.hour === time.hour &&
       earlier.minute === time.minute &&
-      earlier.second === time.second;
+      earlier.second === time.second &&
+      earlier.toPlainDate().equals(date) &&
+      later.toPlainDate().equals(date);
 
     if (keepsItsFace) {
       return {

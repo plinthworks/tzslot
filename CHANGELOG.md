@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+### A day a zone never had was reported as a day that happened twice
+
+Samoa went from 29 December 2011 straight to the 31st, moving across the date
+line: the 30th never happened there. Asked for 09:00 on it, `resolveWallTime`
+answered `exists: true, ambiguous: true`, with two moments forty-eight hours
+apart — 09:00 on the 29th and 09:00 on the 31st. A field offering that day
+would have handed back a moment on the 29th.
+
+`keepsItsFace` compared the clock face and not the date, so both readings
+passed: they really were 09:00, just not on the day asked for. It now requires
+both readings to fall on the date asked for, which a genuine repetition always
+does.
+
+It is the exact failure this library exists to prevent — accepting a moment
+that will not occur — in the function that exists to prevent it. Reported by a
+consumer whose own sweep compared our answers against Temporal's, and
+confirmed here before it was believed. Every one of the 1 407 tests passed
+before the fix and after it: nothing had encoded the old behaviour, and
+nothing had asked.
+
 ## 2.4.0
 
 Four things a consumer put on screen in front of a real user and we had not.
